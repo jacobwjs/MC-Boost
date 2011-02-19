@@ -8,12 +8,7 @@ Medium::Medium()
 	num_radial_pos = MAX_BINS-1;	// Set the number of bins.
 	radial_bin_size = radial_size / num_radial_pos;
 	
-	// Initialize all the bins to zero since they will serve as accumulators.
-	for (int i = 0; i < MAX_BINS; i++) {
-		Cplanar[i] = 0;
-	}
-	
-	
+	Cplanar = NULL;
 }
 
 Medium::~Medium()
@@ -24,7 +19,18 @@ Medium::~Medium()
 		delete *i;
 }
 
-// Add the layer to the medium by pushing it onto the STL vector container.
+
+
+void Medium::setPlanarArray(double *array)
+{
+	Cplanar = array;
+	// Initialize all the bins to zero since they will serve as accumulators.
+	for (int i = 0; i < MAX_BINS; i++) {
+		Cplanar[i] = 0;
+	}
+}
+
+// Add the layer to the medium by pushing it onto the vector container.
 void Medium::addLayer(Layer *layer)
 {
 	p_layers.push_back(layer);
@@ -39,8 +45,9 @@ void Medium::absorbEnergy(const double z, const double energy)
 	
 	double r = fabs(z);
 	short ir = (short)(r/radial_bin_size);
-	if (ir >= num_radial_pos) ir = num_radial_pos;
-
+	if (ir >= num_radial_pos) {
+		ir = num_radial_pos;
+	}
 
 	Cplanar[ir] += energy;
 
@@ -49,10 +56,45 @@ void Medium::absorbEnergy(const double z, const double energy)
 
 void Medium::injectPhoton(const int x_start, const int y_start, Photon *photon)
 {
-     cout << "Stub... injectPhoton\n");
+	
+	// FIXME:
+	// Calculate specular reflectance.
+	// double spec = photon->specularReflectance(double n1, double n2);
+	
+	// Similate photon moving through medium.
+	propogatePhoton(photon);
 }
 
 
+
+// Simulate photon propogation through the medium.
+void Medium::propogatePhoton(Photon *photon)
+{
+	
+	while (photon->isAlive()) {
+		// Move the photon in the medium.
+		photon->hop();
+		
+		// Drop some portion of the photon's weight into the medium's grid.
+		//double weight_dropped = photon->drop();
+		//double depth = photon->getZ();
+		absorbEnergy(photon->getZ(), photon->drop());
+		
+		// Change the direction of the photon.
+		photon->spin();
+		
+		// Perform the roulette test to check if the photon should continue propogation
+		// are die off.
+		photon->performRoulette();
+	}
+	
+	// Plot the photon's propogation path in the medium.
+	photon->plotPath();
+	
+	// Once we make it out of the above loop the photon has died.  Reset this
+	// photon's values and allow it to propogate through the medium once again.
+	photon->reset();
+}
 
 
 void Medium::printGrid(const int numPhotons)
@@ -85,6 +127,4 @@ void Medium::printGrid(const int numPhotons)
 	
 	// close the file.
 	output.close();
-	
-	
 }

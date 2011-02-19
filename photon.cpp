@@ -15,9 +15,14 @@ Photon::Photon(void)
 	// Photon just created, so it is alive.
 	status = ALIVE;
 
+	// Weight, cartesian coords, and step size default values before photon
+	// is moved through the medium.
 	weight = 1;
 	x = y = z = 0;
 	step = 0;
+	
+	// No interactions thus far.
+	num_steps = 0;
 	
 	// Randomly set photon trajectory to yield isotropic source.
 	cos_theta = (2.0 * getRandNum()) - 1;
@@ -53,12 +58,16 @@ void Photon::setIterations(const int num)
 }
 
 
-// Here is where execution begins for the thread and we execute the three main steps,
-// 1) Hop
-// 2) Drop
-// 3) Spin
+// Here is where execution begins for the thread and we execute the  main steps,
+// 1) Hop - move the photon
+// 2) Drop - drop weight due to absorption
+// 3) Spin - update trajectory accordingly
+// 4) Roulette - test to see if photon should live or die.
+
+
 void Photon::run()
-{	
+{
+	/*
 	// Execute this photon (i.e. thread) the given number of iterations, thus
 	// allowing the work to be split up.
 	while (cnt < iterations) {
@@ -68,9 +77,18 @@ void Photon::run()
 			cout << "Running thread( " << Thread::getThreadID() << ")...";
 			cout << "..hop(), drop(), spin(), roulette().  Propogated " << cnt << " times.\n";
 #endif
+			
+			// Move the photon.
 			hop();
+			
+			// Drop weight of the photon due to an interaction with the medium.
 			drop();
+			
+			// Calculate the new coordinates of photon propogation.
 			spin();
+			
+			// Check if the photon has reached the threshold weight, and if so
+			// perform roulette to see if it should continue (ALIVE) or end (DEAD).
 			performRoulette();
 		}
 		
@@ -80,7 +98,15 @@ void Photon::run()
 	
 	// The thread has done its portion of the work, time to exit.
 	//Thread::exit();
+
+*/	 
 }
+
+
+void Photon::plotPath()
+{
+	plot([
+
 
 void Photon::reset()
 {
@@ -91,10 +117,14 @@ void Photon::reset()
 	// Photon just created, so it is alive.
 	status = ALIVE;
 	
+	// Set back to default values.
 	weight = 1;
 	x = y = z = 0;
 	r = 0;
 	step = 0;
+	
+	// Reset the number of interactions back to zero.
+	num_steps = 0;
 	
 	// Randomly set photon trajectory to yield isotropic source.
 	cos_theta = (2.0 * getRandNum()) - 1;
@@ -115,7 +145,6 @@ void Photon::hop()
 #endif	
 	
 	double rnd = getRandNum();
-	if (rnd <= 0 || rnd > 1)	cout << "Error in random number\n";
 	
 	// FIXME: Should check at which depth the photon resides in the medium
 	//        (e.g. double mu_a = medium->getlayerAbsorption(z)), but hard coded values
@@ -124,15 +153,29 @@ void Photon::hop()
 	double mu_s = 0.0; // cm^-1
 	step = -log(rnd)/(mu_a	+ mu_s);
 	
+	
+	
 	// Update position of the photon.
 	x += step*dirx;
 	y += step*diry;
 	z += step*dirz;
 	
+	
+
+	// Store the x, y, and z location for this interaction.  Used with plotting.
+	location_x[num_steps] = x;
+	location_y[num_steps] = y;
+	location_z[num_steps] = z;
+	// Check to see if we have a valid index into the array to store the coords.
+	num_steps += 1;
+	if (num_steps > 10000) {
+		cout << "Error, indexing past array bounds\n";
+	}
+	
 }
 
-// Drop absorbed energy from photon weight into bin.
-void Photon::drop()
+// Return absorbed energy from photon weight at this location.
+double Photon::drop()
 {
 #ifdef DEBUG
 	cout << "Dropping...\n";
@@ -149,8 +192,8 @@ void Photon::drop()
 	// Remove the portion of energy lost due to absorption at this location.
 	weight -= absorbed;
 	
-	// Place the absorbed energy in the correct bin in the medium.
-	medium->absorbEnergy(z, absorbed);
+	// Return the energy that was absorbed.
+	return absorbed;
 }
 
 

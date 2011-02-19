@@ -20,15 +20,34 @@ public:
 	Medium();
 	~Medium();
 	
+	// Add some portion of the photon's energy that was lost at this interaction
+	// point (i.e. due to absorption) to the medium's grid.
 	void absorbEnergy(const double z, const double energy);
+	
+	// Print the grid for this medium.
 	void printGrid(const int num_photons);
+	
+	// Add a layer to the medium.
 	void addLayer(Layer *layer);
+	
+	// Inject a photon into the medium at the x and y coordinates.
 	void injectPhoton(const int x_start, const int y_start, Photon *p);
-	//Layer * getLayer();	
-		
-protected:
-	//double radial_size;	// maximum radial size of medium
+	
+	// Move the photon through the medium stochastically.
+	void propogatePhoton(Photon *photon);
+	
+	// Return the grid where absorption was accumulated.
+	double * getPlanarGrid() {return Cplanar;}
+	
+	// Return the number of bins used in the grid.
+	int getBins() {return MAX_BINS;}
+	
+	// Return the radial size of the medium (cm).
+	double getRadialSize() {return radial_size;}
 
+	void setPlanarArray(double *planar);
+	
+	
 	
 private:
 	double	radial_size;			// Maximum radial size.
@@ -36,7 +55,8 @@ private:
 	double	radial_bin_size;		// Radial bin size of the medium (i.e dr).
 	
 	// The arrays that hold the weights dropped during interaction points.
-	double	Cplanar[MAX_BINS];		// Planar photon concentration.
+	//double	Cplanar[MAX_BINS];		// Planar photon concentration.
+	double *Cplanar;
 	double	Ccylinder[MAX_BINS];	// Clindrical photon concentration.
 	double	Cspherical[MAX_BINS];	// Spherical photon concentration.
 	

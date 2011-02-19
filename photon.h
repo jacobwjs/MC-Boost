@@ -2,7 +2,6 @@
 #ifndef PHOTON_H
 #define PHOTON_H
 
-#include "medium.h"
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
@@ -39,21 +38,14 @@ public:
 	void	hop();
 
 	// Drop absorbed energy from photon weight due to absorption in medium.
-	void	drop();
+	double	drop();
 
 	// Change the trajectory of the photon due to scattering in the medium.
 	void	spin();
 	
 	// Reset the Photon attributes so it can be propogated again.
 	void	reset();
-	
-	// Set the layer for this photon.
-	//void	setLayer(Medium *tissue) {this->medium = tissue;}
-	
-	// Set the medium which the photon will propogate through.
-	// NOTE: can be made up of multiple layers.
-	void	setMedium(Medium *tissue) {this->medium = tissue;}
-	
+		
 	// Give the photon a probabilistic chance of surviving or terminating
 	// if its weight has dropped below a specified threshold.
 	void	performRoulette(void);
@@ -84,17 +76,18 @@ public:
 	// move it to those coordinates.
 	void	updateLocation(void);
 
-	// Step the photon using stochastic methods.
-	void	move(Layer &l);
-	
 	// Update weight based on specular reflectance.
 	void	specularReflectance(double n1, double n2);
+	
+	// Plot the photon's path.
+	void	plotPath();
 	
 	
 	
 	
 private:
-	// Number of times this Photon (i.e., thread) will execute.
+	// Number of times this Photon (i.e., thread) will execute; where one execution
+	// is the full cycle of photon propogation.
 	int iterations;
 	
 	// Holds value of number of iterations thus far.
@@ -122,11 +115,18 @@ private:
 	double	cos_theta, sin_theta;
 	
 	// The azimuthal angle
-	double	psi;	
+	double	psi;
 	
-	// The Medium that the photon will be propogated through.
-	Medium *medium;
+	// Arrays that hold the locations of interaction points for plotting in 3D.
+	// That is each respective array holds an x, y, or z location where the 
+	// interaction occorred.
+	double location_x[10000];
+	double location_y[10000];
+	double location_z[10000];
 	
+	// The number of steps this photon has while propogating through
+	// the medium.
+	int num_steps;
 }; 		
 
 #endif // end PHOTON_H
