@@ -2,6 +2,7 @@
 #ifndef PHOTON_H
 #define PHOTON_H
 
+#include "medium.h"
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
@@ -22,14 +23,13 @@
 class Photon
 {
 public:
+	// Constructors
 	Photon(void);
 	Photon(double x, double y, double z,
 		   double dirx, double diry, double dirz);
-	~Photon(void);
 	
-	 
-	// Implement the virtual function 'run' from Thread.
-	virtual void run();
+	// Destructor
+	~Photon(void);
 	
 	// Set the number of iterations this Photon (i.e. thread) will run.
 	void	setIterations(const int n);
@@ -82,6 +82,9 @@ public:
 	// Plot the photon's path.
 	void	plotPath();
 	
+	// Inject the photon into the medium the given number of iterations.
+	void	injectPhoton(Medium *m, const int iterations);
+	
 	
 	
 	
@@ -117,16 +120,13 @@ private:
 	// The azimuthal angle
 	double	psi;
 	
-	// Arrays that hold the locations of interaction points for plotting in 3D.
-	// That is each respective array holds an x, y, or z location where the 
-	// interaction occorred.
-	double location_x[10000];
-	double location_y[10000];
-	double location_z[10000];
 	
-	// The number of steps this photon has while propogating through
+	// The number of steps this photon has taken while propogating through
 	// the medium.
 	int num_steps;
+	
+	// Pointer to the medium which this photon will propagate through.
+	Medium *m_medium;
 }; 		
 
 #endif // end PHOTON_H

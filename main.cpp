@@ -8,8 +8,6 @@
 
 
 
-// For matlab integration
-#include "mex.h"
 
 #include "stdio.h"
 #include "photon.h"
@@ -21,25 +19,15 @@
 
 using namespace std;
 
-const int MAX_PHOTONS = 1000000;
+const int MAX_PHOTONS = 100000;
 
 //#define DEBUG 1
 
 
 
-void createFluence(double *vals, const double, const double);
-
-
-
-
-void mexFunction( int nlhs, mxArray *plhs[],
-				 int nrhs, const mxArray *prhs[])
+	
+int main()
 {
- 
-	
-	
-//int main()
-//{
 	
 	
 	// Create the medium in which the photons will be fired.
@@ -55,24 +43,9 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	
 	
 	
-	/* Matlab specific initialations */
-	// ------------------------------------------------------
-	// Number of rows and colums of the array given to Matlab.
-	
-	mwSize mrows,ncols;
-	mrows = 1;
-	ncols = 101;
-	
-	// set the output pointer to the output matrix 
-	plhs[0] = mxCreateDoubleMatrix(mrows, ncols, mxREAL);
-	double *Cplanar = mxGetPr(plhs[0]);
-	
+	// Allocate the planar grid and set it in the tissue.
+	double *Cplanar = (double*)malloc(sizeof(double) * 101);
 	tissue->setPlanarArray(Cplanar);
-	
-	
-	
-	//double *Cplanar = (double*)malloc(sizeof(double) * 101);
-	//tissue->setPlanarArray(Cplanar);
 	
 	// Initial injection location of a photon.
 	int x = 0;
@@ -82,15 +55,16 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	clock_t start, end;
 	start = clock();
 	
+	/*
 	// Simulate photons being injected into the medium. 
-	for (int i = 0; i < MAX_PHOTONS; i++) 
+	for (int i = 0; i < MAX_THREADS; i++) 
     {
-		tissue->injectPhoton(x, y, photon);
+		//tissue->injectPhoton(x, y, photon);
 	}
-
+	 */
 	
-	
-	
+	// Non-threaded case.
+	photon->injectPhoton(tissue, MAX_PHOTONS);
 	
 	
 	
@@ -102,50 +76,14 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	
 	
 	// Print the matrix of the photon absorptions to file.
-	//Medium *ptrMedium = &tissue;
-	//tissue->printGrid(MAX_PHOTONS);
-	
-	
-	
-	//double *Cplanar = tissue->getPlanarGrid();
-
-	// Calculate the fluence.
-	//createFluence(Cplanar, tissue->getBins(), tissue->getRadialSize());
-	
-	// Copy over values to the matlab "array".
-	/*
-	for (int i = 0; i < 101; i++)
-	{
-		to_matlab[i] = Cplanar[i];
-	}
-	*/
+	tissue->printGrid(MAX_PHOTONS);
 	
 	
 	// Clean up memory allocated memory on the heap.
 	delete tissue;
 	delete photon;
 	
-	//return 0;
+	return 0;
 }
 
-
-void createFluence(double *Cplanar, const double BINS, const double rad_size)
-{
-	// FIXME:  Assuming homogenous medium.
-	double mu_a = 1.0;
-	
-	double *temp = Cplanar;
-	double radial_bin_size = BINS / rad_size;
-	double fluencePlanar = 0;
-	double r = 0;
-	double shellVolume = 0;
-	
-	shellVolume = radial_bin_size;
-	for (int ir = 0; ir <= BINS-1; ir++, Cplanar++) {
-		r = (ir + 0.5)*radial_bin_size;
-		
-		*Cplanar = (*Cplanar)/MAX_PHOTONS/shellVolume/mu_a;
-	}
-
-}
 

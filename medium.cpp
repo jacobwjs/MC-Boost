@@ -1,6 +1,7 @@
 #include "debug.h"
 #include "medium.h"
 #include <cmath>
+#include <assert.h>
 
 Medium::Medium()
 {
@@ -54,46 +55,84 @@ void Medium::absorbEnergy(const double z, const double energy)
 }
 
 
-void Medium::injectPhoton(const int x_start, const int y_start, Photon *photon)
+// Return the layer in the medium at the passed in depth 'z'.
+// We iterate through the vector which contains pointers to the layers.
+// When the correct layer is found from the depth we return the layer object.
+Layer * Medium::getLayerFromDepth(double z)
 {
+	vector<Layer *>::iterator it;
+	for (it = p_layers.begin(); it != p_layers.end(); it++) {
+		// Find the layer we are in within the medium based on the depth (i.e. z)
+		// that was passed in.  Break from the loop when we find the correct layer.
+		if ((*it)->getDepthStart() <= z && (*it)->getDepthEnd() >= z)
+			break;
+	}
 	
-	// FIXME:
-	// Calculate specular reflectance.
-	// double spec = photon->specularReflectance(double n1, double n2);
-	
-	// Similate photon moving through medium.
-	propogatePhoton(photon);
+	// Return layer based on the depth passed in.
+	return *it;
 }
 
 
-
-// Simulate photon propogation through the medium.
-void Medium::propogatePhoton(Photon *photon)
+double Medium::getLayerAbsorptionCoeff(double z)
 {
-	
-	while (photon->isAlive()) {
-		// Move the photon in the medium.
-		photon->hop();
-		
-		// Drop some portion of the photon's weight into the medium's grid.
-		//double weight_dropped = photon->drop();
-		//double depth = photon->getZ();
-		absorbEnergy(photon->getZ(), photon->drop());
-		
-		// Change the direction of the photon.
-		photon->spin();
-		
-		// Perform the roulette test to check if the photon should continue propogation
-		// are die off.
-		photon->performRoulette();
+	double absorp_coeff = 0;
+	vector<Layer *>::iterator it;
+	for (it = p_layers.begin(); it != p_layers.end(); it++) {
+		// Find the layer we are it in the medium based on the depth (i.e. z)
+		// that was passed in.  Break from the loop when we find the correct layer.
+		if ((*it)->getDepthStart() <= z && (*it)->getDepthEnd() >= z) {
+			absorp_coeff = (*it)->getAbsorpCoeff();
+			break;
+		}
 	}
 	
-	// Plot the photon's propogation path in the medium.
-	photon->plotPath();
+	// If not found, report error.
+	assert(absorp_coeff != 0);
 	
-	// Once we make it out of the above loop the photon has died.  Reset this
-	// photon's values and allow it to propogate through the medium once again.
-	photon->reset();
+	// Return the absorption coefficient value.
+	return absorp_coeff;
+}
+
+
+double Medium::getLayerScatterCoeff(double z)
+{
+	double scatter_coeff = 0;
+	vector<Layer *>::iterator it;
+	for (it = p_layers.begin(); it != p_layers.end(); it++) {
+		// Find the layer we are it in the medium based on the depth (i.e. z)
+		// that was passed in.  Break from the loop when we find the correct layer.
+		if ((*it)->getDepthStart() <= z && (*it)->getDepthEnd() >= z) {
+			scatter_coeff = (*it)->getScatterCoeff();
+			break;
+		}
+	}
+	
+	// If not found, report error.
+	assert(scatter_coeff != 0);
+	
+	// Return the scattering coefficient for the layer that resides at depth 'z'.
+	return scatter_coeff;
+}
+
+
+double Medium::getAnisotropyFromDepth(double z)
+{
+	double anisotropy = 0;
+	vector<Layer *>::iterator it;
+	for (it = p_layers.begin(); it != p_layers.end(); it++) {
+		// Find the layer we are it in the medium based on the depth (i.e. z)
+		// that was passed in.  Break from the loop when we find the correct layer.
+		if ((*it)->getDepthStart() <= z && (*it)->getDepthEnd() >= z) {
+			anisotropy = (*it)->getAnisotropy();
+			break;
+		}
+	}
+	
+	// If not found, report error.
+	assert(anisotropy != 0);
+	
+	// Return the anisotropy value for the layer that resides at depth 'z'.
+	return anisotropy;
 }
 
 

@@ -58,21 +58,26 @@ void Photon::setIterations(const int num)
 }
 
 
-// Here is where execution begins for the thread and we execute the  main steps,
+
 // 1) Hop - move the photon
 // 2) Drop - drop weight due to absorption
 // 3) Spin - update trajectory accordingly
 // 4) Roulette - test to see if photon should live or die.
-
-
-void Photon::run()
+void Photon::injectPhoton(Medium *medium, const int iterations)
 {
-	/*
-	// Execute this photon (i.e. thread) the given number of iterations, thus
-	// allowing the work to be split up.
-	while (cnt < iterations) {
-		
-		while (isAlive()) {
+	// Before propagation we set the medium which will be used by the photon,
+	// which is passed in.
+	this->m_medium = medium;
+	
+	int i;
+	// Inject 'iterations' number of photons into the medium.
+	for (i = 0; i < iterations; i++) 
+	{
+		// While the photon has not been terminated by absorption or leaving
+		// the medium we propagate it through he medium.
+		while (isAlive()) 
+		{
+			
 #ifdef DEBUG
 			cout << "Running thread( " << Thread::getThreadID() << ")...";
 			cout << "..hop(), drop(), spin(), roulette().  Propogated " << cnt << " times.\n";
@@ -81,31 +86,43 @@ void Photon::run()
 			// Move the photon.
 			hop();
 			
-			// Drop weight of the photon due to an interaction with the medium.
-			drop();
 			
-			// Calculate the new coordinates of photon propogation.
-			spin();
+			// FIXME: Should probably have all weight deposited at surface if
+			//		  photon leaves medium by total internal reflection or reaches
+			//		  the maximimum depth.
+			// Ensure the photon has not left the medium by either total internal
+			// reflection or transmission (only looking at z-axis).
+			if (z >= 0 && z <= 10) {
+				
+				// Drop weight of the photon due to an interaction with the medium.
+				drop();
+				
+				// Calculate the new coordinates of photon propogation.
+				spin();
+				
+				// Test whether the photon should continue propagation from the
+				// Roulette rule.
+				performRoulette();
+				
+			}
+			else {
+				break;  // break from while loop and execute reset().
+			}
 			
-			// Check if the photon has reached the threshold weight, and if so
-			// perform roulette to see if it should continue (ALIVE) or end (DEAD).
-			performRoulette();
-		}
+		} // end while() loop
 		
-		cnt++;
+		// Reset the photon and start propogation over from the beginning.
 		reset();
-	}
-	
-	// The thread has done its portion of the work, time to exit.
-	//Thread::exit();
-
-*/	 
+		
+	} // end for() loop
 }
+
 
 
 void Photon::plotPath()
 {
-	plot([
+	// STUB
+}
 
 
 void Photon::reset()
@@ -117,9 +134,13 @@ void Photon::reset()
 	// Photon just created, so it is alive.
 	status = ALIVE;
 	
-	// Set back to default values.
+	// Set back to initial weight values.
 	weight = 1;
+	
+	// FIXME: 
+	// need to reset to the photons initial location.
 	x = y = z = 0;
+	
 	r = 0;
 	step = 0;
 	
@@ -146,33 +167,20 @@ void Photon::hop()
 	
 	double rnd = getRandNum();
 	
-	// FIXME: Should check at which depth the photon resides in the medium
-	//        (e.g. double mu_a = medium->getlayerAbsorption(z)), but hard coded values
-	//        are used for now, which assumes homogeneous single layer throughout. 
-	double mu_a = 1.0; // cm^-1
-	double mu_s = 0.0; // cm^-1
+	// Update the current values of the absorption and scattering coefficients
+	// based on the depth in the medium (i.e. which layer the photon is in).
+	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
+	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
+	
+	// Calculate the new step length of the photon.
 	step = -log(rnd)/(mu_a	+ mu_s);
-	
-	
 	
 	// Update position of the photon.
 	x += step*dirx;
 	y += step*diry;
 	z += step*dirz;
-	
-	
-
-	// Store the x, y, and z location for this interaction.  Used with plotting.
-	location_x[num_steps] = x;
-	location_y[num_steps] = y;
-	location_z[num_steps] = z;
-	// Check to see if we have a valid index into the array to store the coords.
-	num_steps += 1;
-	if (num_steps > 10000) {
-		cout << "Error, indexing past array bounds\n";
-	}
-	
 }
+
 
 // Return absorbed energy from photon weight at this location.
 double Photon::drop()
@@ -181,32 +189,38 @@ double Photon::drop()
 	cout << "Dropping...\n";
 #endif	
 	
-	// FIXME:  Should return the albedo for the layer in which the photon is 
-	//			currently being propogated through. (e.g. double val = medium->getLayerAlbedo(z))
-	//		   For now assume single homogenous layer.
-	double mu_s = 0.0;
-	double mu_a = 1.0;
+	// Update the current values of the absorption and scattering coefficients
+	// based on the depth in the medium (i.e. which layer the photon is in).
+	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
+	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
+	
+	// Calculate the albedo and remove a portion of the photon's weight for this
+	// interaction.
 	double albedo = mu_s / (mu_a + mu_s);
 	double absorbed = weight * (1 - albedo);
 	
 	// Remove the portion of energy lost due to absorption at this location.
 	weight -= absorbed;
 	
+	// Deposit lost energy in the grid of the medium.
+	m_medium->absorbEnergy(z, absorbed);
+	
 	// Return the energy that was absorbed.
 	return absorbed;
 }
 
-
+// Calculate the new trajectory of the photon.
 void Photon::spin()
 {
 #ifdef DEBUG
 	cout << "Spinning...\n";
 #endif	
 	
-	// FIXME:  Should index into medium to find 'g' for given layer at this depth.
-	//		   e.g. double g = medium->getAnisotropy(z);
-	//		   Assuming static value now (ie single homogeneous layer).
-	double g = 0.90;
+	// Get the anisotropy factor from the layer that resides at depth 'z' in
+	// the medium.
+	double g = m_medium->getAnisotropyFromDepth(z);
+	
+	
 	double rnd = getRandNum();
 	
 	if (g == 0.0) {

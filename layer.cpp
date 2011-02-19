@@ -7,7 +7,7 @@ Layer::Layer(void)
 {	
 	// Set scattering and absorption properties of layer.
 	mu_a = 1.0;		// cm^-1
-	mu_s = 0.0;		// cm^-1
+	mu_s = 100.0;		// cm^-1
 
 	
 	albedo = mu_s/(mu_s + mu_a);
@@ -22,7 +22,7 @@ Layer::Layer(void)
 }
 
 Layer::Layer(double mu_a, double mu_s, double refractive_index,
-			 double depth_init, double depth_end)
+			 double depth_start, double depth_end)
 {
 	this->mu_a = mu_a;
 	this->mu_s = mu_s;
@@ -31,7 +31,7 @@ Layer::Layer(double mu_a, double mu_s, double refractive_index,
 	g = 0.90;
 	this->refractive_index = refractive_index;
 	
-	this->depth_start = depth_init;
+	this->depth_start = depth_start;
 	this->depth_end = depth_end;
 }
 
