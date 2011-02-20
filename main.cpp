@@ -17,9 +17,10 @@
 #include <iostream>
 #include <vector>
 
+
 using namespace std;
 
-const int MAX_PHOTONS = 100000;
+const int MAX_PHOTONS = 1000000;
 
 //#define DEBUG 1
 
@@ -54,6 +55,8 @@ int main()
 	// Capture the time before launching photons into the medium.
 	clock_t start, end;
 	start = clock();
+	
+
 	
 	/*
 	// Simulate photons being injected into the medium. 
