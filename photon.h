@@ -35,16 +35,16 @@ public:
 	void	setIterations(const int n);
 
 	// Move photon to new position
-	void	hop();
+	void	hop(void);
 
 	// Drop absorbed energy from photon weight due to absorption in medium.
-	double	drop();
+	double	drop(void);
 
 	// Change the trajectory of the photon due to scattering in the medium.
-	void	spin();
+	void	spin(void);
 	
 	// Reset the Photon attributes so it can be propogated again.
-	void	reset();
+	void	reset(void);
 		
 	// Give the photon a probabilistic chance of surviving or terminating
 	// if its weight has dropped below a specified threshold.
@@ -80,7 +80,7 @@ public:
 	void	specularReflectance(double n1, double n2);
 	
 	// Plot the photon's path.
-	void	plotPath();
+	void	plotPath(void);
 	
 	// Inject the photon into the medium the given number of iterations.
 	void	injectPhoton(Medium *m, const int iterations);

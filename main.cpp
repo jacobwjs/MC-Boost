@@ -16,6 +16,7 @@
 #include <time.h>
 #include <iostream>
 #include <vector>
+#include <boost/thread.hpp> 
 
 using namespace std;
 
@@ -40,31 +41,27 @@ int main()
 	// Create a photon object, which will be propogated through the medium
 	// MAX_PHOTON times.
 	Photon *photon = new Photon();
-	
-	
+	Photon *photon2 = new Photon();
 	
 	// Allocate the planar grid and set it in the tissue.
 	double *Cplanar = (double*)malloc(sizeof(double) * 101);
 	tissue->setPlanarArray(Cplanar);
-	
-	// Initial injection location of a photon.
-	int x = 0;
-	int y = 0;
-	
+		
 	// Capture the time before launching photons into the medium.
 	clock_t start, end;
 	start = clock();
 	
-	/*
-	// Simulate photons being injected into the medium. 
-	for (int i = 0; i < MAX_THREADS; i++) 
-    {
-		//tissue->injectPhoton(x, y, photon);
-	}
-	 */
+	// Let boost decide how many threads to run on this architecture.
+	int NUM_THREADS = boost::thread::hardware_concurrency();
+	
+	boost::thread thread1(&Photon::injectPhoton, photon, tissue, MAX_PHOTONS/2);
+	boost::thread thread2(&Photon::injectPhoton, photon2, tissue, MAX_PHOTONS/2);
+	thread1.join();
+	thread2.join();
+	
 	
 	// Non-threaded case.
-	photon->injectPhoton(tissue, MAX_PHOTONS);
+	//photon->injectPhoton(tissue, MAX_PHOTONS);
 	
 	
 	
