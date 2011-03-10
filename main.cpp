@@ -58,6 +58,7 @@ int main()
 	boost::thread thread2(&Photon::injectPhoton, photon2, tissue, MAX_PHOTONS/2);
 	thread1.join();
 	thread2.join();
+    
 	
 	
 	// Non-threaded case.
