@@ -22,6 +22,7 @@ class Medium
 public:
 
 	Medium();
+    Medium(const int depth);
 	~Medium();
 	
 	// Add some portion of the photon's energy that was lost at this interaction
@@ -58,6 +59,9 @@ public:
 	// Return layer from depth passed in.
 	Layer * getLayerFromDepth(double depth);
 	
+    
+    // Return the max depth of the medium.
+    double getDepth() {return depth;}
 	
 	
 private:
@@ -71,6 +75,8 @@ private:
 	//double	Ccylinder[MAX_BINS];	// Clindrical photon concentration.
 	//double	Cspherical[MAX_BINS];	// Spherical photon concentration.
 	
+    // The total depth of the medium.
+    double depth;
 	
 	// Create a vector to hold the layers of the medium.
 	vector<Layer *> p_layers;

@@ -3,12 +3,23 @@
 #include <cmath>
 #include <assert.h>
 
+#undef DEBUG
+
 Medium::Medium()
 {
 	radial_size = 3.0;	// Total range in which bins are extended (cm).
 	num_radial_pos = MAX_BINS-1;	// Set the number of bins.
 	radial_bin_size = radial_size / num_radial_pos;
-	
+	depth = 10;     // Defualt depth of the medium (cm).
+	Cplanar = NULL;
+}
+
+Medium::Medium(const int depth)
+{
+    radial_size = 3.0;	// Total range in which bins are extended (cm).
+	num_radial_pos = MAX_BINS-1;	// Set the number of bins.
+	radial_bin_size = radial_size / num_radial_pos;
+	this->depth = depth;
 	Cplanar = NULL;
 }
 

@@ -2,7 +2,7 @@
 #include "debug.h"
 #include "photon.h"
 
-
+#undef DEBUG
 
 Photon::Photon(void)
 {
@@ -77,22 +77,19 @@ void Photon::injectPhoton(Medium *medium, const int iterations)
 		// the medium we propagate it through he medium.
 		while (isAlive()) 
 		{
-			
-#ifdef DEBUG
-			cout << "Running thread( " << Thread::getThreadID() << ")...";
-			cout << "..hop(), drop(), spin(), roulette().  Propogated " << cnt << " times.\n";
-#endif
+
 			
 			// Move the photon.
 			hop();
 			
 			
 			// FIXME: Should probably have all weight deposited at surface if
-			//		  photon leaves medium by total internal reflection or reaches
-			//		  the maximimum depth.
+			//		  photon leaves medium by total internal reflection.  Also
+            //        the case where it reaches the max depth.
+            
 			// Ensure the photon has not left the medium by either total internal
 			// reflection or transmission (only looking at z-axis).
-			if (z >= 0 && z <= 10) {
+			if (z >= 0 && z <= m_medium->getDepth()) {
 				
 				// Drop weight of the photon due to an interaction with the medium.
 				drop();
@@ -106,7 +103,12 @@ void Photon::injectPhoton(Medium *medium, const int iterations)
 				
 			}
 			else {
-				break;  // break from while loop and execute reset().
+                // If we make it here the photon has hit a boundary.  We simply absorb
+                // all energy at the boundary.
+                // FIXME:  Take into account specular reflectance since photon might not
+                //          leave medium.
+                m_medium->absorbEnergy(z, weight);
+                break;  // break from while loop and execute reset().
 			}
 			
 		} // end while() loop
