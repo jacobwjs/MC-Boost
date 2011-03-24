@@ -65,8 +65,7 @@ void Photon::setIterations(const int num)
 // 4) Roulette - test to see if photon should live or die.
 void Photon::injectPhoton(Medium *medium, const int iterations)
 {
-	// Before propagation we set the medium which will be used by the photon,
-	// which is passed in.
+	// Before propagation we set the medium which will be used by the photon.
 	this->m_medium = medium;
 	
 	int i;
@@ -89,7 +88,7 @@ void Photon::injectPhoton(Medium *medium, const int iterations)
             
 			// Ensure the photon has not left the medium by either total internal
 			// reflection or transmission (only looking at z-axis).
-			if (z >= 0 && z <= m_medium->getDepth()) {
+			//if (z >= 0 && z <= m_medium->getDepth()) {
 				
 				// Drop weight of the photon due to an interaction with the medium.
 				drop();
@@ -101,15 +100,15 @@ void Photon::injectPhoton(Medium *medium, const int iterations)
 				// Roulette rule.
 				performRoulette();
 				
-			}
-			else {
+			//}
+			//else {
                 // If we make it here the photon has hit a boundary.  We simply absorb
                 // all energy at the boundary.
                 // FIXME:  Take into account specular reflectance since photon might not
                 //          leave medium.
-                m_medium->absorbEnergy(z, weight);
-                break;  // break from while loop and execute reset().
-			}
+                //m_medium->absorbEnergy(z, weight);
+                //break;  // break from while loop and execute reset().
+			//}
 			
 		} // end while() loop
 		
@@ -171,9 +170,12 @@ void Photon::hop()
 	
 	// Update the current values of the absorption and scattering coefficients
 	// based on the depth in the medium (i.e. which layer the photon is in).
-	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
-	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
+	//double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
+	//double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
 	
+    double mu_a = 1.0;		// cm^-1
+	double mu_s = 100.0;		// cm^-1
+    
 	// Calculate the new step length of the photon.
 	step = -log(rnd)/(mu_a	+ mu_s);
 	
@@ -193,9 +195,12 @@ double Photon::drop()
 	
 	// Update the current values of the absorption and scattering coefficients
 	// based on the depth in the medium (i.e. which layer the photon is in).
-	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
-	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
+	//double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
+	//double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
 	
+    double mu_a = 1.0;		// cm^-1
+	double mu_s = 100.0;		// cm^-1
+    
 	// Calculate the albedo and remove a portion of the photon's weight for this
 	// interaction.
 	double albedo = mu_s / (mu_a + mu_s);
@@ -220,9 +225,9 @@ void Photon::spin()
 	
 	// Get the anisotropy factor from the layer that resides at depth 'z' in
 	// the medium.
-	double g = m_medium->getAnisotropyFromDepth(z);
-	
-	
+	//double g = m_medium->getAnisotropyFromDepth(z);
+	double g = 0.90;
+    
 	double rnd = getRandNum();
 	
 	if (g == 0.0) {

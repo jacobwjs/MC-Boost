@@ -16,11 +16,11 @@
 #include <time.h>
 #include <iostream>
 #include <vector>
-#include <boost/thread.hpp> 
+#include <boost/thread/thread.hpp> 
 
 using namespace std;
 
-const int MAX_PHOTONS = 2500000;
+const int MAX_PHOTONS = 100000;
 
 //#define DEBUG 1
 
