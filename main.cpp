@@ -16,11 +16,11 @@
 #include <time.h>
 #include <iostream>
 #include <vector>
-#include <boost/thread.hpp> 
+#include <boost/thread/thread.hpp> 
 
 using namespace std;
 
-const int MAX_PHOTONS = 2500000;
+const int MAX_PHOTONS = 1000000;
 
 //#define DEBUG 1
 
@@ -67,10 +67,8 @@ int main()
 	for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
 	{
 		cout << "Launching photon object" << i << " iterations: " << MAX_PHOTONS/NUM_THREADS << endl;
-		threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS);
+		threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS, i);
 
-		//threads[i].thread(&Photon::injectPhoton, photons[i], tissue, MAX_PHOTONS/NUM_THREADS);
-		//photons[i].injectPhoton(tissue, MAX_PHOTONS/3);
 	}
 
 	// Join all created threads once they have done their work.

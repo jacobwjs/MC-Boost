@@ -6,6 +6,9 @@
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
+#include <boost/random/uniform_real.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <boost/random/mersenne_twister.hpp>
 
 #define ALIVE 1		// Value depicting Photon should continue propagation.
 #define DEAD  0	    // Photon has lost all energy and failed roulette.
@@ -38,7 +41,7 @@ public:
 	void	hop(void);
 
 	// Drop absorbed energy from photon weight due to absorption in medium.
-	double	drop(void);
+	void	drop(void);
 
 	// Change the trajectory of the photon due to scattering in the medium.
 	void	spin(void);
@@ -83,9 +86,13 @@ public:
 	void	plotPath(void);
 	
 	// Inject the photon into the medium the given number of iterations.
-	void	injectPhoton(Medium *m, const int iterations);
+	void	injectPhoton(Medium *m, const int iterations, const int thread_id);
 	
 	
+	// Sets initial trajectory values.
+	void	initTrajectory(void);
+
+
 	
 	
 private:
@@ -127,6 +134,13 @@ private:
 	
 	// Pointer to the medium which this photon will propagate through.
 	Medium *m_medium;
+
+	// The thread id associated with this photon object.  The value is passed
+	// in from the loop that creates the threads in main.cpp.
+	int thread_id;
+
+	// Boost Random Number Library implementatio of Mersenne-twister RNG.
+	boost::mt19937 gen;
 }; 		
 
 #endif // end PHOTON_H

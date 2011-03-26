@@ -2,3 +2,7 @@ Boost
 mc-boost
 fluences.txt
 *.mexmaci64
+.settings
+.project
+.cproject
+Default
