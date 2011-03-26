@@ -9,8 +9,7 @@ Photon::Photon(void)
 #ifdef DEBUG
 	cout << "Creating Photon...\n";
 #endif
-	// seed the random number generator.
-	srand(time(0));
+
 
 	// Photon just created, so it is alive.
 	status = ALIVE;
@@ -24,14 +23,8 @@ Photon::Photon(void)
 	// No interactions thus far.
 	num_steps = 0;
 	
-	// Randomly set photon trajectory to yield isotropic source.
-	cos_theta = (2.0 * getRandNum()) - 1;
-	sin_theta = sqrt(1.0 - cos_theta*cos_theta);
-	psi = 2.0 * PI * getRandNum();
-	dirx = sin_theta * cos(psi);
-	diry = sin_theta * sin(psi);
-	dirz = cos_theta;
 	
+
 	// 'cnt' represents the number of times a photon has propogated
 	// through the medium.
 	cnt = 0;
@@ -58,13 +51,33 @@ void Photon::setIterations(const int num)
 }
 
 
+void Photon::initTrajectory()
+{
+	// Randomly set photon trajectory to yield isotropic source.
+	cos_theta = (2.0 * getRandNum()) - 1;
+	sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+	psi = 2.0 * PI * getRandNum();
+	dirx = sin_theta * cos(psi);
+	diry = sin_theta * sin(psi);
+	dirz = cos_theta;
+}
+
 
 // 1) Hop - move the photon
 // 2) Drop - drop weight due to absorption
 // 3) Spin - update trajectory accordingly
 // 4) Roulette - test to see if photon should live or die.
-void Photon::injectPhoton(Medium *medium, const int iterations)
+void Photon::injectPhoton(Medium *medium, const int iterations, const int thread_id)
 {
+	// seed the random number generator.
+	srand(time(0) + thread_id);
+
+	// Seed the Boost RNG (Random Number Generator).
+	//gen.seed(time(0) + thread_id);
+
+	// Initialize the trajectory the photon will take on it's first step.
+	initTrajectory();
+
 	// Before propagation we set the medium which will be used by the photon.
 	this->m_medium = medium;
 	
@@ -149,12 +162,7 @@ void Photon::reset()
 	num_steps = 0;
 	
 	// Randomly set photon trajectory to yield isotropic source.
-	cos_theta = (2.0 * getRandNum()) - 1;
-	sin_theta = sqrt(1.0 - cos_theta*cos_theta);
-	psi = 2.0 * PI * getRandNum();
-	dirx = sin_theta * cos(psi);
-	diry = sin_theta * sin(psi);
-	dirz = cos_theta;
+	initTrajectory();
 	
 	
 }
@@ -187,7 +195,7 @@ void Photon::hop()
 
 
 // Return absorbed energy from photon weight at this location.
-double Photon::drop()
+void Photon::drop()
 {
 #ifdef DEBUG
 	cout << "Dropping...\n";
@@ -211,9 +219,6 @@ double Photon::drop()
 	
 	// Deposit lost energy in the grid of the medium.
 	m_medium->absorbEnergy(z, absorbed);
-	
-	// Return the energy that was absorbed.
-	return absorbed;
 }
 
 // Calculate the new trajectory of the photon.
@@ -295,6 +300,21 @@ double Photon::getRandNum(void)
 		rnd = (double)rand()/(double)RAND_MAX;
 	}
 	return rnd;
+
+	// FIXME:  Using the Boost Random Library is MUCH slower when generating
+	//			random numbers.  Questions to answer,
+	//			- Is it the algorith used (i.e. Mersenne-twister)?
+	//			- Does the creation and destruction of these objects
+	//			  below slow things down?  That is, should there be
+	//			  creation of them on the heap with pointers so they
+	//			  stay in existence?  Even possible?
+	//			Until these questions are answered and a speedup is found
+	//			this version of the simulation will be using the built in
+	//          RNG above.
+	// Boost implementation of the Mersenne-twister RNG.
+//	boost::uniform_real<> dist(0, 1);
+//	boost::variate_generator<boost::mt19937&, boost::uniform_real<> > rand_num(gen, dist);
+//	return rand_num();
 }
 
 
