@@ -19,7 +19,7 @@
 
 #define THRESHOLD	0.01		// Threshold for determining if we should perform roulette
 #define CHANCE      0.1  		// Used in roulette
-#define PI			3.141592
+#define PI			3.14159265
 
 #define SIGN(x)           ((x)>=0 ? 1:-1)
 
@@ -139,7 +139,7 @@ private:
 	// in from the loop that creates the threads in main.cpp.
 	int thread_id;
 
-	// Boost Random Number Library implementatio of Mersenne-twister RNG.
+	// Boost Random Number Library implementation of Mersenne-twister RNG.
 	boost::mt19937 gen;
 }; 		
 

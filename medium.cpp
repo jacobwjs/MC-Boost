@@ -56,7 +56,7 @@ void Medium::absorbEnergy(const double z, const double energy)
 #endif
 	
 	double r = fabs(z);
-	short ir = (short)(r/radial_bin_size);
+	int ir = (r/radial_bin_size);
 	if (ir >= num_radial_pos) {
 		ir = num_radial_pos;
 	}

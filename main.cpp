@@ -1,5 +1,5 @@
 /*
- * Copyright BMPI 2010
+ * Copyright BMPI 2011
  * J.W. Staley - MIRA, 
  *               Biomedical Photonics Imaging Group (BMPI), 
  *				 University of Twente
@@ -20,12 +20,9 @@
 
 using namespace std;
 
-const int MAX_PHOTONS = 1000000;
+const int MAX_PHOTONS = 100000000;
 
 //#define DEBUG 1
-
-
-
 	
 int main()
 {
@@ -61,7 +58,7 @@ int main()
 	Photon photons[NUM_PHOTON_OBJECTS];
 	boost::thread threads[NUM_THREADS];
 
-	// Create the threads and given them photon objects to run.
+	// Create the threads and give them photon objects to run.
 	// Each photon object is run MAX_PHOTONS/NUM_THREADS times, which essentially
 	// splits up the work (i.e. photon propagation) amongst many workers.
 	for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
