@@ -88,9 +88,16 @@ public:
 	// Inject the photon into the medium the given number of iterations.
 	void	injectPhoton(Medium *m, const int iterations, const int thread_id);
 	
-	
 	// Sets initial trajectory values.
 	void	initTrajectory(void);
+	
+	// Zero's out the local detection array.
+	void	initDetectionArray(void);
+
+	// Routines related to the thread-safe RNG
+	unsigned int TausStep(unsigned int &z, int s1, int s2, int s3, unsigned long M);
+	unsigned int LCGStep(unsigned int &z, unsigned int A, unsigned long C);
+	double	HybridTaus(void);
 
 
 	
@@ -139,8 +146,22 @@ private:
 	// in from the loop that creates the threads in main.cpp.
 	int thread_id;
 
+	// Local absorption array that holds values during execution.  This array
+	// is copied over to the global absorption array (i.e. in the medium) once
+	// a photon has finished propagating in the medium.
+	double local_Cplanar[MAX_BINS];
+	double	radial_size;			// Maximum radial size.
+	int		num_radial_pos;			// Number of radial positions (i.e. NR).
+	double	radial_bin_size;		// Radial bin size of the medium (i.e dr).
+
+
 	// Boost Random Number Library implementation of Mersenne-twister RNG.
 	boost::mt19937 gen;
+
+
+	unsigned int z1, z2, z3, z4;
+
+
 }; 		
 
 #endif // end PHOTON_H

@@ -60,6 +60,18 @@ void Photon::initTrajectory()
 	dirx = sin_theta * cos(psi);
 	diry = sin_theta * sin(psi);
 	dirz = cos_theta;
+
+
+}
+
+void Photon::initDetectionArray()
+{
+	// Zero out the local detection array since it will accumulate
+		// values over many iterations.
+		int i;
+		for (i = 0; i < MAX_BINS; i++) {
+			local_Cplanar[i] = 0;
+		}
 }
 
 
@@ -75,14 +87,22 @@ void Photon::injectPhoton(Medium *medium, const int iterations, const int thread
 	// Seed the Boost RNG (Random Number Generator).
 	//gen.seed(time(0) + thread_id);
 
-	// Initialize the trajectory the photon will take on it's first step.
+	// Initialize the photon's properties before propagation begins.
 	initTrajectory();
+	initDetectionArray();
 
 	// Before propagation we set the medium which will be used by the photon.
 	this->m_medium = medium;
 	
-	int i;
+
+	// Assign local values of the detection grid from the Medium.
+	radial_bin_size = m_medium->getRadialBinSize();
+	num_radial_pos = m_medium->getNumRadialPos();
+
+
+
 	// Inject 'iterations' number of photons into the medium.
+	int i;
 	for (i = 0; i < iterations; i++) 
 	{
 		// While the photon has not been terminated by absorption or leaving
@@ -129,6 +149,12 @@ void Photon::injectPhoton(Medium *medium, const int iterations, const int thread
 		reset();
 		
 	} // end for() loop
+
+
+	// This thread has executed all of it's photons, so now we update the global
+	// absorption array in the medium.
+	m_medium->absorbEnergy(local_Cplanar);
+
 }
 
 
@@ -218,7 +244,18 @@ void Photon::drop()
 	weight -= absorbed;
 	
 	// Deposit lost energy in the grid of the medium.
-	m_medium->absorbEnergy(z, absorbed);
+	//m_medium->absorbEnergy(z, absorbed);
+
+
+	double r = fabs(z);
+	int ir = (r/radial_bin_size);
+	if (ir >= num_radial_pos) {
+		ir = num_radial_pos;
+	}
+	// Deposit lost energy of the photon into the local detection grid.
+	local_Cplanar[ir] += absorbed;
+
+
 }
 
 // Calculate the new trajectory of the photon.
@@ -292,6 +329,30 @@ void Photon::performRoulette(void)
 }
 
 
+unsigned int Photon::TausStep(unsigned int &z, int s1, int s2, int s3, unsigned long M)
+{
+	unsigned int b=(((z << s1) ^ z) >> s2);
+	z = (((z & M) << s3) ^ b);
+	return z;
+}
+
+
+unsigned int Photon::LCGStep(unsigned int &z, unsigned int A, unsigned long C)
+{
+	return z=(A*z+C);
+}
+
+double Photon::HybridTaus(void)
+{
+	// Combined period is lcm(p1,p2,p3,p4)~ 2^121
+	return 2.3283064365387e-10 * (              // Periods
+    TausStep(z1, 13, 19, 12, (unsigned long)4294967294) 	^  // p1=2^31-1
+    TausStep(z2, 2, 25, 4, (unsigned long)4294967288) 	^    // p2=2^30-1
+    TausStep(z3, 3, 11, 17, (unsigned long)4294967280) 	^   // p3=2^28-1
+    LCGStep(z4, 1664525, (unsigned long)1013904223)        // p4=2^32
+	);
+}
+
 
 double Photon::getRandNum(void)
 {
@@ -303,7 +364,7 @@ double Photon::getRandNum(void)
 
 	// FIXME:  Using the Boost Random Library is MUCH slower when generating
 	//			random numbers.  Questions to answer,
-	//			- Is it the algorith used (i.e. Mersenne-twister)?
+	//			- Is it the algorithm used (i.e. Mersenne-twister)?
 	//			- Does the creation and destruction of these objects
 	//			  below slow things down?  That is, should there be
 	//			  creation of them on the heap with pointers so they

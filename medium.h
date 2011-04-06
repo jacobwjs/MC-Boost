@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <boost/thread/mutex.hpp>
 using namespace std;
 
 // Maximum number of bins that hold absorption values.
@@ -29,6 +30,10 @@ public:
 	// point (i.e. due to absorption) to the medium's grid.
 	void	absorbEnergy(const double z, const double energy);
 	
+	// Same as above, only the argument is an array of absorbed energy values
+	// that is copied entirely to the Medium.
+	void	absorbEnergy(const double *energy_array);
+
 	// Print the grid for this medium.
 	void	printGrid(const int num_photons);
 	
@@ -44,6 +49,12 @@ public:
 	// Return the radial size of the medium (cm).
 	double	getRadialSize() {return radial_size;}
 
+	// Return the bin size of the detector array (i.e. dr).
+	double 	getRadialBinSize() {return radial_bin_size;}
+
+	// Return the number of radial positions.
+	double 	getNumRadialPos() {return num_radial_pos;}
+
 	// Assign the array which will hold the planar absorbance values.
 	void	setPlanarArray(double *planar);
 	
@@ -58,8 +69,7 @@ public:
 	
 	// Return layer from depth passed in.
 	Layer * getLayerFromDepth(double depth);
-	
-    
+
     // Return the max depth of the medium.
     double getDepth() {return depth;}
 	
@@ -80,6 +90,9 @@ private:
 	
 	// Create a vector to hold the layers of the medium.
 	vector<Layer *> p_layers;
+
+	// Mutex to serialize access to the sensor array.
+	boost::mutex m_mutex;
 };
 
 #endif	// MEDIUM_H

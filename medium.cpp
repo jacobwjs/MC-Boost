@@ -37,7 +37,8 @@ void Medium::setPlanarArray(double *array)
 {
 	Cplanar = array;
 	// Initialize all the bins to zero since they will serve as accumulators.
-	for (int i = 0; i < MAX_BINS; i++) {
+	int i;
+	for (i = 0; i < MAX_BINS; i++) {
 		Cplanar[i] = 0;
 	}
 }
@@ -63,6 +64,18 @@ void Medium::absorbEnergy(const double z, const double energy)
 
 	Cplanar[ir] += energy;
 
+}
+
+
+void Medium::absorbEnergy(const double *energy_array)
+{
+	int i;
+	boost::mutex::scoped_lock lock(m_mutex);
+	for (i = 0; i < MAX_BINS; i++) {
+		// Grab the lock to serialize threads when updating
+		// the global planar detection array in the Medium.
+		Cplanar[i] += energy_array[i];
+	}
 }
 
 
