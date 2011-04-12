@@ -86,13 +86,19 @@ public:
 	void	plotPath(void);
 	
 	// Inject the photon into the medium the given number of iterations.
-	void	injectPhoton(Medium *m, const int iterations, const int thread_id);
+	// 'state[1,2,3,4]' represent the random initial values for the state
+	// of the random number generator.
+	void	injectPhoton(Medium *m, const int num_iterations, unsigned int state1, unsigned int state2,
+							unsigned int state3, unsigned int state4);
 	
 	// Sets initial trajectory values.
 	void	initTrajectory(void);
 	
 	// Zero's out the local detection array.
 	void	initDetectionArray(void);
+
+	// Initialize the RNG.
+	void	initRNG(unsigned int s1, unsigned int s2, unsigned int s3, unsigned int s4);
 
 	// Routines related to the thread-safe RNG
 	unsigned int TausStep(unsigned int &z, int s1, int s2, int s3, unsigned long M);
@@ -104,7 +110,7 @@ public:
 	
 private:
 	// Number of times this Photon (i.e., thread) will execute; where one execution
-	// is the full cycle of photon propogation.
+	// is the full cycle of photon propagation.
 	int iterations;
 	
 	// Holds value of number of iterations thus far.
@@ -135,7 +141,7 @@ private:
 	double	psi;
 	
 	
-	// The number of steps this photon has taken while propogating through
+	// The number of steps this photon has taken while propagating through
 	// the medium.
 	int num_steps;
 	

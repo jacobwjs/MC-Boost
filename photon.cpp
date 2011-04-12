@@ -75,14 +75,26 @@ void Photon::initDetectionArray()
 }
 
 
+void Photon::initRNG(unsigned int state1, unsigned int state2,
+						unsigned int state3, unsigned int state4)
+{
+	z1 = state1;
+	z2 = state2;
+	z3 = state3;
+	z4 = state4;
+}
+
+
+// BOOST thread library starts execution here.
 // 1) Hop - move the photon
 // 2) Drop - drop weight due to absorption
 // 3) Spin - update trajectory accordingly
 // 4) Roulette - test to see if photon should live or die.
-void Photon::injectPhoton(Medium *medium, const int iterations, const int thread_id)
+void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int state1, unsigned int state2,
+							unsigned int state3, unsigned int state4)
 {
 	// seed the random number generator.
-	srand(time(0) + thread_id);
+	//srand(time(0) + thread_id);
 
 	// Seed the Boost RNG (Random Number Generator).
 	//gen.seed(time(0) + thread_id);
@@ -90,6 +102,7 @@ void Photon::injectPhoton(Medium *medium, const int iterations, const int thread
 	// Initialize the photon's properties before propagation begins.
 	initTrajectory();
 	initDetectionArray();
+	initRNG(state1, state2, state3, state4);
 
 	// Before propagation we set the medium which will be used by the photon.
 	this->m_medium = medium;
@@ -126,7 +139,7 @@ void Photon::injectPhoton(Medium *medium, const int iterations, const int thread
 				// Drop weight of the photon due to an interaction with the medium.
 				drop();
 				
-				// Calculate the new coordinates of photon propogation.
+				// Calculate the new coordinates of photon propagation.
 				spin();
 				
 				// Test whether the photon should continue propagation from the
@@ -345,22 +358,32 @@ unsigned int Photon::LCGStep(unsigned int &z, unsigned int A, unsigned long C)
 double Photon::HybridTaus(void)
 {
 	// Combined period is lcm(p1,p2,p3,p4)~ 2^121
-	return 2.3283064365387e-10 * (              // Periods
-    TausStep(z1, 13, 19, 12, (unsigned long)4294967294) 	^  // p1=2^31-1
-    TausStep(z2, 2, 25, 4, (unsigned long)4294967288) 	^    // p2=2^30-1
-    TausStep(z3, 3, 11, 17, (unsigned long)4294967280) 	^   // p3=2^28-1
-    LCGStep(z4, 1664525, (unsigned long)1013904223)        // p4=2^32
+	return 2.3283064365387e-10 * (              // Periods for the RNG.
+			TausStep(z1, 13, 19, 12, 4294967294UL) 	^  // p1=2^31-1
+			TausStep(z2, 2, 25, 4, 4294967288UL) 	^    // p2=2^30-1
+			TausStep(z3, 3, 11, 17, 4294967280UL) 	^   // p3=2^28-1
+			LCGStep(z4, 1664525, 1013904223UL)        // p4=2^32
 	);
 }
 
 
 double Photon::getRandNum(void)
 {
-	double rnd = (double)rand()/(double)RAND_MAX;
-	while ((rnd == 0) || (rnd == 1)) { // produces 0 < rnd < 1
-		rnd = (double)rand()/(double)RAND_MAX;
-	}
-	return rnd;
+	// Thread safe RNG.
+	return HybridTaus();
+
+
+
+
+	// Non-thread safe RNG
+//	double rnd = (double)rand()/(double)RAND_MAX;
+//	while ((rnd == 0) || (rnd == 1)) { // produces 0 < rnd < 1
+//		rnd = (double)rand()/(double)RAND_MAX;
+//	}
+//	return rnd;
+
+
+
 
 	// FIXME:  Using the Boost Random Library is MUCH slower when generating
 	//			random numbers.  Questions to answer,

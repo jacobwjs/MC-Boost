@@ -13,6 +13,7 @@
 #include "photon.h"
 #include "medium.h"
 #include "layer.h"
+#include <cmath>
 #include <time.h>
 #include <iostream>
 #include <vector>
@@ -20,7 +21,7 @@
 
 using namespace std;
 
-const int MAX_PHOTONS = 100000000;
+const int MAX_PHOTONS = 10000000;
 
 //#define DEBUG 1
 	
@@ -41,7 +42,7 @@ int main()
 	tissue->setPlanarArray(Cplanar);
 		
 	// Notify user of execution.
-	cout << "Launching photons...\n";
+	cout << "Launching photons (" << MAX_PHOTONS << ")...\n";
 
 	// Capture the time before launching photons into the medium.
 	clock_t start, end;
@@ -58,13 +59,25 @@ int main()
 	Photon photons[NUM_PHOTON_OBJECTS];
 	boost::thread threads[NUM_THREADS];
 
+	// Init the random number generator.
+	srand(time(0));
+
+	// Used to seed the RNG.
+	unsigned int s1, s2, s3, s4;
+
 	// Create the threads and give them photon objects to run.
 	// Each photon object is run MAX_PHOTONS/NUM_THREADS times, which essentially
 	// splits up the work (i.e. photon propagation) amongst many workers.
 	for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
 	{
+		s1 = rand() + 128;
+		s2 = rand() + 128;
+		s3 = rand() + 128;
+		s4 = rand() + 128;
+
 		cout << "Launching photon object" << i << " iterations: " << MAX_PHOTONS/NUM_THREADS << endl;
-		threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS, i);
+		threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS,
+									s1, s2, s3, s4);
 
 	}
 
