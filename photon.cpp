@@ -19,6 +19,7 @@ Photon::Photon(void)
 	weight = 1;
 	x = y = z = 0;
 	step = 0;
+	step_remainder = 0;
 	
 	// No interactions thus far.
 	num_steps = 0;
@@ -123,9 +124,25 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 		while (isAlive()) 
 		{
 
+			// Calculate and set the step size for the photon.
+			setStepSize();
 			
-			// Move the photon.
-			hop();
+			// XXX: NOT CURRENTLY IN USE.
+			// If the step size caused the photon to cross a boundary of the
+			// layer, and therefore potentially needing to take into account
+			// reflection, transmission and refraction, we account for these
+			// phonomenon accordingly.
+			/*
+			if (hitLayerBoundary())
+			{
+				hop();	// Move the photon to the boundary.
+				transmitOrReflect();	// Calculate whether to transmit the
+										// photon or reflect it.
+
+			}
+			*/
+
+
 			
 			
 			// FIXME: Should probably have all weight deposited at surface if
@@ -135,7 +152,9 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 			// Ensure the photon has not left the medium by either total internal
 			// reflection or transmission (only looking at z-axis).
 			//if (z >= 0 && z <= m_medium->getDepth()) {
-				
+				// Move the photon in the medium.
+				hop();
+
 				// Drop weight of the photon due to an interaction with the medium.
 				drop();
 				
@@ -196,6 +215,7 @@ void Photon::reset()
 	
 	r = 0;
 	step = 0;
+	step_remainder = 0;
 	
 	// Reset the number of interactions back to zero.
 	num_steps = 0;
@@ -206,6 +226,34 @@ void Photon::reset()
 	
 }
 
+
+// Update the step size for the photon.
+void Photon::setStepSize()
+{
+
+	// Update the current values of the absorption and scattering coefficients
+	// based on the depth in the medium (i.e. which layer the photon is in).
+	//double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
+	//double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
+
+	double mu_a = 1.0;		// cm^-1
+	double mu_s = 100.0;		// cm^-1
+
+	// If last step put the photon on the layer boundary
+	// then we need a new step size.  Otherwise, the step
+	// is set to remainder size and update step_remainder to zero.
+	if (step_remainder == 0.0) {
+		double rnd = getRandNum();
+		// Calculate the new step length of the photon.
+		step = -log(rnd)/(mu_a	+ mu_s);
+	}
+	else
+	{
+		step = step_remainder;
+		step_remainder = 0.0;
+	}
+}
+
 // Step photon to new position.
 void Photon::hop()
 {
@@ -213,18 +261,7 @@ void Photon::hop()
 	cout << "Hopping...\n";
 #endif	
 	
-	double rnd = getRandNum();
-	
-	// Update the current values of the absorption and scattering coefficients
-	// based on the depth in the medium (i.e. which layer the photon is in).
-	//double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
-	//double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
-	
-    double mu_a = 1.0;		// cm^-1
-	double mu_s = 100.0;		// cm^-1
-    
-	// Calculate the new step length of the photon.
-	step = -log(rnd)/(mu_a	+ mu_s);
+	//setStepSize();
 	
 	// Update position of the photon.
 	x += step*dirx;
@@ -342,6 +379,64 @@ void Photon::performRoulette(void)
 }
 
 
+
+// XXX: Currently not in use
+void Photon::specularReflectance(double n1, double n2)
+{
+	// update the weight after specular reflectance has occurred.
+	weight = weight - (pow((n1 - n2), 2) / pow((n1 + n2), 2)) * weight;
+}
+
+
+void Photon::transmitOrReflect(void)
+{
+	// XXX: FINISH ME
+}
+
+
+bool Photon::hitLayerBoundary(void)
+{
+	// 1)Find distance to layer boundary where there could potentially be
+	//   refractive index mismatches.
+	// 2) If distance to boundary is less than the current step_size of the
+	//   photon, we move the photon to the boundary and keep track of how
+	//   much distance is left over from step_size - distance_to_boundary.
+
+	double distance_to_boundary = 0.0;
+	Layer *l = m_medium->getLayerFromDepth(z);
+
+
+	// If the direction the photon is traveling is towards the deeper boundary
+	// of the layer, we execute the first clause.  Otherwise we are moving to
+	// the more superficial boundary of the layer.
+	if (dirz > 0.0)
+	{
+		distance_to_boundary = (l->getDepthEnd() - z) / dirz;
+	}
+	else if (dirz < 0.0)
+	{
+		distance_to_boundary = (l->getDepthStart() - z) / dirz;
+	}
+
+	// If the step size of the photon is larger than the distance
+	// to the boundary and we are moving in some direction along
+	// the z-axis (i.e. not parallel to the layer boundary) we calculate
+	// the left over step size and then step the photon to the boundary.
+	if (dirz != 0.0 && step > distance_to_boundary)
+	{
+		step_remainder = (step - distance_to_boundary)*l->getTotalAttenuationCoeff();
+		step = distance_to_boundary;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+
+// Everything below deals with the random number generator.
 unsigned int Photon::TausStep(unsigned int &z, int s1, int s2, int s3, unsigned long M)
 {
 	unsigned int b=(((z << s1) ^ z) >> s2);
@@ -400,12 +495,3 @@ double Photon::getRandNum(void)
 //	boost::variate_generator<boost::mt19937&, boost::uniform_real<> > rand_num(gen, dist);
 //	return rand_num();
 }
-
-
-// FIXME: Currently not in use
-void Photon::specularReflectance(double n1, double n2)
-{
-	// update the weight after specular reflectance has occurred.
-	weight = weight - (pow((n1 - n2), 2) / pow((n1 + n2), 2)) * weight;
-}
-

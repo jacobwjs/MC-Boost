@@ -46,6 +46,13 @@ public:
 	// Change the trajectory of the photon due to scattering in the medium.
 	void	spin(void);
 	
+	// Set the step size of the photon.
+	void 	setStepSize(void);
+
+	// Decide whether the photon should be transmitted to another layer
+	// or internally reflected.
+	void	transmitOrReflect(void);
+
 	// Reset the Photon attributes so it can be propogated again.
 	void	reset(void);
 		
@@ -106,6 +113,10 @@ public:
 	double	HybridTaus(void);
 
 
+	// Check if photon has come into contact with a layer boundary.
+	bool hitLayerBoundary(void);
+
+
 	
 	
 private:
@@ -131,6 +142,13 @@ private:
 	// Step size for the photon.
 	double	step;
 	
+	// Step size to boundary.  Used when calculating distance from layer
+	// boundary to current position of the photon.  Specifically, it is
+	// the remainder of the step size after calculating the distance to
+	// the layer boundary.
+	// i.e. (step_size - distance_to_boundary)/mu_t
+	double step_remainder;
+
 	// status for current photon - dead (false) or alive (true).
 	bool	status;
 	
