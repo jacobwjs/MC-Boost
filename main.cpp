@@ -6,6 +6,7 @@
  *
  */
 
+//#define DEBUG 1
 
 
 
@@ -17,18 +18,31 @@
 #include <time.h>
 #include <iostream>
 #include <vector>
+#include <cstdlib>
 #include <boost/thread/thread.hpp> 
-
+#include <boost/multi_array.hpp>
 using namespace std;
 
-const int MAX_PHOTONS = 10000000;
 
-//#define DEBUG 1
+typedef boost::multi_array<double, 3> Three_Dim_Array;
+typedef three_dim_array::index index;
+
+const int MAX_PHOTONS = 10000;
+
 	
+void loadPressureFromKWave(Three_Dim_Array &pressure_map);
+
+
+
 int main()
 {
-	
 
+	// Load the data produced from kWave into an N-dimensional array (typically 3-D).
+
+	Three_Dim_Array pressure_map(boost::extents[5][4][3]);
+	loadPressureFromKWave(pressure_map);
+
+	/*
 	// Create the medium in which the photons will be fired.
 	Medium *tissue = new Medium();
 	
@@ -99,5 +113,42 @@ int main()
 	delete tissue;
 	//delete photon;
 	
+	*/
+
 	return 0;
 }
+
+
+
+void loadPressureFromKWave(Three_Dim_Array &pressure_map)
+{
+	// Number of 'pixels' in the x-direction from the K-Wave simulation.
+	int Nx, Ny, Nz = 64;
+
+	// Size of each pixel.
+	double dx, dy, dz = 100e-3/(double)Nx;
+
+
+
+
+
+
+	ifstream pressure_file;
+	pressure_file.open("pressure-at-25us.txt");
+	if (!pressure_file) {
+		cout << "!!! Error opening pressure map file !!!\n";
+		exit(1);
+	}
+	else {
+		cout << "Pressure map opened successfully\n";
+	}
+
+	double data = 0.0;
+	while (pressure_file.good()) {
+		pressure_file >> data;
+		//cout << "data = " << data << endl;
+	}
+
+	pressure_file.close();
+}
+
