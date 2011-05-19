@@ -4,13 +4,17 @@
 
 #undef DEBUG
 
+
+double const Pi=4*atan(1);
+
+
 Photon::Photon(void)
 {
 #ifdef DEBUG
 	cout << "Creating Photon...\n";
 #endif
 
-
+	/*
 	// Photon just created, so it is alive.
 	status = ALIVE;
 
@@ -23,12 +27,11 @@ Photon::Photon(void)
 	
 	// No interactions thus far.
 	num_steps = 0;
-	
+	*/
+	this->reset();
 	
 
-	// 'cnt' represents the number of times a photon has propogated
-	// through the medium.
-	cnt = 0;
+
 }
 
 Photon::Photon(double x, double y, double z,
@@ -42,6 +45,8 @@ Photon::~Photon(void)
 #ifdef DEBUG	
 	cout << "Destructing Photon...\n";
 #endif
+	cout << "Non-displaced path length: " << scientific << setprecision(9) <<  original_path_length << endl;
+	cout << "Displaced path length: " << scientific << setprecision(9) << displaced_path_length << endl;
 }
 
 
@@ -60,8 +65,8 @@ void Photon::initTrajectory()
 	psi = 2.0 * PI * getRandNum();
 	dirx = sin_theta * cos(psi);
 	diry = sin_theta * sin(psi);
-	dirz = cos_theta;
-
+	//dirz = cos_theta;
+	dirz = 1;
 
 }
 
@@ -209,9 +214,11 @@ void Photon::reset()
 	// Set back to initial weight values.
 	weight = 1;
 	
-	// FIXME: 
+	// FIXME: ASSUMES GRID IS 10x10x10 cm.
 	// need to reset to the photons initial location.
-	x = y = z = 0;
+	x = 5;
+	y = 5;
+	z = 1;
 	
 	r = 0;
 	step = 0;
@@ -220,6 +227,14 @@ void Photon::reset()
 	// Reset the number of interactions back to zero.
 	num_steps = 0;
 	
+	// Reset the path lengths of the photon.
+	original_path_length = 0;
+	displaced_path_length = 0;
+
+	// 'cnt' represents the number of times a photon has propogated
+	// through the medium.
+	cnt = 0;
+
 	// Randomly set photon trajectory to yield isotropic source.
 	initTrajectory();
 	
@@ -261,12 +276,31 @@ void Photon::hop()
 	cout << "Hopping...\n";
 #endif	
 	
-	//setStepSize();
+
+	cout << "x=" << x << ", y=" << y << ", z=" << z << endl;
+
+	// Locations before the photon's are changed based on the step size.
+	double temp_x, temp_y, temp_z;
+	temp_x = x;
+	temp_y = y;
+	temp_z = z;
+
 	
 	// Update position of the photon.
 	x += step*dirx;
 	y += step*diry;
 	z += step*dirz;
+
+	// Calculate the path length of the photon with WITHOUT displacement.
+	original_path_length += sqrt(pow(x-temp_x,2)+pow(y-temp_y, 2)+pow(z-temp_z, 2));
+
+	// Move the photon to the new position based on the displacement of from
+	// the ultrasound wave.
+	this->displacePhotonFromPressure();
+
+	// Calculate the path length of the photon with WITH displacement.
+	displaced_path_length += sqrt(pow(x-temp_x,2)+pow(y-temp_y, 2)+pow(z-temp_z, 2));
+
 }
 
 
@@ -378,6 +412,26 @@ void Photon::performRoulette(void)
 
 }
 
+
+// FIXME: CURRENTLY ONLY DISPLACING IN ONE DIRECTION.  SHOULD USE A TENSOR.
+void Photon::displacePhotonFromPressure(void)
+{
+	// Get the local pressure from the grid based on the coordinate of the photon.
+	double pressure = m_medium->getPressureFromCartCoords(x, z, y);
+
+	// Impedance of the tissue.
+	double impedance = 1.63e6;
+
+	// FIXME: THIS SHOULD NOT BE HARD CODED.
+	// Frequency of the ultrasound transducer.
+	double freq = 5e6;
+
+	// Displace in the z-axis based on the pressure.
+	double displacement = (pressure*1e6)/(2*Pi*freq*impedance);
+
+	z += displacement;
+
+}
 
 
 // XXX: Currently not in use

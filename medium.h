@@ -3,6 +3,7 @@
 
 
 #include "layer.h"
+#include "pressureMap.h"
 #include <vector>
 #include <iostream>
 #include <iomanip>
@@ -40,6 +41,17 @@ public:
 	// Add a layer to the medium.
 	void	addLayer(Layer *layer);
 	
+	// Add a pressure map object that holds pressure generated from K-Wave in order to simulate
+	// acousto-optics.
+	void 	addPressureMap(PressureMap *pmap);
+
+	// Load the pressure data generated from K-Wave into the pressure map object.
+	void 	loadPressure(void);
+
+	// Return the pressure from the pressure grid based on cartesian coordinates
+	// of the current location of the photon in the medium.
+	double	getPressureFromCartCoords(double x, double z, double y);
+
 	// Return the grid where absorption was accumulated.
 	double * getPlanarGrid() {return Cplanar;}
 	
@@ -93,6 +105,11 @@ private:
 
 	// Mutex to serialize access to the sensor array.
 	boost::mutex m_mutex;
+
+	// Create a pointer to a PressureMap object.  For use with
+	// modeling acousto-optics.
+	PressureMap * pmap;
+
 };
 
 #endif	// MEDIUM_H

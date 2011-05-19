@@ -116,8 +116,10 @@ public:
 	// Check if photon has come into contact with a layer boundary.
 	bool hitLayerBoundary(void);
 
+	// Displace (i.e. update the location) the photon some distance
+	// based on the pressure at that location.
+	void displacePhotonFromPressure(void);
 
-	
 	
 private:
 	// Number of times this Photon (i.e., thread) will execute; where one execution
@@ -180,11 +182,14 @@ private:
 
 
 	// Boost Random Number Library implementation of Mersenne-twister RNG.
-	boost::mt19937 gen;
+	//boost::mt19937 gen;
 
-
+	// Used with the state for the thread-safe RNG.
 	unsigned int z1, z2, z3, z4;
 
+	// Tracks the path length of the photon through the medium.
+	double original_path_length;
+	double displaced_path_length;
 
 }; 		
 
