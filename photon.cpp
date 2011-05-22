@@ -45,8 +45,6 @@ Photon::~Photon(void)
 #ifdef DEBUG	
 	cout << "Destructing Photon...\n";
 #endif
-	cout << "Non-displaced path length: " << scientific << setprecision(9) <<  original_path_length << endl;
-	cout << "Displaced path length: " << scientific << setprecision(9) << displaced_path_length << endl;
 }
 
 
@@ -182,6 +180,15 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 			
 		} // end while() loop
 		
+		cout << "Non-displaced path length: " << scientific << setprecision(12) <<  original_path_length << endl;
+		cout << "Displaced path length: " << scientific << setprecision(12) << displaced_path_length << endl;
+		cout << "Displaced - Original = " << scientific << setprecision(12)
+					<< displaced_path_length - original_path_length << endl;
+
+		// Write out the x,y,z coordinates of the photons path as it propagated through
+		// the medium.
+		writeCoordsToFile();
+
 		// Reset the photon and start propogation over from the beginning.
 		reset();
 		
@@ -191,8 +198,8 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 	// This thread has executed all of it's photons, so now we update the global
 	// absorption array in the medium.
 	m_medium->absorbEnergy(local_Cplanar);
-
 }
+
 
 
 
@@ -220,6 +227,13 @@ void Photon::reset()
 	y = 5;
 	z = 1;
 	
+
+	// Reset the displaced ('displaced path') coordinates for the photon.
+	x_disp = 5;
+	y_disp = 5;
+	z_disp = 1;
+
+
 	r = 0;
 	step = 0;
 	step_remainder = 0;
@@ -235,7 +249,7 @@ void Photon::reset()
 	// through the medium.
 	cnt = 0;
 
-	// Randomly set photon trajectory to yield isotropic source.
+	// Randomly set photon trajectory to yield isotropic or anisotropic source.
 	initTrajectory();
 	
 	
@@ -269,6 +283,25 @@ void Photon::setStepSize()
 	}
 }
 
+
+double Photon::getPathLength(double x_dist, double y_dist, double z_dist)
+{
+	return sqrt(pow(x_dist, 2) + pow(y_dist, 2) + pow(z_dist, 2));
+}
+
+
+void Photon::captureLocationCoords(void)
+{
+	// Add the coordinates to the STL vector for the displaced and
+	// non-displaced case.
+	//	coords.push_back(x);
+	//	coords.push_back(y);
+	//	coords.push_back(z);
+	coords.push_back(x_disp);
+	coords.push_back(y_disp);
+	coords.push_back(z_disp);
+}
+
 // Step photon to new position.
 void Photon::hop()
 {
@@ -277,13 +310,13 @@ void Photon::hop()
 #endif	
 	
 
-	cout << "x=" << x << ", y=" << y << ", z=" << z << endl;
+	// Record the location of the photon during this interaction.
+	captureLocationCoords();
 
-	// Locations before the photon's are changed based on the step size.
-	double temp_x, temp_y, temp_z;
-	temp_x = x;
-	temp_y = y;
-	temp_z = z;
+	// Locations before the photon is moved.
+	double temp_x = x;
+	double temp_y = y;
+	double temp_z = z;
 
 	
 	// Update position of the photon.
@@ -291,15 +324,21 @@ void Photon::hop()
 	y += step*diry;
 	z += step*dirz;
 
-	// Calculate the path length of the photon with WITHOUT displacement.
-	original_path_length += sqrt(pow(x-temp_x,2)+pow(y-temp_y, 2)+pow(z-temp_z, 2));
+	// Update positon for the 'displaced' position of the photon.  Allows us to track
+	// displaced and non-displaced separately.
+	x_disp += step*dirx;
+	y_disp += step*diry;
+	z_disp += step*dirz;
+
+	// Calculate the path length of the photon WITHOUT displacement.
+	original_path_length += getPathLength((x - temp_x), (y - temp_y), (z - temp_z));
 
 	// Move the photon to the new position based on the displacement of from
 	// the ultrasound wave.
 	this->displacePhotonFromPressure();
 
-	// Calculate the path length of the photon with WITH displacement.
-	displaced_path_length += sqrt(pow(x-temp_x,2)+pow(y-temp_y, 2)+pow(z-temp_z, 2));
+	// Calculate the path length of the photon WITH displacement.
+	displaced_path_length += getPathLength((x_disp - temp_x), (y_disp - temp_y), (z_disp - temp_z));
 
 }
 
@@ -413,6 +452,21 @@ void Photon::performRoulette(void)
 }
 
 
+// Write the coordinates of each scattering event of the photon
+// to file for postprocessing with matlab.
+void Photon::writeCoordsToFile(void)
+{
+	ofstream outfile("photon-paths.txt");
+
+	// Iterate over all the coordinates in the stl vector and write
+	// to file.
+	for (int i = 0; i < coords.size(); i++)
+		outfile << coords[i] << " ";
+
+	outfile.close();
+}
+
+
 // FIXME: CURRENTLY ONLY DISPLACING IN ONE DIRECTION.  SHOULD USE A TENSOR.
 void Photon::displacePhotonFromPressure(void)
 {
@@ -427,9 +481,8 @@ void Photon::displacePhotonFromPressure(void)
 	double freq = 5e6;
 
 	// Displace in the z-axis based on the pressure.
-	double displacement = (pressure*1e6)/(2*Pi*freq*impedance);
-
-	z += displacement;
+	double displacement = (abs(pressure)*1e6)/(2*Pi*freq*impedance);
+	z_disp += displacement;
 
 }
 

@@ -6,9 +6,13 @@
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
-#include <boost/random/uniform_real.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/random/mersenne_twister.hpp>
+#include <vector>
+#include <fstream>
+#include <iostream>
+using namespace std;
+//#include <boost/random/uniform_real.hpp>
+//#include <boost/random/variate_generator.hpp>
+//#include <boost/random/mersenne_twister.hpp>
 
 #define ALIVE 1		// Value depicting Photon should continue propagation.
 #define DEAD  0	    // Photon has lost all energy and failed roulette.
@@ -114,11 +118,22 @@ public:
 
 
 	// Check if photon has come into contact with a layer boundary.
-	bool hitLayerBoundary(void);
+	bool 	hitLayerBoundary(void);
 
 	// Displace (i.e. update the location) the photon some distance
 	// based on the pressure at that location.
-	void displacePhotonFromPressure(void);
+	void 	displacePhotonFromPressure(void);
+
+	// Write the coordinates of each scattering event to file for use
+	// with plotting in matlab.
+	void 	writeCoordsToFile(void);
+
+	// Calculate path length of photon from point 'p1' to point 'p2'.
+	double	getPathLength(double x, double y, double z);
+
+
+	// Add the coordinates of the photon at it's current position.
+	void	captureLocationCoords(void);
 
 	
 private:
@@ -132,6 +147,9 @@ private:
 	// Location of the photon.
 	double	x, y, z;
 	
+	// Location of the photon with displacement from ultrasound source taken into account.
+	double x_disp, y_disp, z_disp;
+
 	// Radial position.
 	double r;
 	
@@ -190,6 +208,9 @@ private:
 	// Tracks the path length of the photon through the medium.
 	double original_path_length;
 	double displaced_path_length;
+
+
+	vector<double> coords;
 
 }; 		
 
