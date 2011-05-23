@@ -9,8 +9,9 @@
 #define LOADPRESSUREMAP_H_
 
 #include <boost/multi_array.hpp>
-#include<iostream>
-#include<fstream>
+#include <iostream>
+#include <fstream>
+#include <string>
 using namespace std;
 
 
@@ -22,6 +23,7 @@ class PressureMap
 {
 public:
 	PressureMap();
+	PressureMap(const char *filename);
 	~PressureMap();
 
 	void 	loadPressureFromKWave(void);
@@ -31,9 +33,13 @@ public:
 
 
 private:
+	void init(void);	// Common init function for constructors of the class.
+
 	three_dim_array * pgrid;
 	int Nx, Nz, Ny;
 	double dx, dz, dy;
+	ifstream pressure_file;
+	string p_file;
 
 };
 

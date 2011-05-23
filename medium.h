@@ -52,6 +52,10 @@ public:
 	// of the current location of the photon in the medium.
 	double	getPressureFromCartCoords(double x, double z, double y);
 
+	// Return the pressure from the pressure grid based on array index into
+	// the matrix.
+	double	getPressureFromGridCoords(int x, int z, int y);
+
 	// Return the grid where absorption was accumulated.
 	double * getPlanarGrid() {return Cplanar;}
 	

@@ -154,7 +154,7 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
             
 			// Ensure the photon has not left the medium by either total internal
 			// reflection or transmission (only looking at z-axis).
-			//if (z >= 0 && z <= m_medium->getDepth()) {
+			if (z >= 0 && z <= m_medium->getDepth()) {
 				// Move the photon in the medium.
 				hop();
 
@@ -168,16 +168,18 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 				// Roulette rule.
 				performRoulette();
 				
-			//}
-			//else {
+			}
+			else {
                 // If we make it here the photon has hit a boundary.  We simply absorb
                 // all energy at the boundary.
                 // FIXME:  Take into account specular reflectance since photon might not
                 //          leave medium.
                 //m_medium->absorbEnergy(z, weight);
-                //break;  // break from while loop and execute reset().
-			//}
+                break;  // break from while loop and execute reset().
+			}
 			
+			// FIXME: ONLY HOPPING 10 TIMES TO TEST PATH ORIENTATION.  SHOULD REMOVE WHEN DONE.
+			if (cnt >= 10) break;
 		} // end while() loop
 		
 		cout << "Non-displaced path length: " << scientific << setprecision(12) <<  original_path_length << endl;
@@ -227,7 +229,7 @@ void Photon::reset()
 	y = 5;
 	z = 1;
 	
-
+	// FIXME: ASSUMES GRID IS 10x10x10 cm.
 	// Reset the displaced ('displaced path') coordinates for the photon.
 	x_disp = 5;
 	y_disp = 5;
@@ -262,11 +264,11 @@ void Photon::setStepSize()
 
 	// Update the current values of the absorption and scattering coefficients
 	// based on the depth in the medium (i.e. which layer the photon is in).
-	//double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
-	//double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
+	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
+	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
 
-	double mu_a = 1.0;		// cm^-1
-	double mu_s = 100.0;		// cm^-1
+	//double mu_a = 1.0;		// cm^-1
+	//double mu_s = 100.0;		// cm^-1
 
 	// If last step put the photon on the layer boundary
 	// then we need a new step size.  Otherwise, the step
@@ -309,6 +311,7 @@ void Photon::hop()
 	cout << "Hopping...\n";
 #endif	
 	
+	cnt++;
 
 	// Record the location of the photon during this interaction.
 	captureLocationCoords();
@@ -352,11 +355,11 @@ void Photon::drop()
 	
 	// Update the current values of the absorption and scattering coefficients
 	// based on the depth in the medium (i.e. which layer the photon is in).
-	//double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
-	//double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
+	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
+	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
 	
-    double mu_a = 1.0;		// cm^-1
-	double mu_s = 100.0;		// cm^-1
+    //double mu_a = 1.0;		// cm^-1
+	//double mu_s = 100.0;		// cm^-1
     
 	// Calculate the albedo and remove a portion of the photon's weight for this
 	// interaction.
@@ -471,7 +474,7 @@ void Photon::writeCoordsToFile(void)
 void Photon::displacePhotonFromPressure(void)
 {
 	// Get the local pressure from the grid based on the coordinate of the photon.
-	double pressure = m_medium->getPressureFromCartCoords(x, z, y);
+	double pressure = m_medium->getPressureFromCartCoords(x, y, z);
 
 	// Impedance of the tissue.
 	double impedance = 1.63e6;
@@ -480,9 +483,12 @@ void Photon::displacePhotonFromPressure(void)
 	// Frequency of the ultrasound transducer.
 	double freq = 5e6;
 
-	// Displace in the z-axis based on the pressure.
+	// Displace the photon in the x-axis based on the pressure.
+	// Note: Since we are firing the photons into the medium perpindicularly
+	//		 to the propagation of the ultrasound wave, we displace on the
+	//		 x-axis.
 	double displacement = (abs(pressure)*1e6)/(2*Pi*freq*impedance);
-	z_disp += displacement;
+	x_disp += displacement;
 
 }
 

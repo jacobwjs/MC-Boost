@@ -38,12 +38,22 @@ int main()
 	
 	// Add the layer to the medium.  NOTE:  destruction of the 'Layer' object is
 	// handled in the 'tissue' object.
-	tissue->addLayer(new Layer());
+							//mu_a, mu_s,  n, start, end
+	tissue->addLayer(new Layer(0.0, 10.0, 1.33, 0,  10));
 	
 	
 	// Add the pressure map object to the medium and load the pressure data.
-	tissue->addPressureMap(new PressureMap());
+	tissue->addPressureMap(new PressureMap("testing.txt"));
+	//tissue->addPressureMap(new PressureMap("pressure-at-25us.txt"));
 	tissue->loadPressure();
+
+	int x_photon = 31;
+	int y_photon = 31;
+	int z_photon = 23;
+															// x,  y,  z (photon)
+	cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
+															// z , y , x (pressure)
+
 
 	// Allocate the planar grid and set it in the tissue.
 	double *Cplanar = (double*)malloc(sizeof(double) * 101);
@@ -106,8 +116,9 @@ int main()
 	
 	// Clean up memory allocated memory on the heap.
 	delete tissue;
-	//delete photon;
 	
+
+
 
 
 	return 0;
