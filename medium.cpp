@@ -11,17 +11,22 @@ Medium::Medium()
 	radial_size = 3.0;	// Total range in which bins are extended (cm).
 	num_radial_pos = MAX_BINS-1;	// Set the number of bins.
 	radial_bin_size = radial_size / num_radial_pos;
+	// FIXME:  NOT SURE 'depth' is needed anymore.
 	depth = 10;     // Defualt depth of the medium (cm).
+	z_bound = x_bound = y_bound = 10; // Default bounds of the medium (cm).
 	Cplanar = NULL;
 	pmap = NULL;
 }
 
-Medium::Medium(const int depth)
+Medium::Medium(const int depth, const int x, const int y, const int z)
 {
     radial_size = 3.0;	// Total range in which bins are extended (cm).
 	num_radial_pos = MAX_BINS-1;	// Set the number of bins.
 	radial_bin_size = radial_size / num_radial_pos;
 	this->depth = depth;
+	this->z_bound = z;
+	this->y_bound = y;
+	this->x_bound = x;
 	Cplanar = NULL;
 }
 
@@ -89,7 +94,7 @@ double Medium::getPressureFromCartCoords(double a, double b, double c)
 // pressure matrix.
 double Medium::getPressureFromGridCoords(int a, int b, int c)
 {
-	cout << "getPressureFromGridCoords\n";
+	//cout << "getPressureFromGridCoords\n";
 	assert(pmap != NULL);
 	return pmap->getPressureFromGrid(a, b, c);
 }
@@ -116,6 +121,8 @@ void Medium::absorbEnergy(const double z, const double energy)
 void Medium::absorbEnergy(const double *energy_array)
 {
 	int i;
+	// Grab the lock to ensure a single thread has access
+	// to update the global array.
 	boost::mutex::scoped_lock lock(m_mutex);
 	for (i = 0; i < MAX_BINS; i++) {
 		// Grab the lock to serialize threads when updating
@@ -130,6 +137,10 @@ void Medium::absorbEnergy(const double *energy_array)
 // When the correct layer is found from the depth we return the layer object.
 Layer * Medium::getLayerFromDepth(double z)
 {
+	// Ensure that the photon's z-axis coordinate is sane.  That is,
+	// it has not left the medium.
+	assert(z >= 0 && z <= z_bound);
+
 	vector<Layer *>::iterator it;
 	for (it = p_layers.begin(); it != p_layers.end(); it++) {
 		// Find the layer we are in within the medium based on the depth (i.e. z)
@@ -145,6 +156,10 @@ Layer * Medium::getLayerFromDepth(double z)
 
 double Medium::getLayerAbsorptionCoeff(double z)
 {
+	// Ensure that the photon's z-axis coordinate is sane.  That is,
+	// it has not left the medium.
+	assert(z >= 0 && z <= z_bound);
+
 	double absorp_coeff = -1;
 	vector<Layer *>::iterator it;
 	for (it = p_layers.begin(); it != p_layers.end(); it++) {
@@ -166,6 +181,10 @@ double Medium::getLayerAbsorptionCoeff(double z)
 
 double Medium::getLayerScatterCoeff(double z)
 {
+	// Ensure that the photon's z-axis coordinate is sane.  That is,
+	// it has not left the medium.
+	assert(z >= 0 && z <= z_bound);
+
 	double scatter_coeff = -1;
 	vector<Layer *>::iterator it;
 	for (it = p_layers.begin(); it != p_layers.end(); it++) {
@@ -187,7 +206,11 @@ double Medium::getLayerScatterCoeff(double z)
 
 double Medium::getAnisotropyFromDepth(double z)
 {
-	double anisotropy = 0;
+	// Ensure that the photon's z-axis coordinate is sane.  That is,
+	// it has not left the medium.
+	assert(z >= 0 && z <= z_bound);
+
+	double anisotropy = -1;
 	vector<Layer *>::iterator it;
 	for (it = p_layers.begin(); it != p_layers.end(); it++) {
 		// Find the layer we are it in the medium based on the depth (i.e. z)
@@ -199,7 +222,7 @@ double Medium::getAnisotropyFromDepth(double z)
 	}
 	
 	// If not found, fail.
-	assert(anisotropy != 0);
+	assert(anisotropy != -1);
 	
 	// Return the anisotropy value for the layer that resides at depth 'z'.
 	return anisotropy;

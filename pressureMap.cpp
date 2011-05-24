@@ -106,11 +106,11 @@ double PressureMap::getPressureFromGrid(int a, int b, int c)
 // Returns the pressure from the grid based on supplied coordinates.
 double PressureMap::getPressureCartCords(double a, double b, double c)
 {
-
 	int _x = floor(a/dx);
 	int _z = floor(b/dz);
 	int _y = floor(c/dy);
 	cout << "PressureMap::getPressureCartCords\n";
+	cout << "a=" << a << "b=" << b << "c=" << c << endl;
 	return getPressureFromGrid(_x, _z, _y);
 
 }

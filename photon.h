@@ -16,16 +16,19 @@ using namespace std;
 
 #define ALIVE 1		// Value depicting Photon should continue propagation.
 #define DEAD  0	    // Photon has lost all energy and failed roulette.
-
 #define ONE_MINUS_COSZERO 1.0E-12
 /* If 1-cos(theta) <= ONE_MINUS_COSZERO, fabs(theta) <= 1e-6 rad. */
 /* If 1+cos(theta) <= ONE_MINUS_COSZERO, fabs(PI-theta) <= 1e-6 rad. */
-
 #define THRESHOLD	0.01		// Threshold for determining if we should perform roulette
 #define CHANCE      0.1  		// Used in roulette
-#define PI			3.14159265
-
+#define PI			3.1415926
 #define SIGN(x)           ((x)>=0 ? 1:-1)
+//const int MAX_BINS = 101;
+
+
+
+class Medium;
+
 
 class Photon
 {
@@ -117,6 +120,9 @@ public:
 	double	HybridTaus(void);
 
 
+	// Check if photon is still within the medium.
+	bool	isPhotonInMedium(void);
+
 	// Check if photon has come into contact with a layer boundary.
 	bool 	hitLayerBoundary(void);
 
@@ -193,7 +199,8 @@ private:
 	// Local absorption array that holds values during execution.  This array
 	// is copied over to the global absorption array (i.e. in the medium) once
 	// a photon has finished propagating in the medium.
-	double local_Cplanar[MAX_BINS];
+	// FIXME: 101 SHOULD NOT BE HARD CODED VALUE.
+	double local_Cplanar[101];
 	double	radial_size;			// Maximum radial size.
 	int		num_radial_pos;			// Number of radial positions (i.e. NR).
 	double	radial_bin_size;		// Radial bin size of the medium (i.e dr).

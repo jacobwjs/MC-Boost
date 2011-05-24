@@ -4,6 +4,7 @@
 
 #include "layer.h"
 #include "pressureMap.h"
+#include "photon.h" // Photon class is a friend of the Medium class.
 #include <vector>
 #include <iostream>
 #include <iomanip>
@@ -23,8 +24,10 @@ class Medium
 	
 public:
 
+	friend class Photon;
+
 	Medium();
-    Medium(const int depth);
+    Medium(const int depth, const int x, const int y, const int z);
 	~Medium();
 	
 	// Add some portion of the photon's energy that was lost at this interaction
@@ -88,6 +91,10 @@ public:
 
     // Return the max depth of the medium.
     double getDepth() {return depth;}
+
+    double getMediumZaxisBound(void) {return z_bound;}
+    double getMediumXaxisBound(void) {return x_bound;}
+    double getMediumYaxisBound(void) {return y_bound;}
 	
 	
 private:
@@ -103,6 +110,9 @@ private:
 	
     // The total depth of the medium.
     double depth;
+    double x_bound,
+           y_bound,
+           z_bound;
 	
 	// Create a vector to hold the layers of the medium.
 	vector<Layer *> p_layers;

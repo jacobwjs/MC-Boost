@@ -154,10 +154,14 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
             
 			// Ensure the photon has not left the medium by either total internal
 			// reflection or transmission (only looking at z-axis).
-			if (z >= 0 && z <= m_medium->getDepth()) {
+			if (z_disp > 0 && z_disp < 10 && x_disp > 0 && x_disp < 10 && y_disp > 0 && y_disp < 10) {
 				// Move the photon in the medium.
 				hop();
 
+				if (!isPhotonInMedium()) {
+					this->status = DEAD;
+					break;
+				}
 				// Drop weight of the photon due to an interaction with the medium.
 				drop();
 				
@@ -175,11 +179,12 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
                 // FIXME:  Take into account specular reflectance since photon might not
                 //          leave medium.
                 //m_medium->absorbEnergy(z, weight);
+				this->status = DEAD;
                 break;  // break from while loop and execute reset().
 			}
 			
 			// FIXME: ONLY HOPPING 10 TIMES TO TEST PATH ORIENTATION.  SHOULD REMOVE WHEN DONE.
-			if (cnt >= 10) break;
+			//if (cnt >= 125) break;
 		} // end while() loop
 		
 		cout << "Non-displaced path length: " << scientific << setprecision(12) <<  original_path_length << endl;
@@ -202,7 +207,22 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 	m_medium->absorbEnergy(local_Cplanar);
 }
 
-
+// Return a boolean value if the photon is still within the bounds of the
+// medium (true) or if it has left the medium (false).
+bool Photon::isPhotonInMedium(void)
+{
+	// Compare the coordinates of the photon to the bounds of the medium.
+	if ((this->x <= (*m_medium).x_bound && this->x >= 0) &&
+		(this->y <= (*m_medium).y_bound && this->y >= 0) &&
+		(this->z <= (*m_medium).z_bound && this->z >= 0))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 
 
 void Photon::plotPath()
@@ -336,9 +356,14 @@ void Photon::hop()
 	// Calculate the path length of the photon WITHOUT displacement.
 	original_path_length += getPathLength((x - temp_x), (y - temp_y), (z - temp_z));
 
+	if (z_disp > 0 && z_disp < 10 && x_disp > 0 && x_disp < 10 && y_disp > 0 && y_disp < 10) {
 	// Move the photon to the new position based on the displacement of from
 	// the ultrasound wave.
 	this->displacePhotonFromPressure();
+	}
+	else {
+		this->status = DEAD;
+	}
 
 	// Calculate the path length of the photon WITH displacement.
 	displaced_path_length += getPathLength((x_disp - temp_x), (y_disp - temp_y), (z_disp - temp_z));

@@ -43,8 +43,8 @@ int main()
 	
 	
 	// Add the pressure map object to the medium and load the pressure data.
-	tissue->addPressureMap(new PressureMap("testing.txt"));
-	//tissue->addPressureMap(new PressureMap("pressure-at-25us.txt"));
+	//tissue->addPressureMap(new PressureMap("testing.txt"));
+	tissue->addPressureMap(new PressureMap("pressure-at-25us.txt"));
 	tissue->loadPressure();
 
 	int x_photon = 31;

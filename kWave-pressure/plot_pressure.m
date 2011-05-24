@@ -6,9 +6,10 @@ p = reshape(p, 3, size(p,2)/3);
 
 figure;
 view(45,30); 
-box on;
+
 %colormap(color_map); 
 caxis([0 1]); 
+axis([0 10 0 10 0 10]);
 %grid on;  
 
 % plot orientation line
@@ -26,10 +27,11 @@ isosurface(x,y,z,pressure);
 plot3(p(3,:), p(2,:), p(1,:), '-m');
 
 % add the axes labels
-xlabel('x [pixels]');
-ylabel('z [pixels]');
-zlabel('y [pixels]');
+xlabel('x [cm]');
+ylabel('z [cm]');
+zlabel('y [cm]');
 
 set(gcf,'Color',[.5,.5,.5],'Renderer','zbuffer')
 set(gca,'Color','black','XColor','white', ...
 	'YColor','white','ZColor','white');
+box on;
