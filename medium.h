@@ -30,6 +30,9 @@ public:
     Medium(const int depth, const int x, const int y, const int z);
 	~Medium();
 	
+	// Common values to be used with the constructors.
+	void	initCommon(void);
+
 	// Add some portion of the photon's energy that was lost at this interaction
 	// point (i.e. due to absorption) to the medium's grid.
 	void	absorbEnergy(const double z, const double energy);
@@ -90,12 +93,17 @@ public:
 	Layer * getLayerFromDepth(double depth);
 
     // Return the max depth of the medium.
-    double getDepth() {return depth;}
+    double 	getDepth() {return depth;}
 
-    double getMediumZaxisBound(void) {return z_bound;}
-    double getMediumXaxisBound(void) {return x_bound;}
-    double getMediumYaxisBound(void) {return y_bound;}
+    double 	getMediumZaxisBound(void) {return z_bound;}
+    double 	getMediumXaxisBound(void) {return x_bound;}
+    double 	getMediumYaxisBound(void) {return y_bound;}
 	
+    // Write photon coordinates to file.
+    void 	writePhotonCoords(vector<double> &coords);
+
+    // Write photon exit locations and phases to file.
+    void	writeExitCoordsAndPhase(double x_disp, double y_disp, double displaced_path_length);
 	
 private:
 	double	radial_size;			// Maximum radial size.
@@ -118,11 +126,24 @@ private:
 	vector<Layer *> p_layers;
 
 	// Mutex to serialize access to the sensor array.
-	boost::mutex m_mutex;
+	boost::mutex m_sensor_mutex;
+
+	// Mutex to serialize access to the data file that is written
+	// by photons to store their coordinates during propagation.
+	boost::mutex m_coords_mutex;
+
+	// Mutex to serialize access to the data file that is written
+	// by photons to store their coordinates during propagation.
+	boost::mutex m_exit_phase_mutex;
 
 	// Create a pointer to a PressureMap object.  For use with
 	// modeling acousto-optics.
 	PressureMap * pmap;
+
+
+	// File for dumping photon paths to.  Used in the Photon class.
+	ofstream coords_file;
+	ofstream exit_location_and_phase_file;
 
 };
 

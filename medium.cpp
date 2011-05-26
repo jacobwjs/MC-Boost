@@ -8,26 +8,23 @@
 
 Medium::Medium()
 {
-	radial_size = 3.0;	// Total range in which bins are extended (cm).
-	num_radial_pos = MAX_BINS-1;	// Set the number of bins.
-	radial_bin_size = radial_size / num_radial_pos;
+
+	this->initCommon();
 	// FIXME:  NOT SURE 'depth' is needed anymore.
 	depth = 10;     // Defualt depth of the medium (cm).
 	z_bound = x_bound = y_bound = 10; // Default bounds of the medium (cm).
-	Cplanar = NULL;
-	pmap = NULL;
+
 }
 
 Medium::Medium(const int depth, const int x, const int y, const int z)
 {
-    radial_size = 3.0;	// Total range in which bins are extended (cm).
-	num_radial_pos = MAX_BINS-1;	// Set the number of bins.
-	radial_bin_size = radial_size / num_radial_pos;
+
+	this->initCommon();
 	this->depth = depth;
 	this->z_bound = z;
 	this->y_bound = y;
 	this->x_bound = x;
-	Cplanar = NULL;
+
 }
 
 Medium::~Medium()
@@ -37,12 +34,27 @@ Medium::~Medium()
 	for (vector<Layer *>::iterator i = p_layers.begin(); i != p_layers.end(); ++i)
 		delete *i;
 
+	// Free the PressureMap() object.
 	if (pmap) {
 		delete pmap;
 		pmap = NULL;
 	}
+
+	// Close the data file that stores photon paths.
+	coords_file.close();
 }
 
+
+void Medium::initCommon(void)
+{
+	radial_size = 3.0;	// Total range in which bins are extended (cm).
+	num_radial_pos = MAX_BINS-1;	// Set the number of bins.
+	radial_bin_size = radial_size / num_radial_pos;
+	Cplanar = NULL;  // Planar detector array.
+	pmap = NULL;     // Pointer to a PressureMap() object.
+	coords_file.open("photon-paths.txt");  // File that photon paths are dumped to.
+	exit_location_and_phase_file.open("photon-paths-phase.txt");
+}
 
 
 void Medium::setPlanarArray(double *array)
@@ -112,7 +124,7 @@ void Medium::absorbEnergy(const double z, const double energy)
 	if (ir >= num_radial_pos) {
 		ir = num_radial_pos;
 	}
-
+	boost::mutex::scoped_lock lock(m_sensor_mutex);
 	Cplanar[ir] += energy;
 
 }
@@ -123,7 +135,7 @@ void Medium::absorbEnergy(const double *energy_array)
 	int i;
 	// Grab the lock to ensure a single thread has access
 	// to update the global array.
-	boost::mutex::scoped_lock lock(m_mutex);
+	boost::mutex::scoped_lock lock(m_sensor_mutex);
 	for (i = 0; i < MAX_BINS; i++) {
 		// Grab the lock to serialize threads when updating
 		// the global planar detection array in the Medium.
@@ -226,6 +238,40 @@ double Medium::getAnisotropyFromDepth(double z)
 	
 	// Return the anisotropy value for the layer that resides at depth 'z'.
 	return anisotropy;
+}
+
+
+// Write out the photon coordinates to file.
+void Medium::writePhotonCoords(vector<double> &coords)
+{
+	boost::mutex::scoped_lock lock(m_coords_mutex);
+
+	//Iterate over all the coordinates in the STL vector and write
+	// to file.
+	for (int i = 0; i < coords.size(); i++) {
+		coords_file << coords[i] << " ";
+	}
+	// Create a new line in the file after this photon's coordinates have been written.
+	coords_file << "\n";
+	coords_file.flush();
+}
+
+// Write out the exit location (i.e. photon coordinates when it left the medium) and phase
+// at the exit point, to file.
+void Medium::writeExitCoordsAndPhase(double x_disp, double y_disp, double displaced_path_length)
+{
+	boost::mutex::scoped_lock lock(m_exit_phase_mutex);
+
+	//Iterate over all the coordinates and phases in the STL vector and write
+	// to file.
+	//for (int i = 0; i < exit_and_phase.size(); i++) {
+		exit_location_and_phase_file << x_disp << " "
+									 << y_disp << " "
+									 << displaced_path_length << " \n";
+	//}
+	// Create a new line in the file after this photon's coordinates have been written.
+	//exit_location_and_phase_file << "\n";
+	exit_location_and_phase_file.flush();
 }
 
 

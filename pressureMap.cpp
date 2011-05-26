@@ -97,8 +97,8 @@ double PressureMap::getPressureFromGrid(int a, int b, int c)
 //	array_index z = z_location;
 //	array_index y = y_location;
 //	return (*pgrid)[x][z][y];
-	cout << "PressureMap::getPressureFromGrid\n";
-	cout << "a=" << a << ", b=" << b << ", c =" << c  << endl;
+//	cout << "PressureMap::getPressureFromGrid\n";
+//	cout << "a=" << a << ", b=" << b << ", c =" << c  << endl;
 	return (*pgrid)[(array_index)a][(array_index)b][(array_index)c];
 }
 
@@ -109,8 +109,8 @@ double PressureMap::getPressureCartCords(double a, double b, double c)
 	int _x = floor(a/dx);
 	int _z = floor(b/dz);
 	int _y = floor(c/dy);
-	cout << "PressureMap::getPressureCartCords\n";
-	cout << "a=" << a << "b=" << b << "c=" << c << endl;
+//	cout << "PressureMap::getPressureCartCords\n";
+//	cout << "a=" << a << ", b=" << b << ", c=" << c << endl;
 	return getPressureFromGrid(_x, _z, _y);
 
 }

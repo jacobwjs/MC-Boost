@@ -26,7 +26,7 @@ using namespace std;
 
 
 
-const int MAX_PHOTONS = 1;
+const int MAX_PHOTONS = 10000;
 
 
 int main()
@@ -39,7 +39,7 @@ int main()
 	// Add the layer to the medium.  NOTE:  destruction of the 'Layer' object is
 	// handled in the 'tissue' object.
 							//mu_a, mu_s,  n, start, end
-	tissue->addLayer(new Layer(0.0, 10.0, 1.33, 0,  10));
+	tissue->addLayer(new Layer(0.0, 30.0, 1.33, 0,  10));
 	
 	
 	// Add the pressure map object to the medium and load the pressure data.
@@ -47,11 +47,8 @@ int main()
 	tissue->addPressureMap(new PressureMap("pressure-at-25us.txt"));
 	tissue->loadPressure();
 
-	int x_photon = 31;
-	int y_photon = 31;
-	int z_photon = 23;
-															// x,  y,  z (photon)
-	cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
+										// x,  y,  z (photon)
+	//cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
 															// z , y , x (pressure)
 
 
@@ -68,8 +65,8 @@ int main()
 	
 
 	// Let boost decide how many threads to run on this architecture.
-	//const int NUM_THREADS = boost::thread::hardware_concurrency();
-	const int NUM_THREADS = 1;
+	const int NUM_THREADS = boost::thread::hardware_concurrency();
+	//const int NUM_THREADS = 2;
 	
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.

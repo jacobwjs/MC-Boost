@@ -137,9 +137,12 @@ public:
 	// Calculate path length of photon from point 'p1' to point 'p2'.
 	double	getPathLength(double x, double y, double z);
 
-
 	// Add the coordinates of the photon at it's current position.
 	void	captureLocationCoords(void);
+
+	// Check if exit location is through the aperture that will fall
+	// on the detector.
+	bool	didExitThroughDetectorAperture(void);
 
 	
 private:
@@ -150,6 +153,9 @@ private:
 	// Holds value of number of iterations thus far.
 	int cnt;	
 	
+	// The number of photons that exit through the detector aperture.
+	int cnt_through_aperture;
+
 	// Location of the photon.
 	double	x, y, z;
 	
@@ -216,8 +222,10 @@ private:
 	double original_path_length;
 	double displaced_path_length;
 
-
+	// Holds the x,y,z coordinates of the photon for each scattering event.
+	// Used to plot the photon's path.
 	vector<double> coords;
+
 
 }; 		
 

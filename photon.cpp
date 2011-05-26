@@ -28,6 +28,10 @@ Photon::Photon(void)
 	// No interactions thus far.
 	num_steps = 0;
 	*/
+	// holds the number of photons that leave through the detection
+		// aperture of the medium.
+		cnt_through_aperture = 0;
+
 	this->reset();
 	
 
@@ -45,6 +49,7 @@ Photon::~Photon(void)
 #ifdef DEBUG	
 	cout << "Destructing Photon...\n";
 #endif
+	cout << "Number of photons that passed to detector = " << cnt_through_aperture << endl;
 }
 
 
@@ -154,14 +159,12 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
             
 			// Ensure the photon has not left the medium by either total internal
 			// reflection or transmission (only looking at z-axis).
-			if (z_disp > 0 && z_disp < 10 && x_disp > 0 && x_disp < 10 && y_disp > 0 && y_disp < 10) {
+			//if (z_disp > 0 && z_disp < 10 && x_disp > 0 && x_disp < 10 && y_disp > 0 && y_disp < 10) {
+			if (isPhotonInMedium()) {
 				// Move the photon in the medium.
 				hop();
 
-				if (!isPhotonInMedium()) {
-					this->status = DEAD;
-					break;
-				}
+
 				// Drop weight of the photon due to an interaction with the medium.
 				drop();
 				
@@ -174,27 +177,29 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 				
 			}
 			else {
-                // If we make it here the photon has hit a boundary.  We simply absorb
-                // all energy at the boundary.
-                // FIXME:  Take into account specular reflectance since photon might not
-                //          leave medium.
-                //m_medium->absorbEnergy(z, weight);
+				hop(); // needed to make the move to the boundary
+
+				if (didExitThroughDetectorAperture()) {
+					//writeCoordsToFile();
+					(*m_medium).writeExitCoordsAndPhase(x_disp,
+														y_disp,
+														displaced_path_length);
+				}
+
+
+				// If photon has left the medium we kill it and break from the while loop.
 				this->status = DEAD;
                 break;  // break from while loop and execute reset().
 			}
 			
-			// FIXME: ONLY HOPPING 10 TIMES TO TEST PATH ORIENTATION.  SHOULD REMOVE WHEN DONE.
-			//if (cnt >= 125) break;
+
 		} // end while() loop
 		
-		cout << "Non-displaced path length: " << scientific << setprecision(12) <<  original_path_length << endl;
-		cout << "Displaced path length: " << scientific << setprecision(12) << displaced_path_length << endl;
-		cout << "Displaced - Original = " << scientific << setprecision(12)
-					<< displaced_path_length - original_path_length << endl;
+
 
 		// Write out the x,y,z coordinates of the photons path as it propagated through
 		// the medium.
-		writeCoordsToFile();
+		//writeCoordsToFile();
 
 		// Reset the photon and start propogation over from the beginning.
 		reset();
@@ -207,23 +212,78 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 	m_medium->absorbEnergy(local_Cplanar);
 }
 
+// FIXME: *** should eventually take into account reflectance since we always
+//			  assume transmission once a photon reaches the boundary of the
+//			  medium.
+//        ***
 // Return a boolean value if the photon is still within the bounds of the
 // medium (true) or if it has left the medium (false).
+// NOTE: setStepSize() must occur before this test is made.
 bool Photon::isPhotonInMedium(void)
 {
-	// Compare the coordinates of the photon to the bounds of the medium.
-	if ((this->x <= (*m_medium).x_bound && this->x >= 0) &&
-		(this->y <= (*m_medium).y_bound && this->y >= 0) &&
-		(this->z <= (*m_medium).z_bound && this->z >= 0))
+	double temp_x = this->x_disp + step*dirx;
+	double temp_y = this->y_disp + step*diry;
+	double temp_z = this->z_disp + step*dirz;
+
+	// See if the step produced from 'setStepSize()' put the photon
+	// outside of the bounds of the medium.
+	if (!(temp_x <= (*m_medium).x_bound && temp_x >= 0))
 	{
-		return true;
+		// If the photon step size moved the photon past the x-bounds
+		// of the medium, move to the x-boundary, update the status of
+		// the photon (DEAD), and return false since it is no longer in the medium.
+		// This same check is made for the y-bound and z-bound's of the medium below.
+		this->x = (*m_medium).x_bound;
+		this->status = DEAD;
+		return false;
+	}
+	else if (!(temp_y <= (*m_medium).y_bound && temp_y >= 0))
+	{
+		this->y = (*m_medium).y_bound;
+		this->status = DEAD;
+		return false;
+	}
+	else if (!(temp_z <= (*m_medium).z_bound && temp_z >= 0))
+	{
+		//cout << "exited through x-y plane\n";
+		this->z = (*m_medium).z_bound;
+		this->status = DEAD;
+		return false;
 	}
 	else
 	{
-		return false;
+		// If all other tests fail, then we are still in the medium
+		// so we return true.
+		return true;
 	}
 }
 
+
+// Check the location of departure from the medium and if it falls
+// within the bounds of the aperture, then record the position and
+// phase of the photon.
+bool Photon::didExitThroughDetectorAperture(void)
+{
+	// Note: z-axis is along the path of initial propagation (i.e. injection into the medium)
+	//       and the x-axis is taken to be the axis of displacement.
+
+	// Defining the aperture to be 2x2 cm and centered
+	// around the injection point (5,5) and sitting on the x-y plane.
+	if (z_disp >= (*m_medium).z_bound - 0.25) {
+		if ((x_disp >= 4 && x_disp <= 6) &&
+			(y_disp >= 4 && y_disp <= 6))
+		{
+			//writeCoordsToFile();
+			cout << "hit aperture" << endl;
+			cnt_through_aperture++;
+			return true;
+		}
+	}
+
+	// If above is not true, photon has exited somewhere else in the medium
+	// so return false.
+	return false;
+}
 
 void Photon::plotPath()
 {
@@ -271,6 +331,12 @@ void Photon::reset()
 	// through the medium.
 	cnt = 0;
 
+
+
+	// Clear the coordinate vector so it does not continuously accumlate
+	// positions and grow for each photon.
+	coords.clear();
+
 	// Randomly set photon trajectory to yield isotropic or anisotropic source.
 	initTrajectory();
 	
@@ -284,6 +350,8 @@ void Photon::setStepSize()
 
 	// Update the current values of the absorption and scattering coefficients
 	// based on the depth in the medium (i.e. which layer the photon is in).
+	// FIXME: *** when simulating AO we inject photons normal to the z-axis,
+	//			  since the ultrasound propagates al
 	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
 	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
 
@@ -484,14 +552,14 @@ void Photon::performRoulette(void)
 // to file for postprocessing with matlab.
 void Photon::writeCoordsToFile(void)
 {
-	ofstream outfile("photon-paths.txt");
 
-	// Iterate over all the coordinates in the stl vector and write
-	// to file.
-	for (int i = 0; i < coords.size(); i++)
-		outfile << coords[i] << " ";
+//	cout << "Non-displaced path length: " << scientific << setprecision(12) <<  original_path_length << endl;
+//	cout << "Displaced path length: " << scientific << setprecision(12) << displaced_path_length << endl;
+//	cout << "Displaced - Original = " << scientific << setprecision(12)
+//		 << displaced_path_length - original_path_length << endl;
 
-	outfile.close();
+
+	m_medium->writePhotonCoords(coords);
 }
 
 
@@ -509,7 +577,7 @@ void Photon::displacePhotonFromPressure(void)
 	double freq = 5e6;
 
 	// Displace the photon in the x-axis based on the pressure.
-	// Note: Since we are firing the photons into the medium perpindicularly
+	// Note: Since we are firing the photons into the medium normal
 	//		 to the propagation of the ultrasound wave, we displace on the
 	//		 x-axis.
 	double displacement = (abs(pressure)*1e6)/(2*Pi*freq*impedance);

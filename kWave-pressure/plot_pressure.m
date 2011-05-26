@@ -1,8 +1,24 @@
 %plots pressure, photon path, etc.
 
-p = dlmread('../Default/photon-paths.txt');
-p = reshape(p, 3, size(p,2)/3);
-[x,y,z] = meshgrid(0:10/64:10-10/64);
+
+set(0,'DefaultFigureRenderer','OpenGL');
+
+% number of photons to plot.
+num_photons = 10;
+
+% open the file that contains the photon coordinates.
+fid = fopen('../Default/photon-paths.txt');
+
+% open the pressure file that k-wave genrated.
+pressure = dlmread('pressure-at-25us.txt');
+
+% reshape into a 64x64x64 matrix.
+% NOTE: this assumes using default dimensions from the simulation.
+pressure = reshape(pressure, 64, 64, 64);
+
+
+
+
 
 figure;
 view(45,30); 
@@ -21,10 +37,20 @@ hold on;
 
 
 % plot the pressure
+[x,y,z] = meshgrid(0:10/64:10-10/64);
 isosurface(x,y,z,pressure);
 
-% plot the photon
-plot3(p(3,:), p(2,:), p(1,:), '-m');
+% plot the photon paths
+hold all;   % hold all cycles through colors for plotting.  Allows to distinguish
+            % between each separate photon path.
+for i=1:num_photons
+     tline = fgetl(fid);
+     tline = str2num(tline);
+     a = reshape(tline, 3, size(tline,2)/3);
+     plot3(a(3,:), a(2,:), a(1,:));
+end
+
+ fclose(fid);
 
 % add the axes labels
 xlabel('x [cm]');
@@ -35,3 +61,4 @@ set(gcf,'Color',[.5,.5,.5],'Renderer','zbuffer')
 set(gca,'Color','black','XColor','white', ...
 	'YColor','white','ZColor','white');
 box on;
+camlight; lighting phong;
