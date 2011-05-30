@@ -177,7 +177,9 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 				
 			}
 			else {
-				hop(); // needed to make the move to the boundary
+				hop(); // needed to make the move to the boundary,
+				       // otherwise the check for 'didExitThroughDetectorAperture()'
+				       // will never be true.
 
 				if (didExitThroughDetectorAperture()) {
 					//writeCoordsToFile();
@@ -274,7 +276,7 @@ bool Photon::didExitThroughDetectorAperture(void)
 			(y_disp >= 4 && y_disp <= 6))
 		{
 			//writeCoordsToFile();
-			cout << "hit aperture" << endl;
+			//cout << "hit aperture" << endl;
 			cnt_through_aperture++;
 			return true;
 		}

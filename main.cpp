@@ -26,7 +26,7 @@ using namespace std;
 
 
 
-const int MAX_PHOTONS = 10000;
+const int MAX_PHOTONS = 100000;
 
 
 int main()
@@ -42,6 +42,7 @@ int main()
 	tissue->addLayer(new Layer(0.0, 30.0, 1.33, 0,  10));
 	
 	
+
 	// Add the pressure map object to the medium and load the pressure data.
 	//tissue->addPressureMap(new PressureMap("testing.txt"));
 	tissue->addPressureMap(new PressureMap("pressure-at-25us.txt"));

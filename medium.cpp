@@ -265,8 +265,9 @@ void Medium::writeExitCoordsAndPhase(double x_disp, double y_disp, double displa
 	//Iterate over all the coordinates and phases in the STL vector and write
 	// to file.
 	//for (int i = 0; i < exit_and_phase.size(); i++) {
-		exit_location_and_phase_file << x_disp << " "
-									 << y_disp << " "
+		exit_location_and_phase_file << fixed << setprecision(5) << x_disp << "\t"
+									 << y_disp << "\t"
+									 << scientific << setprecision(3)
 									 << displaced_path_length << " \n";
 	//}
 	// Create a new line in the file after this photon's coordinates have been written.
