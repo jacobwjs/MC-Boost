@@ -132,38 +132,37 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 			// layer, and therefore potentially needing to take into account
 			// reflection, transmission and refraction, we account for these
 			// phonomenon accordingly.
-			/*
+
 			if (hitLayerBoundary())
 			{
 				hop();	// Move the photon to the boundary.
 				transmitOrReflect();	// Calculate whether to transmit the
 										// photon or reflect it.
-
 			}
-			*/
+
 
 
 			
 			
-			// FIXME: Should probably have all weight deposited at surface if
-			//		  photon leaves medium by total internal reflection.  Also
-            //        the case where it reaches the max depth.
-            
-			// Ensure the photon has not left the medium by either total internal
-			// reflection or transmission (only looking at z-axis).
-			//if (z >= 0 && z <= m_medium->getDepth()) {
-				// Move the photon in the medium.
-				hop();
-
-				// Drop weight of the photon due to an interaction with the medium.
-				drop();
-				
-				// Calculate the new coordinates of photon propagation.
-				spin();
-				
-				// Test whether the photon should continue propagation from the
-				// Roulette rule.
-				performRoulette();
+//			// FIXME: Should probably have all weight deposited at surface if
+//			//		  photon leaves medium by total internal reflection.  Also
+//            //        the case where it reaches the max depth.
+//
+//			// Ensure the photon has not left the medium by either total internal
+//			// reflection or transmission (only looking at z-axis).
+//			//if (z >= 0 && z <= m_medium->getDepth()) {
+//				// Move the photon in the medium.
+//				hop();
+//
+//				// Drop weight of the photon due to an interaction with the medium.
+//				drop();
+//
+//				// Calculate the new coordinates of photon propagation.
+//				spin();
+//
+//				// Test whether the photon should continue propagation from the
+//				// Roulette rule.
+//				performRoulette();
 				
 			//}
 			//else {
@@ -390,7 +389,17 @@ void Photon::specularReflectance(double n1, double n2)
 
 void Photon::transmitOrReflect(void)
 {
-	// XXX: FINISH ME
+	// XXX: Finish me
+}
+
+
+bool Photon::hitMediumBoundary(void)
+{
+	// XXX: Finish me
+	if (x > medim_x_bound || y > medim_y_bound || z > medim_z_bound)
+	{
+
+	}
 }
 
 
@@ -403,7 +412,8 @@ bool Photon::hitLayerBoundary(void)
 	//   much distance is left over from step_size - distance_to_boundary.
 
 	double distance_to_boundary = 0.0;
-	Layer *l = m_medium->getLayerFromDepth(z);
+	double mu_t = layer->getTotalAttenuationCoeff();
+	Layer *layer = m_medium->getLayerFromDepth(z);
 
 
 	// If the direction the photon is traveling is towards the deeper boundary
@@ -411,20 +421,21 @@ bool Photon::hitLayerBoundary(void)
 	// the more superficial boundary of the layer.
 	if (dirz > 0.0)
 	{
-		distance_to_boundary = (l->getDepthEnd() - z) / dirz;
+		distance_to_boundary = (layer->getDepthEnd() - z) / dirz;
 	}
 	else if (dirz < 0.0)
 	{
-		distance_to_boundary = (l->getDepthStart() - z) / dirz;
+		distance_to_boundary = (layer->getDepthStart() - z) / dirz;
 	}
+
 
 	// If the step size of the photon is larger than the distance
 	// to the boundary and we are moving in some direction along
 	// the z-axis (i.e. not parallel to the layer boundary) we calculate
 	// the left over step size and then step the photon to the boundary.
-	if (dirz != 0.0 && step > distance_to_boundary)
+	if (dirz != 0.0 && step > distance_to_boundary*mu_t)
 	{
-		step_remainder = (step - distance_to_boundary)*l->getTotalAttenuationCoeff();
+		step_remainder = (step - (distance_to_boundary*mu_t));
 		step = distance_to_boundary;
 		return true;
 	}

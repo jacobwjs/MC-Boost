@@ -114,7 +114,10 @@ public:
 
 
 	// Check if photon has come into contact with a layer boundary.
-	bool hitLayerBoundary(void);
+	bool 	hitLayerBoundary(void);
+
+	// Check if photon has left the bounds of the medium.
+	bool	hitMediumBoundary(void);
 
 
 	
