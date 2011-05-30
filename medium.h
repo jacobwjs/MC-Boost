@@ -92,7 +92,14 @@ public:
 	// Return layer from depth passed in.
 	Layer * getLayerFromDepth(double depth);
 
+	// Return the layer above the current layer.
+	Layer * getLayerAboveCurrent(double depth);
+
+	// Return the layer below the current layer.
+	Layer * getLayerBelowCurrent(double depth);
+
     // Return the max depth of the medium.
+
     double 	getDepth() {return depth;}
 
     double 	getMediumZaxisBound(void) {return z_bound;}
@@ -104,6 +111,7 @@ public:
 
     // Write photon exit locations and phases to file.
     void	writeExitCoordsAndPhase(double x_disp, double y_disp, double displaced_path_length);
+
 	
 private:
 	double	radial_size;			// Maximum radial size.
@@ -118,9 +126,13 @@ private:
 	
     // The total depth of the medium.
     double depth;
+<<<<<<< Updated upstream
     double x_bound,
            y_bound,
            z_bound;
+=======
+    double x_bound, y_bound, z_bound;
+>>>>>>> Stashed changes
 	
 	// Create a vector to hold the layers of the medium.
 	vector<Layer *> p_layers;
