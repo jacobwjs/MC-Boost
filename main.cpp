@@ -21,7 +21,7 @@
 
 using namespace std;
 
-const int MAX_PHOTONS = 10000000;
+const int MAX_PHOTONS = 1000;
 
 //#define DEBUG 1
 	

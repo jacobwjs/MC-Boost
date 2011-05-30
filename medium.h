@@ -70,9 +70,19 @@ public:
 	// Return layer from depth passed in.
 	Layer * getLayerFromDepth(double depth);
 
+	// Return the layer above the current layer.
+	Layer * getLayerAboveCurrent(double depth);
+
+	// Return the layer below the current layer.
+	Layer * getLayerBelowCurrent(double depth);
+
     // Return the max depth of the medium.
-    double getDepth() {return depth;}
-	
+    double getDepth(void) {return depth;}
+
+    // Return the bounds of the medium.
+    double getXbound(void) {return x_bound;}
+    double getYbound(void) {return y_bound;}
+    double getZbound(void) {return z_bound;}
 	
 private:
 	double	radial_size;			// Maximum radial size.
@@ -87,6 +97,7 @@ private:
 	
     // The total depth of the medium.
     double depth;
+    double x_bound, y_bound, z_bound;
 	
 	// Create a vector to hold the layers of the medium.
 	vector<Layer *> p_layers;

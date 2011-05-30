@@ -51,7 +51,7 @@ public:
 
 	// Decide whether the photon should be transmitted to another layer
 	// or internally reflected.
-	void	transmitOrReflect(void);
+	void	transmitOrReflect(const char *);
 
 	// Reset the Photon attributes so it can be propogated again.
 	void	reset(void);
@@ -76,6 +76,12 @@ public:
 	// Returns a random number 'n': 0 < n < 1
 	double	getRandNum(void);
 	
+	// Return the calculated reflectance.
+	double	getLayerReflectance(void);
+
+	// Return the calculated medium reflectance (the boundary of the tissue).
+	double	getMediumReflectance(void);
+
 	// Return the status of the photon.
 	bool	isAlive(void) {return status;}
 
@@ -89,6 +95,13 @@ public:
 	// Update weight based on specular reflectance.
 	void	specularReflectance(double n1, double n2);
 	
+	// Update the direction cosine when internal reflection occurs.
+	// Note: Assumes depth axis is the z-axis.
+	void	internallyReflect(double axis) {axis = -1*axis;}
+
+	// Transmit the photon.
+	void	transmit(void);
+
 	// Plot the photon's path.
 	void	plotPath(void);
 	
@@ -161,6 +174,11 @@ private:
 	// The azimuthal angle
 	double	psi;
 	
+	// The value of internal reflectance that is compared to a random
+	// number (uniform between (0,1]) to determine if the photon should
+	// be transmitted or reflected on a stochastic basis.
+	double	reflectance;
+
 	
 	// The number of steps this photon has taken while propagating through
 	// the medium.
@@ -183,10 +201,13 @@ private:
 
 
 	// Boost Random Number Library implementation of Mersenne-twister RNG.
-	boost::mt19937 gen;
+	//boost::mt19937 gen;
 
-
+	// Used with the thread safe RNG to track state.
 	unsigned int z1, z2, z3, z4;
+
+	// Tracks whether or not a photon has hit a medium boundary.
+	bool hit_x_bound, hit_y_bound, hit_z_bound;
 
 
 }; 		

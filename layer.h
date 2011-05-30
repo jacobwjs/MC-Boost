@@ -16,10 +16,11 @@ public:
 	double	getAbsorpCoeff(void) 	{return mu_a;}
 	double	getScatterCoeff(void)	{return mu_s;}
 	double	getTotalAttenuationCoeff(void)	{return mu_t;}
-	double	getAlbedo(void) {return albedo;}
-	double	getAnisotropy(void) {return g;}
-	double 	getDepthStart(void) 	{return depth_start;}
-	double  getDepthEnd(void)		{return depth_end;}
+	double	getAlbedo(void) 			{return albedo;}
+	double	getAnisotropy(void) 		{return g;}
+	double 	getDepthStart(void) 		{return depth_start;}
+	double  getDepthEnd(void)			{return depth_end;}
+	double	getRefractiveIndex(void)	{return refractive_index;}
 
 	void	setAbsorpCoeff(const double mu_a);
 	void	setScatterCoeff(const double mu_s);
