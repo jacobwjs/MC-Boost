@@ -2,7 +2,7 @@ CFLAGS = -Wall
 CC = g++
 DEBUG = -g
 RM =/bin/rm -rf
-LIBS =
+LIBS =-lboost_thread
 
 
 OBJS = main.o photon.o layer.o boundary.o medium.o
