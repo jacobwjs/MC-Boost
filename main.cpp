@@ -26,7 +26,7 @@ using namespace std;
 
 
 
-const int MAX_PHOTONS = 100000;
+const int MAX_PHOTONS = 10000000;
 
 
 int main()

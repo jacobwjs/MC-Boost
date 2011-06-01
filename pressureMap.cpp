@@ -109,8 +109,14 @@ double PressureMap::getPressureCartCords(double a, double b, double c)
 	int _x = floor(a/dx);
 	int _z = floor(b/dz);
 	int _y = floor(c/dy);
+
+	// Sanity check.
+	assert((_x <= Nx && _x >= 0) &&
+			(_y <= Ny && _y >= 0) &&
+			(_z <= Nz && _z >= 0));
+
 //	cout << "PressureMap::getPressureCartCords\n";
-//	cout << "a=" << a << ", b=" << b << ", c=" << c << endl;
+	//cout << "a=" << _x << ", b=" << _z << ", c=" << _y << endl;
 	return getPressureFromGrid(_x, _z, _y);
 
 }
