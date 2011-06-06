@@ -175,6 +175,9 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 				// Roulette rule.
 				performRoulette();
 
+				// Capture the locations of all interactions of the photon.
+				//captureLocationCoords();
+
 			}
 			else {
 				hop(); // need to make the move to the boundary,
@@ -182,10 +185,10 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 				// will never be true.
 
 				if (didExitThroughDetectorAperture()) {
-					//writeCoordsToFile();
-					m_medium->writeExitCoordsAndPhase(x_disp,
-														y_disp,
-														displaced_path_length);
+
+					// Capture the location of where the photon exited from the medium
+					// as well as its path length when that occured.
+					captureExitCoordsLengthWeight();
 				}
 
 
@@ -203,11 +206,13 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 		// the medium.
 		//writeCoordsToFile();
 
+
 		// Reset the photon and start propogation over from the beginning.
 		reset();
 
 	} // end for() loop
 
+	writeExitLocationsLengthWeight();
 
 	// This thread has executed all of it's photons, so now we update the global
 	// absorption array in the medium.
@@ -275,7 +280,7 @@ bool Photon::didExitThroughDetectorAperture(void)
 		if ((x_disp >= 3.5 && x_disp <= 5.5) &&
 				(y_disp >= 3.5 && y_disp <= 5.5))
 		{
-			//writeCoordsToFile();
+
 			//cout << "hit aperture" << endl;
 			cnt_through_aperture++;
 			return true;
@@ -335,9 +340,12 @@ void Photon::reset()
 
 
 
-	// Clear the coordinate vector so it does not continuously accumlate
+	// Clear the coordinate vector so it does not continuously accumulate
 	// positions and grow for each photon.
+	// NOTE: We don't need to clear the photon_exit_data each time since
+	//       it only happens once for each photon.
 	coords.clear();
+
 
 	// Randomly set photon trajectory to yield isotropic or anisotropic source.
 	initTrajectory();
@@ -384,14 +392,31 @@ double Photon::getPathLength(double x_dist, double y_dist, double z_dist)
 
 void Photon::captureLocationCoords(void)
 {
-	// Add the coordinates to the STL vector for the displaced and
-	// non-displaced case.
-	//	coords.push_back(x);
-	//	coords.push_back(y);
-	//	coords.push_back(z);
+	// Add the coordinates to the STL vector for the displaced scattering locations.
 	coords.push_back(x_disp);
 	coords.push_back(y_disp);
 	coords.push_back(z_disp);
+}
+
+
+void Photon::captureExitCoordsAndLength(void)
+{
+	// Add the coordinates to the STL vector for the displaced scattering locations
+	// and the displaced length.
+	photon_exit_data.push_back(x_disp);
+	photon_exit_data.push_back(y_disp);
+	photon_exit_data.push_back(displaced_path_length);
+}
+
+
+void Photon::captureExitCoordsLengthWeight(void)
+{
+	// Add the coordinates to the STL vector for the displaced scattering locations
+	// and the displaced length.
+	photon_exit_data.push_back(x_disp);
+	photon_exit_data.push_back(y_disp);
+	photon_exit_data.push_back(displaced_path_length);
+	photon_exit_data.push_back(weight);
 }
 
 // Step photon to new position.
@@ -564,6 +589,17 @@ void Photon::writeCoordsToFile(void)
 	m_medium->writePhotonCoords(coords);
 }
 
+
+// Write exit locations and path lenghts of photons to file.
+void Photon::writeExitLocationsAndLength(void)
+{
+	m_medium->writeExitCoordsAndLength(photon_exit_data);
+}
+
+void Photon::writeExitLocationsLengthWeight(void)
+{
+	m_medium->writeExitCoordsLengthWeight(photon_exit_data);
+}
 
 // FIXME: CURRENTLY ONLY DISPLACING IN ONE DIRECTION.  SHOULD USE A TENSOR.
 void Photon::displacePhotonFromPressure(void)

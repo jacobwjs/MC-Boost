@@ -39,7 +39,7 @@ int main()
 	// Add the layer to the medium.  NOTE:  destruction of the 'Layer' object is
 	// handled in the 'tissue' object.
 							//mu_a, mu_s,  n, start, end
-	tissue->addLayer(new Layer(0.0, 30.0, 1.33, 0,  10));
+	tissue->addLayer(new Layer(0.1, 40.0, 1.33, 0,  10));
 	
 	
 

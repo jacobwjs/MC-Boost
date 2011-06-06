@@ -132,17 +132,36 @@ public:
 
 	// Write the coordinates of each scattering event to file for use
 	// with plotting in matlab.
-	void 	writeCoordsToFile(void);
+	//void 	writephoton_dataToFile(void);
 
 	// Calculate path length of photon from point 'p1' to point 'p2'.
 	double	getPathLength(double x, double y, double z);
 
-	// Add the coordinates of the photon at it's current position.
+	// Add the coordinates of the photon at it's current position
+	// to the 'photon_data' vector.  Used for tracking the positiion of
+	// scattering events in the medium.
 	void	captureLocationCoords(void);
+
+	// Add the coordinates and path length to the vector.
+	void	captureExitCoordsAndLength(void);
+
+	// Add the coordinates, path length, and weight of photon to the vector.
+	void 	captureExitCoordsLengthWeight(void);
 
 	// Check if exit location is through the aperture that will fall
 	// on the detector.
 	bool	didExitThroughDetectorAperture(void);
+
+	// Write the coordinates of this photon to file.
+	void	writeCoordsToFile(void);
+
+	// Write the x-y coordinates of the exit location when the photon left the medium, as well
+	// as its accumulated path length.
+	void	writeExitLocationsAndLength(void);
+
+	// Write the x-y coordinates of the exit location when the photon left the medium, path length
+	// and also the weight of the photon when it exited the medium.
+	void	writeExitLocationsLengthWeight(void);
 
 	
 private:
@@ -225,6 +244,7 @@ private:
 	// Holds the x,y,z coordinates of the photon for each scattering event.
 	// Used to plot the photon's path.
 	vector<double> coords;
+	vector<double> photon_exit_data;
 
 
 }; 		

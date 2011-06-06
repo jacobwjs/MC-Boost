@@ -8,28 +8,21 @@
 
 Medium::Medium()
 {
-
-	this->initCommon();
-	// FIXME:  NOT SURE 'depth' is needed anymore.
-	depth = 10;     // Defualt depth of the medium (cm).
 	z_bound = x_bound = y_bound = 10; // Default bounds of the medium (cm).
-
+	this->initCommon();
 }
 
-Medium::Medium(const int depth, const int x, const int y, const int z)
+Medium::Medium(const int x, const int y, const int z)
 {
-
-	this->initCommon();
-	this->depth = depth;
 	this->z_bound = z;
 	this->y_bound = y;
 	this->x_bound = x;
-
+	this->initCommon();
 }
 
 Medium::~Medium()
 {
-	
+
 	// Free the memory for layers that were added to the medium.
 	for (vector<Layer *>::iterator i = p_layers.begin(); i != p_layers.end(); ++i)
 		delete *i;
@@ -40,8 +33,9 @@ Medium::~Medium()
 		pmap = NULL;
 	}
 
-	// Close the data file that stores photon paths.
+	// Close the various data files.
 	coords_file.close();
+	photon_data_file.close();
 }
 
 
@@ -52,8 +46,8 @@ void Medium::initCommon(void)
 	radial_bin_size = radial_size / num_radial_pos;
 	Cplanar = NULL;  // Planar detector array.
 	pmap = NULL;     // Pointer to a PressureMap() object.
-	coords_file.open("photon-paths.txt");  // File that photon paths are dumped to.
-	exit_location_and_phase_file.open("photon-paths-phase.txt");
+	coords_file.open("photon-paths.txt");
+	photon_data_file.open("photon-exit-data.txt");
 }
 
 
@@ -118,7 +112,7 @@ void Medium::absorbEnergy(const double z, const double energy)
 #ifdef DEBUG
 	cout << "Updating bin...\n";
 #endif
-	
+
 	double r = fabs(z);
 	int ir = (r/radial_bin_size);
 	if (ir >= num_radial_pos) {
@@ -160,7 +154,7 @@ Layer * Medium::getLayerFromDepth(double z)
 		if ((*it)->getDepthStart() <= z && (*it)->getDepthEnd() >= z)
 			break;
 	}
-	
+
 	// Return layer based on the depth passed in.
 	return *it;
 }
@@ -182,10 +176,10 @@ double Medium::getLayerAbsorptionCoeff(double z)
 			break;
 		}
 	}
-	
+
 	// If not found, fail.
 	assert(absorp_coeff != -1);
-	
+
 	// Return the absorption coefficient value.
 	return absorp_coeff;
 }
@@ -207,10 +201,10 @@ double Medium::getLayerScatterCoeff(double z)
 			break;
 		}
 	}
-	
+
 	// If not found, fail.
 	assert(scatter_coeff != -1);
-	
+
 	// Return the scattering coefficient for the layer that resides at depth 'z'.
 	return scatter_coeff;
 }
@@ -232,10 +226,10 @@ double Medium::getAnisotropyFromDepth(double z)
 			break;
 		}
 	}
-	
+
 	// If not found, fail.
 	assert(anisotropy != -1);
-	
+
 	// Return the anisotropy value for the layer that resides at depth 'z'.
 	return anisotropy;
 }
@@ -244,66 +238,99 @@ double Medium::getAnisotropyFromDepth(double z)
 // Write out the photon coordinates to file.
 void Medium::writePhotonCoords(vector<double> &coords)
 {
-	boost::mutex::scoped_lock lock(m_coords_mutex);
+	// Assert that there are 3 fields of data per photon (x, y, z)
+	assert((coords.size() % 3) == 0);
+
+	boost::mutex::scoped_lock lock(m_data_file_mutex);
 
 	//Iterate over all the coordinates in the STL vector and write
 	// to file.
-	for (int i = 0; i < coords.size(); i++) {
+	for (std::vector<int>::size_type i = 0; i < coords.size(); i++) {
 		coords_file << coords[i] << " ";
 	}
-	// Create a new line in the file after this photon's coordinates have been written.
+
+	// Carriage return signifies the end of a photon's path, so that the data file can be
+	// properly parsed to plot photons in 3-D using matlab.
 	coords_file << "\n";
 	coords_file.flush();
 }
 
 // Write out the exit location (i.e. photon coordinates when it left the medium) and phase
 // at the exit point, to file.
-void Medium::writeExitCoordsAndPhase(double x_disp, double y_disp, double displaced_path_length)
+void Medium::writeExitCoordsAndLength(vector<double> &coords_phase)
 {
-	boost::mutex::scoped_lock lock(m_exit_phase_mutex);
+
+	// Assert that there are 3 fields of data per photon (x, y, path_length)
+	assert((coords_phase.size() % 3) == 0);
+
+	boost::mutex::scoped_lock lock(m_data_file_mutex);
 
 	//Iterate over all the coordinates and phases in the STL vector and write
 	// to file.
-	//for (int i = 0; i < exit_and_phase.size(); i++) {
-		exit_location_and_phase_file << fixed << setprecision(5) << x_disp << "\t"
-									 << y_disp << "\t"
-									 << scientific << setprecision(3)
-									 << displaced_path_length << " \n";
-	//}
-	// Create a new line in the file after this photon's coordinates have been written.
-	//exit_location_and_phase_file << "\n";
-	exit_location_and_phase_file.flush();
+	for (std::vector<int>::size_type i = 0; i < coords_phase.size(); i++)
+	{
+
+		photon_data_file << fixed << setprecision(9) << coords_phase[i] << "\t\t";
+		photon_data_file << coords_phase[++i] << "\t\t";
+		photon_data_file << coords_phase[++i] << " \n";
+	}
+
+	photon_data_file.flush();
+}
+
+
+// Write out the exit location (i.e. photon coordinates when it left the medium) and phase
+// at the exit point, to file.
+void Medium::writeExitCoordsLengthWeight(vector<double> &coords_phase_weight)
+{
+	// Assert that there are 4 fields of data per photon (x, y, path_length, weight)
+	assert((coords_phase_weight.size()% 4) == 0);
+
+	boost::mutex::scoped_lock lock(m_data_file_mutex);
+
+	//Iterate over all the coordinates and phases in the STL vector and write
+	// to file.
+	for (std::vector<int>::size_type i = 0; i < coords_phase_weight.size(); i++)
+	{
+
+		photon_data_file << fixed << setprecision(9) << coords_phase_weight[i] << "\t\t";
+		photon_data_file << coords_phase_weight[++i] << "\t\t";
+		photon_data_file << coords_phase_weight[++i] << "\t\t";
+		photon_data_file << coords_phase_weight[++i] << " \n";
+	}
+
+	photon_data_file.flush();
 }
 
 
 void Medium::printGrid(const int numPhotons)
 {
-	
+
 	// Open the file we will write to.
 	ofstream output;
 	output.open("fluences.txt");
-	
+
 	// Print the header information to the file.
 	//output << "r [cm] \t Fsph [1/cm2] \t Fcyl [1/cm2] \t Fpla [1/cm2]\n";
 	//output << "r [cm] \t Fplanar[1/cm^2]\n";
-	
+
 	double mu_a = p_layers[0]->getAbsorpCoeff();
 	double fluencePlanar = 0;
 	double r = 0;
 	double shellVolume = 0;
-	
+
 	for (int ir = 0; ir <= num_radial_pos; ir++) {
 		r = (ir + 0.5)*radial_bin_size;
 		shellVolume = radial_bin_size;
 		fluencePlanar = Cplanar[ir]/numPhotons/shellVolume/mu_a;
-		
+
 		// Print to file with the value for 'r' in fixed notation and having a
 		// precision of 5 decimal places, followed by the fluence in scientific
 		// notation with a precision of 3 decimal places.
 		output << fixed << setprecision(5) << r << "\t \t";
 		output << scientific << setprecision(3) <<  fluencePlanar << "\n";
 	}
-	
+
 	// close the file.
 	output.close();
 }

@@ -7,20 +7,20 @@ clear;
 
 
 % --------------- Load photon exit location and phase data ----------------
-dataFile = 'photon-paths-phase.txt';
+dataFile = 'photon-exit-data.txt';
 data = dlmread(dataFile);
 
 lambda = 780e-7;
  
 % Distance between medium and detector.
-D = 15; % [cm]
+D = 5; % [cm]
 
 
 
 %define camera
 CCDGrid=zeros(100,100);
-CCDdx=5e-3/size(CCDGrid,1);
-CCDdy=5e-3/size(CCDGrid,2);
+CCDdx=2.5e-3/size(CCDGrid,1);
+CCDdy=2.5e-3/size(CCDGrid,2);
 
 % The aperture of the medium (window in which photons leave)
 % is defined as a 3x3cm square centered at x=5,y=5.  Therefore,
@@ -34,7 +34,7 @@ start_x = 5 - (size(CCDGrid,1)/2*CCDdx);
 start_y = 5 - (size(CCDGrid,2)/2*CCDdy);
 
 % only grab a chunk of photons for testing.
-data = data(1:10000,:);
+data = data(1:100,:);
 
 % for each pixel in the x-axis
 for i = 1:size(CCDGrid, 1)
@@ -53,12 +53,14 @@ for i = 1:size(CCDGrid, 1)
             % retrieve the stored path length in them medium.
             path_length = data(k,3);
             
+            % retrieve the weight of the photon.  
+            weight = data(k,4);
+            
             % add the distance from medium to the detector pixel.
             dist_to_pixel = sqrt(D^2 + (x_pixel - x)^2 + (y_pixel - y)^2);
             L = path_length + dist_to_pixel;
             
-            % simulate a random weight for the time being.  
-            weight = 1;
+            
             
             CCDGrid(i,j) = (CCDGrid(i,j) + 1/dist_to_pixel*sqrt(weight)*exp(-(1i)*L*2*pi/lambda));
         end

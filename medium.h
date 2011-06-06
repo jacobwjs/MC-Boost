@@ -103,7 +103,10 @@ public:
     void 	writePhotonCoords(vector<double> &coords);
 
     // Write photon exit locations and phases to file.
-    void	writeExitCoordsAndPhase(double x_disp, double y_disp, double displaced_path_length);
+    void	writeExitCoordsAndLength(vector<double> &coords_phase);
+
+    // Write the photon exit locations, phase and weight to file.
+    void	writeExitCoordsLengthWeight(vector<double> &coords_phase_weight);
 	
 private:
 	double	radial_size;			// Maximum radial size.
@@ -123,18 +126,14 @@ private:
            z_bound;
 	
 	// Create a vector to hold the layers of the medium.
-	vector<Layer *> p_layers;
+	vector<Layer *>p_layers;
 
 	// Mutex to serialize access to the sensor array.
 	boost::mutex m_sensor_mutex;
 
 	// Mutex to serialize access to the data file that is written
-	// by photons to store their coordinates during propagation.
-	boost::mutex m_coords_mutex;
-
-	// Mutex to serialize access to the data file that is written
-	// by photons to store their coordinates during propagation.
-	boost::mutex m_exit_phase_mutex;
+	// by photons.
+	boost::mutex m_data_file_mutex;
 
 	// Create a pointer to a PressureMap object.  For use with
 	// modeling acousto-optics.
@@ -143,7 +142,10 @@ private:
 
 	// File for dumping photon paths to.  Used in the Photon class.
 	ofstream coords_file;
-	ofstream exit_location_and_phase_file;
+
+	// File for dumping data regarding exit location, path length, weight, etc.
+	// to file for post processing in matlab.
+	ofstream photon_data_file;
 
 };
 
