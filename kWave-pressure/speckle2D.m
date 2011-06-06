@@ -15,20 +15,7 @@ lambda = 780e-7;
 % Distance between medium and detector.
 D = 15; % [cm]
 
-% %define surface (apperture)
-% if info.GenerateNewGeneralPattern==1
-% surfaceGrid=ones(50)*info.EFieldStrenght;%Store electric fields with phase
-% surfaceGrid=surfaceGrid.*exp(1i*2*pi*rand(size(surfaceGrid)));
-% %info.phaseOffsetMap=zeros(size(surfaceGrid));
-% info.phaseOffsetMap=2*pi*rand(size(surfaceGrid));
-% info.surfaceGrid=surfaceGrid;
-% info.GenerateNewGeneralPattern=0;
-% end
-% surfaceGrid=info.surfaceGrid;
-% %surfaceGrid=surfaceGrid+0.04*exp(1i*2*pi*rand(size(surfaceGrid)));
-% surfaceGrid=surfaceGrid+info.modulationField;
-% surfaceGrid=surfaceGrid/info.EFieldStrenght;
-% surfacedX=1e-3/size(surfaceGrid,1);%spacing of 'pixels'
+
 
 %define camera
 CCDGrid=zeros(100,100);
@@ -46,8 +33,8 @@ CCDdy=5e-3/size(CCDGrid,2);
 start_x = 5 - (size(CCDGrid,1)/2*CCDdx);
 start_y = 5 - (size(CCDGrid,2)/2*CCDdy);
 
-% only grab 500 photons for testing.
-data = data(1:5000,:);
+% only grab a chunk of photons for testing.
+data = data(1:10000,:);
 
 % for each pixel in the x-axis
 for i = 1:size(CCDGrid, 1)

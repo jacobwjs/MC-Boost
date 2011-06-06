@@ -177,15 +177,15 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 
 			}
 			else {
-				hop(); // needed to make the move to the boundary,
+				hop(); // need to make the move to the boundary,
 				// otherwise the check for 'didExitThroughDetectorAperture()'
 				// will never be true.
 
 				if (didExitThroughDetectorAperture()) {
 					//writeCoordsToFile();
-					(*m_medium).writeExitCoordsAndPhase(x_disp,
-							y_disp,
-							displaced_path_length);
+					m_medium->writeExitCoordsAndPhase(x_disp,
+														y_disp,
+														displaced_path_length);
 				}
 
 
@@ -269,11 +269,11 @@ bool Photon::didExitThroughDetectorAperture(void)
 	// Note: z-axis is along the path of initial propagation (i.e. injection into the medium)
 	//       and the x-axis is taken to be the axis of displacement.
 
-	// Defining the aperture to be 2x2 cm and centered
+	// Defining the aperture to be 1x1 cm and centered
 	// around the injection point (5,5) and sitting on the x-y plane.
 	if (z_disp >= (*m_medium).z_bound) {
-		if ((x_disp >= 3 && x_disp <= 7) &&
-				(y_disp >= 3 && y_disp <= 7))
+		if ((x_disp >= 3.5 && x_disp <= 5.5) &&
+				(y_disp >= 3.5 && y_disp <= 5.5))
 		{
 			//writeCoordsToFile();
 			//cout << "hit aperture" << endl;
