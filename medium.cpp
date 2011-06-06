@@ -7,20 +7,30 @@
 
 Medium::Medium()
 {
-	radial_size = 3.0;	// Total range in which bins are extended (cm).
-	num_radial_pos = MAX_BINS-1;	// Set the number of bins.
-	radial_bin_size = radial_size / num_radial_pos;
-	depth = 10;     // Defualt depth of the medium (cm).
-	Cplanar = NULL;
+    x_bound = y_bound = z_bound = 10;   // defaults to 10x10x10 (cm)
+   	this->initCommon();
 }
 
-Medium::Medium(const int depth)
+Medium::Medium(const int x, const int y, const int z)
 {
-	radial_size = 3.0;	// Total range in which bins are extended (cm).
+    
+    this->x_bound = x;
+    this->y_bound = y;
+    this->z_bound = z;
+	this->initCommon();	
+}
+
+
+
+void Medium::initCommon(void)
+{
+    // Assuming air surrounds tissue.
+    refractive_index = 1.0;
+    
+    radial_size = 3.0;	// Total range in which bins are extended (cm).
 	num_radial_pos = MAX_BINS-1;	// Set the number of bins.
 	radial_bin_size = radial_size / num_radial_pos;
-	this->depth = depth;
-	Cplanar = NULL;
+    Cplanar = NULL;
 }
 
 Medium::~Medium()
@@ -134,7 +144,7 @@ Layer * Medium::getLayerBelowCurrent(double z)
 		// Find the layer we are in within the medium based on the depth (i.e. z)
 		// that was passed in.  Break from the loop when we find the correct layer.
 		if ((*it)->getDepthStart() <= z && (*it)->getDepthEnd() >= z) {
-			return *(it++);
+			return *(++it);
 		}
 	}
 

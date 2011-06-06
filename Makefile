@@ -1,4 +1,4 @@
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 CC = g++
 DEBUG = -g
 RM =/bin/rm -rf
@@ -10,7 +10,6 @@ OBJS = main.o photon.o layer.o boundary.o medium.o
 
 .cpp.o:
 	 $(CC) -c $(CFLAGS) $*.cpp
-#####
 
 
 all : mc-boost 

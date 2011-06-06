@@ -30,11 +30,18 @@ int main()
 	
 
 	// Create the medium in which the photons will be fired.
-	Medium *tissue = new Medium();
+	Medium *tissue = new Medium(10, 10, 10);
 	
 	// Add the layer to the medium.  NOTE:  destruction of the 'Layer' object is
 	// handled in the 'tissue' object.
-	tissue->addLayer(new Layer());
+    
+    // Define an air layer.
+    Layer *airLayer = new Layer(0.0, 0.001, 1.0,  0,    1);
+    // Define a layer in the tissue.
+    Layer *tissueLayer = new Layer(1.0, 100.0, 1.33, 1, 10);
+    
+    tissue->addLayer(airLayer);
+    tissue->addLayer(tissueLayer);
 	
 	
 	// Allocate the planar grid and set it in the tissue.
@@ -50,12 +57,13 @@ int main()
 	
 
 	// Let boost decide how many threads to run on this architecture.
-	const int NUM_THREADS = boost::thread::hardware_concurrency();
-	
+	//const int NUM_THREADS = boost::thread::hardware_concurrency();
+	const int NUM_THREADS = 1;
+    
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
 	const int NUM_PHOTON_OBJECTS = NUM_THREADS;
-
+    
 	Photon photons[NUM_PHOTON_OBJECTS];
 	boost::thread threads[NUM_THREADS];
 
@@ -97,7 +105,9 @@ int main()
 	
 	// Clean up memory allocated memory on the heap.
 	delete tissue;
-	//delete photon;
+    delete airLayer;
+    delete tissueLayer;
+
 	
 	return 0;
 }

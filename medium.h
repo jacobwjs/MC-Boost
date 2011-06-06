@@ -22,9 +22,12 @@ class Medium
 	
 public:
 
-	Medium();
-    Medium(const int depth);
+	Medium(void);
+    Medium(const int x, const int y, const int z);
 	~Medium();
+    
+    // Common initializations for the Medium object.  Called from constructors.
+    void    initCommon(void);
 	
 	// Add some portion of the photon's energy that was lost at this interaction
 	// point (i.e. due to absorption) to the medium's grid.
@@ -77,7 +80,10 @@ public:
 	Layer * getLayerBelowCurrent(double depth);
 
     // Return the max depth of the medium.
-    double getDepth(void) {return depth;}
+    double getDepth(void) {return z_bound;}
+    
+    // Return the refractive index of the medium.
+    double getRefractiveIndex(void) {return refractive_index;}
 
     // Return the bounds of the medium.
     double getXbound(void) {return x_bound;}
@@ -96,7 +102,6 @@ private:
 	//double	Cspherical[MAX_BINS];	// Spherical photon concentration.
 	
     // The total depth of the medium.
-    double depth;
     double x_bound, y_bound, z_bound;
 	
 	// Create a vector to hold the layers of the medium.
@@ -104,6 +109,9 @@ private:
 
 	// Mutex to serialize access to the sensor array.
 	boost::mutex m_mutex;
+    
+    // The refrective index outside of the medium.  We assume air.
+    double refractive_index;
 };
 
 #endif	// MEDIUM_H

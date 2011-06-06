@@ -8,6 +8,7 @@ Layer::Layer(void)
 	// Set scattering and absorption properties of layer.
 	mu_a = 1.0;		// cm^-1
 	mu_s = 100.0;		// cm^-1
+    mu_t = mu_a + mu_s;
 
 	
 	albedo = mu_s/(mu_s + mu_a);

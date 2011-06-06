@@ -23,6 +23,12 @@
 
 #define SIGN(x)           ((x)>=0 ? 1:-1)
 
+typedef struct {
+    double x;
+    double y;
+    double z;
+} injectionCoords;
+
 class Photon
 {
 public:
@@ -100,7 +106,7 @@ public:
 	void	internallyReflect(double axis) {axis = -1*axis;}
 
 	// Transmit the photon.
-	void	transmit(void);
+	void	transmit(const char *type);
 
 	// Plot the photon's path.
 	void	plotPath(void);
@@ -178,6 +184,9 @@ private:
 	// number (uniform between (0,1]) to determine if the photon should
 	// be transmitted or reflected on a stochastic basis.
 	double	reflectance;
+    
+    // Transmission angle for a photon when it hits a layer boundary.
+    double transmission_angle;
 
 	
 	// The number of steps this photon has taken while propagating through
@@ -208,6 +217,9 @@ private:
 
 	// Tracks whether or not a photon has hit a medium boundary.
 	bool hit_x_bound, hit_y_bound, hit_z_bound;
+    
+    
+    
 
 
 }; 		
