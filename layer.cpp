@@ -19,6 +19,9 @@ Layer::Layer(void)
 	
 	// The depth at which this layer ends (cm).
 	depth_end = 10;
+
+	// Impedance of the layer.
+	impedance = 1.63e6;
 }
 
 Layer::Layer(double mu_a, double mu_s, double refractive_index,

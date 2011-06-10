@@ -27,7 +27,7 @@ public:
 	friend class Photon;
 
 	Medium();
-    Medium(const int depth, const int x, const int y, const int z);
+    Medium(const int x, const int y, const int z);
 	~Medium();
 	
 	// Common values to be used with the constructors.

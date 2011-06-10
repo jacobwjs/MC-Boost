@@ -451,6 +451,7 @@ void Photon::hop()
 	// Calculate the path length of the photon WITHOUT displacement.
 	original_path_length += getPathLength((x - temp_x), (y - temp_y), (z - temp_z));
 
+	// FIXME: Does this still need to be here???
 	if (z_disp > 0 && z_disp < 10 && x_disp > 0 && x_disp < 10 && y_disp > 0 && y_disp < 10) {
 		// Move the photon to the new position based on the displacement from
 		// the ultrasound wave.
@@ -478,8 +479,7 @@ void Photon::drop()
 	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
 	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
 
-	//double mu_a = 1.0;		// cm^-1
-	//double mu_s = 100.0;		// cm^-1
+
 
 	// Calculate the albedo and remove a portion of the photon's weight for this
 	// interaction.
@@ -607,18 +607,19 @@ void Photon::displacePhotonFromPressure(void)
 	// Get the local pressure from the grid based on the coordinate of the photon.
 	double pressure = m_medium->getPressureFromCartCoords(x_disp, y_disp, z_disp);
 
-	// Impedance of the tissue.
-	double impedance = 1.63e6;
 
-	// FIXME: THIS SHOULD NOT BE HARD CODED.
+	Layer *layer = m_medium->getLayerFromDepth(z_disp);
+	// Impedance of the tissue.
+	double impedance = layer->getImpedance();
+
 	// Frequency of the ultrasound transducer.
-	double freq = 5e6;
+	static double transducer_freq = m_medium->pmap->getTransducerFreq();
 
 	// Displace the photon in the x-axis based on the pressure.
 	// Note: Since we are firing the photons into the medium normal
 	//		 to the propagation of the ultrasound wave, we displace on the
-	//		 x-axis.
-	double displacement = (abs(pressure)*1e6)/(2*Pi*freq*impedance);
+	//		 x-axis.  Also, multiplication by 100 puts the displacement from meters to cm.
+	double displacement = 100*(pressure*1e6)/(2*Pi*transducer_freq*impedance); // [cm]
 	x_disp += displacement;
 
 }

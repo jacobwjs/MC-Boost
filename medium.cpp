@@ -81,6 +81,7 @@ void Medium::loadPressure(void)
 {
 	//cout << "LoadPressure\n";
 	assert(pmap != NULL);
+	assert()
 	pmap->loadPressureFromKWave();
 }
 

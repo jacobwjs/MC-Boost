@@ -23,22 +23,44 @@ class PressureMap
 {
 public:
 	PressureMap();
-	PressureMap(const char *filename);
+	PressureMap(const string &filename, const int x, const int z, const int y, const int dimension);
 	~PressureMap();
 
 	void 	loadPressureFromKWave(void);
 	double 	getPressureFromGrid(int x, int z, int y);
 	double 	getPressureCartCords(double x, double z, double y);
+	int		getXBound(void) {return x_bound;}
+	int		getYBound(void)	{return y_bound;}
+	int		getZBound(void) {return z_bound;}
+	double	getTransducerFreq(void) {return freq;}
+
+	// Set the frequency of the transducer used to create the pressure map in k-Wave.
+	void	setTransducerFreq(double freq) {this->freq = freq;}
 
 
 
 private:
 	void init(void);	// Common init function for constructors of the class.
 
+	// Holds the pressure values obtained from k-Wave in a 3-dimensional grid
+	// allowing us to index into the grid based on the coordinates of the phton
+	// and retrieve the localized pressure.
 	three_dim_array * pgrid;
+
+	// The bounds of the pressure grid [cm].
+	int x_bound, y_bound, z_bound;
+
+	// The number of voxels in the x, y, and z directions [cm].
 	int Nx, Nz, Ny;
+
+	// The voxel size [cm].
 	double dx, dz, dy;
+
+	// Frequency of the transducer that produced the pressure map.
+	double freq;
+
 	ifstream pressure_file;
+	// Holds the name of the text file that contains the pressure values.
 	string p_file;
 
 };

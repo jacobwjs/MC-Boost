@@ -11,39 +11,37 @@ PressureMap::PressureMap()
 {
 	// Initialize the data structures and values for the pressure map.
 	this->init();
+}
+
+
+PressureMap::PressureMap(const string &filename, const int Nx, const int Nz, const int Ny, const int dimension)
+{
+	// Assign the number of grid points (pixels in k-wave) used in the simulation.
+	this->Nx = Nx;
+	this->Ny = Ny;
+	this->Nz = Nz;
+
+	x_bound = y_bound = z_bound = dimension;
 
 	// FIXME: SHOULD USE BOOST FILESYSTEM TO GET initial_path AND DECIDE
 	//        WHAT FILE TO LOAD BASED ON CURRENT WORKING DIRECTORY.
 	// Assign the name to the pressure file.
-	p_file.append("pressure-at-25us.txt");
-}
+	p_file = filename;
 
-
-PressureMap::PressureMap(const char *filename)
-{
 	// Initialize the data structures and values for the pressure map.
 	this->init();
-
-	// FIXME: SHOULD USE BOOST FILESYSTEM TO GET initial_path AND DECIDE
-	//        WHAT FILE TO LOAD BASED ON CURRENT WORKING DIRECTORY.
-	// Assign the name to the pressure file.
-	p_file.append(filename);
-
 }
+
 
 void PressureMap::init(void)
 {
-	// FIXME:  THESE SHOULD NOT BE HARD CODED.
-	Nx = Nz = Ny = 64;
-	dx = dz = dy = 0.16; // [cm] (note: 100e-3/Nx in centimeters is 0.16;
+
+	dx = x_bound/Nx; // [cm] (note: 20e-3/Nx in centimeters is 0.16;
+	dy = y_bound/Ny;
+	dz = z_bound/Nz;
 	pgrid = new three_dim_array (boost::extents[Nx][Nz][Ny]);
-
-	// Default location of where pressure files are located.  That is,
-	// the current working directory of the executable.
-	// FIXME: SHOULD USE BOOST FILESYSTEM TO REMAIN PLATFORM AGNOSTIC.
-	p_file = "C:/Users/StaleyJW/Desktop/Software/MC-Boost/kWave-pressure/";
-
 }
+
 
 PressureMap::~PressureMap()
 {

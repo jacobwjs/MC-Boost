@@ -32,21 +32,32 @@ const int MAX_PHOTONS = 1000000;
 int main()
 {
 
-
+	// The bounds of the simulation grid (i.e. medium).
+	const int X = 2;
+	const int Y = 2;
+	const int Z = 2;
 	// Create the medium in which the photons will be fired.
-	Medium *tissue = new Medium();
+	Medium *tissue = new Medium(X, Y, Z);
 	
-	// Add the layer to the medium.  NOTE:  destruction of the 'Layer' object is
-	// handled in the 'tissue' object.
-							//mu_a, mu_s,  n, start, end
-	tissue->addLayer(new Layer(0.1, 40.0, 1.33, 0,  10));
+	// Add the layer to the medium.
+	// NOTE:  destruction of the 'Layer' object is
+	// 		  handled in the 'tissue' object.
+							//mu_a, mu_s,  n,  start, end
+	tissue->addLayer(new Layer(0.1, 100.0, 1.33, 0,  2));
 	
 	
 
 	// Add the pressure map object to the medium and load the pressure data.
 	//tissue->addPressureMap(new PressureMap("testing.txt"));
-	tissue->addPressureMap(new PressureMap("pressure-at-25us.txt"));
+	const int pgrid_x = 64;
+	const int pgrid_y = 64;
+	const int pgrid_z = 64;
+	string pressure_file = "C:/Users/StaleyJW/Desktop/Software/MC-Boost/kWave-pressure/pressure-at-25us.txt";
+	PressureMap *pmap = new PressureMap(pressure_file, pgrid_x, pgrid_z, pgrid_y, 2);
+	pmap->setTransducerFreq(2.5e6); // Hz
+	tissue->addPressureMap(pmap);
 	tissue->loadPressure();
+
 
 										// x,  y,  z (photon)
 	//cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
@@ -113,8 +124,10 @@ int main()
 	tissue->printGrid(MAX_PHOTONS);
 	
 	// Clean up memory allocated memory on the heap.
-	delete tissue;
-	
+	if (tissue)
+		delete tissue;
+	if (pmap)
+		delete pmap;
 
 
 

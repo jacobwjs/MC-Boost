@@ -62,7 +62,7 @@ for i = 1:size(CCDGrid, 1)
             
             
             
-            CCDGrid(i,j) = (CCDGrid(i,j) + 1/dist_to_pixel*sqrt(weight)*exp(-(1i)*L*2*pi/lambda));
+            CCDGrid(i,j) = (CCDGrid(i,j) + 1/dist_to_pixel*weight*exp(-(1i)*L*2*pi/lambda));
         end
         
     end
