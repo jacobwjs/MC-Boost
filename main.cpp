@@ -26,7 +26,7 @@ using namespace std;
 
 
 
-const int MAX_PHOTONS = 1000000;
+const int MAX_PHOTONS = 1000;
 
 
 int main()
@@ -49,12 +49,13 @@ int main()
 
 	// Add the pressure map object to the medium and load the pressure data.
 	//tissue->addPressureMap(new PressureMap("testing.txt"));
-	const int pgrid_x = 64;
+	const int pgrid_x = 64;  // Number of pixels in the kWave pressure grid.
 	const int pgrid_y = 64;
 	const int pgrid_z = 64;
-	string pressure_file = "C:/Users/StaleyJW/Desktop/Software/MC-Boost/kWave-pressure/pressure-at-25us.txt";
-	PressureMap *pmap = new PressureMap(pressure_file, pgrid_x, pgrid_z, pgrid_y, 2);
-	pmap->setTransducerFreq(2.5e6); // Hz
+	//string pressure_file = "C:/Users/StaleyJW/Desktop/Software/MC-Boost/kWave-pressure/pressure-at-25us.txt";
+	string pressure_file = "pressure-at-25us.txt";
+    PressureMap *pmap = new PressureMap(pressure_file, pgrid_x, pgrid_z, pgrid_y, 2);
+	pmap->setTransducerFreq(2.5e6); // The frequency of the transducer used to generate the pressure map.
 	tissue->addPressureMap(pmap);
 	tissue->loadPressure();
 

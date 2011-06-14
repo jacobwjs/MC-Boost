@@ -2,10 +2,10 @@ CFLAGS = -Wall
 CC = g++
 DEBUG = -g
 RM =/bin/rm -rf
-LIBS =
+LIBS = -lboost_thread
 
 
-OBJS = main.o photon.o layer.o boundary.o medium.o
+OBJS = main.o photon.o layer.o boundary.o medium.o pressureMap.o
 #OBJS := $(wildcard *.o)
 
 .cpp.o:
