@@ -3,6 +3,7 @@
 #define PHOTON_H
 
 #include "medium.h"
+#include "layer.h"
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
@@ -27,7 +28,7 @@ typedef struct {
     double x;
     double y;
     double z;
-} injectionCoords;
+} InjectionCoords;
 
 class Photon
 {
@@ -36,9 +37,11 @@ public:
 	Photon(void);
 	Photon(double x, double y, double z,
 		   double dirx, double diry, double dirz);
-	
 	// Destructor
 	~Photon(void);
+    
+    // Common function to initialize basic values of the photon object.
+    void    initCommon(void);
 	
 	// Set the number of iterations this Photon (i.e. thread) will run.
 	void	setIterations(const int n);
@@ -101,10 +104,15 @@ public:
 	// Update weight based on specular reflectance.
 	void	specularReflectance(double n1, double n2);
 	
-	// Update the direction cosine when internal reflection occurs.
-	// Note: Assumes depth axis is the z-axis.
-	void	internallyReflect(double axis) {axis = -1*axis;}
+	// Update the direction cosine when internal reflection occurs on z-axis.
+	void	internallyReflectZ(void) {dirz = -1*dirz;}
 
+	// Update the direction cosine when internal reflection occurs on y-axis.
+	void	internallyReflectY(void) {diry = -1*diry;}
+    
+	// Update the direction cosine when internal reflection occurs on z-axis.
+	void	internallyReflectX(void) {dirx = -1*dirx;}
+    
 	// Transmit the photon.
 	void	transmit(const char *type);
 
@@ -115,7 +123,12 @@ public:
 	// 'state[1,2,3,4]' represent the random initial values for the state
 	// of the random number generator.
 	void	injectPhoton(Medium *m, const int num_iterations, unsigned int state1, unsigned int state2,
-							unsigned int state3, unsigned int state4);
+							unsigned int state3, unsigned int state4, InjectionCoords &coords);
+    
+    
+    // Hop, Drop, Spin, Roulette and everything in between.
+    // NOTE: 'iterations' are the number of photons simulated by this 'Photon' object.
+    void    propagatePhoton(const int iterations);
 	
 	// Sets initial trajectory values.
 	void	initTrajectory(void);
@@ -219,7 +232,12 @@ private:
 	bool hit_x_bound, hit_y_bound, hit_z_bound;
     
     
+    // Pointer to the current layer the photon is in.
+    Layer *currLayer;
     
+    // Structure that contains the cartesian coordinates of the injection point of each
+    // photon into the medium.
+    InjectionCoords illuminationCoords;
 
 
 }; 		

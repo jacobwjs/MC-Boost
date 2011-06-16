@@ -27,21 +27,51 @@ const int MAX_PHOTONS = 1000;
 	
 int main()
 {
-	
-
+	// The dimensions of the medium.
+    double X_dim = 2.0; // [cm]
+    double Y_dim = 2.0; // [cm]
+    double Z_dim = 2.0; // [cm]
+    
 	// Create the medium in which the photons will be fired.
-	Medium *tissue = new Medium(10, 10, 10);
+	Medium *tissue = new Medium(X_dim, Y_dim, Z_dim);
 	
 	// Add the layer to the medium.  NOTE:  destruction of the 'Layer' object is
 	// handled in the 'tissue' object.
     
     // Define an air layer.
-    Layer *airLayer = new Layer(0.0, 0.001, 1.0,  0,    1);
+    double mu_a = 0.0;
+    double mu_s = 0.001;
+    double refractive_index = 1.0;
+    double start_depth = 0; // [cm]
+    double end_depth = 0.5; // [cm]
+    Layer *airLayer = new Layer(mu_a, mu_s, refractive_index, start_depth, end_depth);
+    
     // Define a layer in the tissue.
-    Layer *tissueLayer = new Layer(1.0, 100.0, 1.33, 1, 10);
+    mu_a = 1.0;
+    mu_s = 33.3;
+    refractive_index = 1.33;
+    start_depth = 0.5; // [cm]
+    end_depth = 1.0;   // [cm]
+    Layer *tissueLayer1 = new Layer(mu_a, mu_s, refractive_index, start_depth, end_depth);
+
+    
+    // Define a layer in the tissue.
+    mu_a = 2.0;
+    mu_s = 55;
+    refractive_index = 1.54;
+    start_depth = 1.0; // [cm]
+    end_depth = 2.0;   // [cm]
+    Layer *tissueLayer2 = new Layer(mu_a, mu_s, refractive_index, start_depth, end_depth);
     
     tissue->addLayer(airLayer);
-    tissue->addLayer(tissueLayer);
+    tissue->addLayer(tissueLayer1);
+    tissue->addLayer(tissueLayer2);
+    
+    // Define the initial location of injection of the photons.
+    InjectionCoords coords;
+    coords.x = X_dim/2; // Centered
+    coords.y = Y_dim/2; // Centered
+    coords.z = 0.001;   // Just below the 'air' layer.
 	
 	
 	// Allocate the planar grid and set it in the tissue.
@@ -85,7 +115,7 @@ int main()
 
 		cout << "Launching photon object" << i << " iterations: " << MAX_PHOTONS/NUM_THREADS << endl;
 		threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS,
-									s1, s2, s3, s4);
+									s1, s2, s3, s4, coords);
 
 	}
 
@@ -101,13 +131,13 @@ int main()
 	cout << "Time elapsed: " << end << endl;
 	
 	// Print the matrix of the photon absorptions to file.
-	tissue->printGrid(MAX_PHOTONS);
+	//tissue->printGrid(MAX_PHOTONS);
 	
 	// Clean up memory allocated memory on the heap.
 	delete tissue;
     delete airLayer;
-    delete tissueLayer;
-
+    delete tissueLayer1;
+    delete tissueLayer2;
 	
 	return 0;
 }

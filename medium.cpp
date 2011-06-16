@@ -99,6 +99,10 @@ Layer * Medium::getLayerAboveCurrent(double z)
 	// And we should return NULL since there is no layer above us.
 	if (p_layers.size() == 1)
 		return NULL;
+    
+    // If we are at the top of the medium there is no layer above, so return NULL;
+    if (z == 0)
+        return NULL;
 
 	// Otherwise we walk the vector and return 'trailer' since it is the
 	// one before the current layer (i.e. 'it').
@@ -137,6 +141,11 @@ Layer * Medium::getLayerBelowCurrent(double z)
 	// And we should return NULL since there is no layer below us.
 	if (p_layers.size() == 1)
 		return NULL;
+    
+    // The case where there is no layer below is since we are at the bottom of the
+    // medium.
+    if (z == z_bound)
+        return NULL;
 
 
 	vector<Layer *>::iterator it;
