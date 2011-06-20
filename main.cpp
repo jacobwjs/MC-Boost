@@ -21,7 +21,7 @@
 
 using namespace std;
 
-const int MAX_PHOTONS = 1000;
+const int MAX_PHOTONS = 1000000;
 
 //#define DEBUG 1
 	
@@ -42,26 +42,29 @@ int main()
     double mu_a = 0.0;
     double mu_s = 0.001;
     double refractive_index = 1.0;
+    double anisotropy = 1.0;
     double start_depth = 0; // [cm]
     double end_depth = 0.5; // [cm]
-    Layer *airLayer = new Layer(mu_a, mu_s, refractive_index, start_depth, end_depth);
+    Layer *airLayer = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
     
     // Define a layer in the tissue.
     mu_a = 1.0;
     mu_s = 33.3;
     refractive_index = 1.33;
+    anisotropy = 0.9;
     start_depth = 0.5; // [cm]
     end_depth = 1.0;   // [cm]
-    Layer *tissueLayer1 = new Layer(mu_a, mu_s, refractive_index, start_depth, end_depth);
+    Layer *tissueLayer1 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
 
     
     // Define a layer in the tissue.
     mu_a = 2.0;
     mu_s = 55;
     refractive_index = 1.54;
+    anisotropy = 0.8;
     start_depth = 1.0; // [cm]
     end_depth = 2.0;   // [cm]
-    Layer *tissueLayer2 = new Layer(mu_a, mu_s, refractive_index, start_depth, end_depth);
+    Layer *tissueLayer2 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
     
     tissue->addLayer(airLayer);
     tissue->addLayer(tissueLayer1);
@@ -71,7 +74,7 @@ int main()
     InjectionCoords coords;
     coords.x = X_dim/2; // Centered
     coords.y = Y_dim/2; // Centered
-    coords.z = 0.001;   // Just below the 'air' layer.
+    coords.z = 0.00001;   // Just below the surface of the 'air' layer.
 	
 	
 	// Allocate the planar grid and set it in the tissue.
@@ -87,8 +90,8 @@ int main()
 	
 
 	// Let boost decide how many threads to run on this architecture.
-	//const int NUM_THREADS = boost::thread::hardware_concurrency();
-	const int NUM_THREADS = 1;
+	const int NUM_THREADS = boost::thread::hardware_concurrency();
+	//const int NUM_THREADS = 1;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
@@ -135,9 +138,9 @@ int main()
 	
 	// Clean up memory allocated memory on the heap.
 	delete tissue;
-    delete airLayer;
-    delete tissueLayer1;
-    delete tissueLayer2;
+    //delete airLayer;
+    //delete tissueLayer1;
+    //delete tissueLayer2;
 	
 	return 0;
 }

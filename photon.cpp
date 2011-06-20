@@ -166,15 +166,18 @@ void Photon::propagatePhoton(const int iterations)
             
             if (hitLayerBoundary())
 			{
+#ifdef DEBUG
 				cout << "Hit layer boundary\n";
+#endif
                 
 				hop();	// Move the photon to the layer boundary.
 				transmitOrReflect("layer");
 			}
             else if (hitMediumBoundary())
 			{
-				
+#ifdef DEBUG			
 				cout << "Hit medium boundary\n";
+#endif
 				hop();  // Move the photon to the medium boundary.
 				transmitOrReflect("medium");
 			}
@@ -321,11 +324,9 @@ void Photon::drop()
     
 	// Update the current values of the absorption and scattering coefficients
 	// based on the depth in the medium (i.e. which layer the photon is in).
-	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
-	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
+    double mu_a = currLayer->getAbsorpCoeff();  // cm^-1
+    double mu_s = currLayer->getScatterCoeff(); // cm^-1
     
-	//double mu_a = 1.0;		// cm^-1
-	//double mu_s = 100.0;		// cm^-1
     
 	// Calculate the albedo and remove a portion of the photon's weight for this
 	// interaction.
@@ -359,8 +360,7 @@ void Photon::spin()
     
 	// Get the anisotropy factor from the layer that resides at depth 'z' in
 	// the medium.
-	//double g = m_medium->getAnisotropyFromDepth(z);
-	double g = 0.90;
+    double g = currLayer->getAnisotropy();
     
 	double rnd = getRandNum();
     
@@ -414,7 +414,9 @@ void Photon::performRoulette(void)
 			weight /= CHANCE;
 		}
 		else {
+#ifdef DEBUG
             cout << "Photon died in Roulette\n";
+#endif
 			status = DEAD;
 		}
 	}
@@ -434,22 +436,46 @@ void Photon::specularReflectance(double n1, double n2)
 // XXX: Finish me
 void Photon::transmit(const char *type)
 {
+    // 'tempLayer' is used 
+    Layer *tempLayer = NULL;
+    
     if (strcmp("layer", type) == 0)
     {
+#ifdef DEBUG
         cout << "Transmitting through layer\n";
+#endif
         dirz = cos(transmission_angle);
         // If we transmit through the layer to another we must update
         // the current layer pointer of the photon so it will correctly 
         // calculate the next step size.
         if (dirz > 0)
-            currLayer = m_medium->getLayerBelowCurrent(z);
+            tempLayer = m_medium->getLayerBelowCurrent(z);
         else
-            currLayer = m_medium->getLayerAboveCurrent(z);
+            tempLayer = m_medium->getLayerAboveCurrent(z);
         
+        
+        // If 'tempLayer' is NULL we are at the edge of the medium since
+        // the layer above or below does not exist.  Therefore we decide if the
+        // photon should reflect or transmit from the medium boundary.
+        if (tempLayer == NULL) {
+            // Since 'tempLayer' is NULL we have tried to retrieve a layer outside of the
+            // medium's bounds.  Therefore 'currLayer' still is valid (i.e. not NULL) and we check
+            // if the photon should reflect or transmit through the medium.
+            if (hitMediumBoundary())
+                hop();
+                transmitOrReflect("medium");
+        }
+        else
+        {
+            currLayer = tempLayer;
+        }
+                    
     }
     else if (strcmp("medium", type) == 0)
     {
+#ifdef DEBUG
         cout << "Transmitting through medium boundary\n";
+#endif
         this->status = DEAD;
     }
     
@@ -467,7 +493,9 @@ void Photon::transmitOrReflect(const char *type)
 		// Stochastically determine if the photon should be transmitted or reflected.
 		if (getLayerReflectance() > getRandNum())
 		{
+#ifdef DEBUG
             cout << "Internally reflecting\n";
+#endif
 			internallyReflectZ();
             
 			// Since the photon has interacted with the tissue we deposit weight.
@@ -490,7 +518,9 @@ void Photon::transmitOrReflect(const char *type)
 		// Stochastically determine if the photon should be transmitted or reflected.
 		if (getMediumReflectance() > getRandNum())
 		{
+#ifdef DEBUG
             cout << "Reflecting photon on medium boundary\n";
+#endif
 			// Depending on which medium boundary was hit, we reflect on that axis,
             // change the direction of the direction cosign, and reset the boolean flag.
             if (hit_x_bound)
@@ -638,7 +668,7 @@ double Photon::getLayerReflectance(void)
         // to the next layer.
         transmission_angle = asin(refract_index_n1/refract_index_n2 * sin(incident_angle));
         specularReflectance(refract_index_n1, refract_index_n2);
-        //transmit("layer");
+
         // Since we know we transmit, set reflectance to zero.
         reflectance = 0;
     }
@@ -706,7 +736,7 @@ bool Photon::hitMediumBoundary(void)
 	else if (step*dirz + z >= z_bound || step*dirz + z <= 0)
 	{
 		hit_z_bound = true;
-		if (dirz > 0) // Moving towards positive y_bound
+		if (dirz > 0) // Moving towards positive z_bound
 			distance_to_boundary = (z_bound - z) / dirz;
 		else
 			distance_to_boundary = abs(z / dirz);
@@ -722,8 +752,9 @@ bool Photon::hitMediumBoundary(void)
 	// to the boundary and we are moving in some direction along
 	// the axis we calculate the left over step size and then step
 	// the photon to the boundary with the next call to 'hop()'.
-	if (step > distance_to_boundary && distance_to_boundary != 0)
-	{
+	//if (step > distance_to_boundary && distance_to_boundary != 0)
+	if (step > distance_to_boundary)
+    {
 		step_remainder = (step - distance_to_boundary)*mu_t;
 		step = distance_to_boundary;
 		return true;

@@ -22,14 +22,14 @@ Layer::Layer(void)
 	depth_end = 10;
 }
 
-Layer::Layer(double mu_a, double mu_s, double refractive_index,
+Layer::Layer(double mu_a, double mu_s, double refractive_index, double anisotropy,
 			 double depth_start, double depth_end)
 {
 	this->mu_a = mu_a;
 	this->mu_s = mu_s;
 	this->mu_t = mu_a + mu_s;
 	albedo = mu_s/(mu_s + mu_a);
-	g = 0.90;
+	g = anisotropy;
 	this->refractive_index = refractive_index;
 	
 	this->depth_start = depth_start;

@@ -8,7 +8,7 @@ class Layer
 
 public:
 	Layer(void);
-	Layer(double mu_a, double mu_s, double ref_index,
+	Layer(double mu_a, double mu_s, double ref_index, double anisotropy,
 		  double depth_start, double depth_end);
 	~Layer(void);
 
