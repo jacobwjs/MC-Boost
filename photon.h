@@ -4,6 +4,7 @@
 
 #include "medium.h"
 #include "layer.h"
+#include "coordinates.h"
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
@@ -24,11 +25,10 @@
 
 #define SIGN(x)           ((x)>=0 ? 1:-1)
 
-typedef struct {
-    double x;
-    double y;
-    double z;
-} InjectionCoords;
+
+
+
+//typedef struct coords InjectionCoords;
 
 class Photon
 {
@@ -70,14 +70,14 @@ public:
 	void	performRoulette(void);
 
 	// Return the cartesian coordinates
-	double	getX(void) {return x;}
-	double	getY(void) {return y;}
-	double	getZ(void) {return z;}
+	double	getX(void) {return location.x;}
+	double	getY(void) {return location.y;}
+	double	getZ(void) {return location.z;}
 
 	// Return the direction cosines
-	double	getDirX(void) {return dirx;}
-	double	getDirY(void) {return diry;}
-	double	getDirZ(void) {return dirz;}
+	double	getDirX(void) {return direction.x;}
+	double	getDirY(void) {return direction.y;}
+	double	getDirZ(void) {return direction.z;}
 
 	// Return the current weight of the photon
 	double	getWeight(void) {return weight;}
@@ -105,13 +105,13 @@ public:
 	void	specularReflectance(double n1, double n2);
 	
 	// Update the direction cosine when internal reflection occurs on z-axis.
-	void	internallyReflectZ(void) {dirz = -1*dirz;}
+	void	internallyReflectZ(void) {direction.z = -1*direction.z;}
 
 	// Update the direction cosine when internal reflection occurs on y-axis.
-	void	internallyReflectY(void) {diry = -1*diry;}
+	void	internallyReflectY(void) {direction.y = -1*direction.y;}
     
 	// Update the direction cosine when internal reflection occurs on z-axis.
-	void	internallyReflectX(void) {dirx = -1*dirx;}
+	void	internallyReflectX(void) {direction.x = -1*direction.x;}
     
 	// Transmit the photon.
 	void	transmit(const char *type);
@@ -123,7 +123,7 @@ public:
 	// 'state[1,2,3,4]' represent the random initial values for the state
 	// of the random number generator.
 	void	injectPhoton(Medium *m, const int num_iterations, unsigned int state1, unsigned int state2,
-							unsigned int state3, unsigned int state4, InjectionCoords &coords);
+							unsigned int state3, unsigned int state4, coords &c);
     
     
     // Hop, Drop, Spin, Roulette and everything in between.
@@ -150,6 +150,13 @@ public:
 
 	// Check if photon has left the bounds of the medium.
 	bool	hitMediumBoundary(void);
+    
+    
+    // Store the energy lost into a local array that will be written to a global array
+    // for all photons once they are DEAD.
+    // This relieves contention between threads trying to update a single global data
+    // structure and improves speed.
+    void    updateLocalWeightArray(const double absorbed);
 
 
 	
@@ -162,14 +169,14 @@ private:
 	// Holds value of number of iterations thus far.
 	int cnt;	
 	
-	// Location of the photon.
-	double	x, y, z;
+	// Structure that holds the location of the photon.
+    coords location;
 	
 	// Radial position.
 	double r;
 	
-	// Direction of the photon.
-	double	dirx, diry, dirz;
+	// Structure that holds the direction cosines of the photon.
+    directionCos   direction;
 	
 	// Weight of the photon.
 	double	weight;
@@ -237,8 +244,7 @@ private:
     
     // Structure that contains the cartesian coordinates of the injection point of each
     // photon into the medium.
-    InjectionCoords illuminationCoords;
-
+    coords illuminationCoords;
 
 }; 		
 

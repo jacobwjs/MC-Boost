@@ -13,18 +13,24 @@
 #include "photon.h"
 #include "medium.h"
 #include "layer.h"
+#include "sphere.h"
+#include "coordinates.h"
 #include <cmath>
 #include <time.h>
 #include <iostream>
 #include <vector>
 #include <boost/thread/thread.hpp> 
-
 using namespace std;
+
 
 const int MAX_PHOTONS = 1000000;
 
 //#define DEBUG 1
-	
+
+
+
+
+
 int main()
 {
 	// The dimensions of the medium.
@@ -66,15 +72,31 @@ int main()
     end_depth = 2.0;   // [cm]
     Layer *tissueLayer2 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
     
+    // Define an absorber to place in a layer.
+    mu_a = 3.0; // cm^-1
+    mu_s = 100; // cm^-1
+    anisotropy = 0.9;
+    double radius = 0.05;   // [cm]
+    coords sphereCenter;
+    sphereCenter.x = 1.5;
+    sphereCenter.y = 1.5;
+    sphereCenter.z = 1.5;
+    Absorber *sphereAbsorber = new Sphere(radius, sphereCenter);
+    
+    // Add absorber to layer 2 at location x=1.5, y=1.5, z=1.5;
+    tissueLayer2->addAbsorber(sphereAbsorber);
+    
+    
+    // Add the layers to the medium.
     tissue->addLayer(airLayer);
     tissue->addLayer(tissueLayer1);
     tissue->addLayer(tissueLayer2);
     
     // Define the initial location of injection of the photons.
-    InjectionCoords coords;
-    coords.x = X_dim/2; // Centered
-    coords.y = Y_dim/2; // Centered
-    coords.z = 0.00001;   // Just below the surface of the 'air' layer.
+    coords injectionCoords;
+    injectionCoords.x = X_dim/2; // Centered
+    injectionCoords.y = Y_dim/2; // Centered
+    injectionCoords.z = 0.00001;   // Just below the surface of the 'air' layer.
 	
 	
 	// Allocate the planar grid and set it in the tissue.
@@ -118,7 +140,7 @@ int main()
 
 		cout << "Launching photon object" << i << " iterations: " << MAX_PHOTONS/NUM_THREADS << endl;
 		threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS,
-									s1, s2, s3, s4, coords);
+									s1, s2, s3, s4, injectionCoords);
 
 	}
 
@@ -132,7 +154,8 @@ int main()
 	// Print out the elapsed time it took from beginning to end.
 	end = ((double)clock() - start) / CLOCKS_PER_SEC;
 	cout << "Time elapsed: " << end << endl;
-	
+
+     
 	// Print the matrix of the photon absorptions to file.
 	//tissue->printGrid(MAX_PHOTONS);
 	

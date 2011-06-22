@@ -37,7 +37,7 @@ Medium::~Medium()
 {
 
 	// Free the memory for layers that were added to the medium.
-	for (vector<Layer *>::iterator i = p_layers.begin(); i != p_layers.end(); ++i)
+	for (vector<Layer *>::iterator i = p_layers.begin(); i != p_layers.end(); i++)
 		delete *i;
 }
 

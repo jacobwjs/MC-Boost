@@ -101,11 +101,11 @@ private:
 	//double	Ccylinder[MAX_BINS];	// Clindrical photon concentration.
 	//double	Cspherical[MAX_BINS];	// Spherical photon concentration.
 	
-    // The total depth of the medium.
+    // The total depth of the medium in all dimensions.
     double x_bound, y_bound, z_bound;
 	
 	// Create a vector to hold the layers of the medium.
-	vector<Layer *> p_layers;
+    std::vector<Layer *> p_layers;
 
 	// Mutex to serialize access to the sensor array.
 	boost::mutex m_mutex;
