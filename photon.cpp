@@ -131,11 +131,6 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 	// Before propagation we set the medium which will be used by the photon.
 	this->m_medium = medium;
     
-    // Set the current layer the photon starts propagating through.  This will
-    // be updated as the photon moves through layers by checking 'hitLayerBoundary'.
-    currLayer = m_medium->getLayerFromDepth(location.z);
-    
-    
 	// Assign local values of the detection grid from the Medium.
 	radial_bin_size = m_medium->getRadialBinSize();
 	num_radial_pos = m_medium->getNumRadialPos();
@@ -146,10 +141,13 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
     this->location.y = this->illuminationCoords.y = c.y;
     this->location.z = this->illuminationCoords.z = c.z;
     
+    // Set the current layer the photon starts propagating through.  This will
+    // be updated as the photon moves through layers by checking 'hitLayerBoundary'.
+    currLayer = m_medium->getLayerFromDepth(location.z);
+    
     // Move the photon through the medium.
     propagatePhoton(iterations);
 	
-    
 }
 
 
