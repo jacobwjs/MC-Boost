@@ -2,9 +2,6 @@ Boost
 Xcode/
 xcode/
 Xcode/*
-Xcode*
-xcode/*
-xcode*
 .DS_Store
 *.xcodeproj
 mc-boost
@@ -14,3 +11,4 @@ fluences.txt
 .project
 .cproject
 Default
+*.o
