@@ -11,6 +11,7 @@
 
 #include "vector3D.h"
 #include "vectorMath.h"
+#include "logger.h"
 using namespace VectorMath;
 
 class Detector 
@@ -22,6 +23,7 @@ public:
         
     virtual bool photonPassedThroughDetector(const boost::shared_ptr<Vector3d> p0,
                                              const boost::shared_ptr<Vector3d> p1) = 0;
+    
     virtual void savePhotonExitCoordinates(const boost::shared_ptr<Vector3d> exitCoords) = 0;
     virtual void savePhotonExitWeight(void) = 0;
     

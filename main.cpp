@@ -40,8 +40,15 @@ const int MAX_PHOTONS = 100000;
 int main()
 {
     
+    // The logger is a singleton.  To bypass any problems with using singletons in a multi-threaded applicaton
+    // initialization occurs in main before any threads are spawned.
+    std::string dataFile = "exit-locations.txt";
+    Logger::getInstance()->openFile(dataFile);
+    
+
+    /*
     boost::shared_ptr<Vector3d> p0(new Vector3d(2.0f, 1.0f, 1.0f));
-    boost::shared_ptr<Vector3d> p1(new Vector3d(2.5f, 1.5f, 19.0f));
+    boost::shared_ptr<Vector3d> p1(new Vector3d(3.5f, 1.5f, 11.0f));
     boost::shared_ptr<Vector3d> dir;
     boost::shared_ptr<Vector3d> c0(new Vector3d(0.0f, 0.0f, 11.0f));
     boost::shared_ptr<Vector3d> c1(new Vector3d(2.0f, 3.0f, 11.0f));
@@ -55,7 +62,7 @@ int main()
     
     double u = VectorMath::dotProduct(n, (*c0 - *p0)) / VectorMath::dotProduct(n, (*p1 - *p0));
     double THRESH = 0.0000000000001;
-    if (u < 0.0f + THRESH || u > c0->location.z + THRESH)
+    if (u < 0.0f || u > 1.0f + THRESH)
         cout << "FALSE\n";
     
     cout << "n = " << n;
@@ -71,9 +78,9 @@ int main()
     double x0 = p0->location.x;
     double x1 = p1->location.x;
     
-    double dist = abs(VectorMath::dotProduct(n, (*c0-*p0)) / VectorMath::Length(n));
+    double distToPlane = abs(VectorMath::dotProduct(n, (*c0-*p0)) / VectorMath::Length(n));
     //D = VectorMath::Distance(c0, p0);
-    cout << "distance to plane = " << dist << endl;
+    cout << "distance to plane = " << distToPlane << endl;
     cout << (*c0 - *p0);
     
     double z= z0 + (z1-z0)*u;
@@ -84,8 +91,11 @@ int main()
     cout << "intersection point = " << intersectPoint;
     
     
-    CircularDetector detector(1.0, Vector3d(1.0f, 1.0f, 10.0f));
+    CircularDetector detector(1.0, Vector3d(1.0f, 1.0f, 11.0f));
     detector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
+    bool hitDetector = detector.photonPassedThroughDetector(p0, p1);
+    cout << "hitDetector = " << hitDetector << endl;
+    */
     
 //    z = (*p) - (*x);
 //    cout << "p - x = " << z->X() << endl;
@@ -94,18 +104,14 @@ int main()
 //    z = VectorMath::crossProduct(p, x);
 //    double d = VectorMath::dotProduct(p, x);
 //    cout << "Dot product = " << d << endl;
-    //VectorMath::Length(z);
+//    VectorMath::Length(z);
 //    
 //    //VectorMath vmath;
 //    //z = vmath.crossProduct(p, x);
 //    cout << "cross x = " << z->location.x << "\ncross y = " << z->location.y << "\ncross z = " << z->location.z << endl;
 //    
 
-    
-//    std::string file = "blah.txt";
-//    Logger::getInstance()->openFile(file);
-//    Logger::getInstance()->write(2);
-    
+
     
 /*    
 	// The dimensions of the medium.

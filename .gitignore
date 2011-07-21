@@ -5,10 +5,11 @@ Xcode/*
 .DS_Store
 *.xcodeproj
 mc-boost
-fluences.txt
+*.txt
 *.mexmaci64
 .settings
 .project
 .cproject
 Default
 *.o
+kWave-pressure*

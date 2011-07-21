@@ -7,7 +7,8 @@
 //
 
 #include "circularDetector.h"
-
+#include <iostream>
+using std::cout;
 
 
 CircularDetector::CircularDetector(const double radius, const Vector3d &centerPoint)
@@ -68,7 +69,8 @@ bool CircularDetector::photonPassedThroughDetector(const boost::shared_ptr<Vecto
     // not intersected it.  If 0 <= t <= 1 then the line segment has crossed the plane.
     double t = VectorMath::dotProduct(normalVector, *pointToPlane) / VectorMath::dotProduct(normalVector, *lineSegment);
 
-    if (0 <= t <= 1)
+    
+    if (t >= 0.0f && t <= 1.0f)
     {
         // If we have made it in here we know the line segment passed through the plane.
         // Knowing 't' we can calculate the intersection point of the line segment with the plane.
@@ -76,6 +78,7 @@ bool CircularDetector::photonPassedThroughDetector(const boost::shared_ptr<Vecto
         // FIXME:  The dereferencing of returned pointers is confusing due to the returned object (boost::shared_ptr<>)
         //          from the operator overloading.
         boost::shared_ptr<Vector3d> intersectionPoint = (*p0) + (*((*lineSegment)*t));
+        
         
         // Now calculate the distance from the center of the detector plane to the intersection point, and if
         // that distance is larger than the radius the line segment missed the detector.
@@ -85,6 +88,8 @@ bool CircularDetector::photonPassedThroughDetector(const boost::shared_ptr<Vecto
         }
         else
         {
+            cout << "intersection point = " << intersectionPoint;
+
             // Write the photon intersection coordinates to file for use with post-processing routines.
             savePhotonExitCoordinates(intersectionPoint);
         
@@ -104,6 +109,7 @@ bool CircularDetector::photonPassedThroughDetector(const boost::shared_ptr<Vecto
 void CircularDetector::savePhotonExitCoordinates(const boost::shared_ptr<Vector3d> exitCoords)
 {
     // Use logger class to write out data.
+    Logger::getInstance()->write(exitCoords);
 }
 
 
