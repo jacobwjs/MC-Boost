@@ -10,8 +10,9 @@
 #define VECTOR3D_H
 
 #include "coordinates.h"
-#include "boost/smart_ptr.hpp"
-
+#include "boost/shared_ptr.hpp"
+#include <iostream>
+using std::ostream;
 
 
 class Vector3d
@@ -34,6 +35,9 @@ public:
     boost::shared_ptr<Vector3d> operator+(Vector3d &rhs);
     boost::shared_ptr<Vector3d> operator*(double num);
     boost::shared_ptr<Vector3d> operator*(Vector3d &rhs);
+    inline friend ostream& operator<< (ostream &out, const boost::shared_ptr<Vector3d> rhs);
+
+    
     
     // Get the coordinates.
     double getDirX(void);
@@ -44,6 +48,8 @@ public:
     void setDirX(double x);
     void setDirY(double y);
     void setDirZ(double z);
+    
+    
     
     
     // Making these public to ease manipulation in vector math.
@@ -61,6 +67,16 @@ private:
 
 
 
+
+ostream& operator<<(ostream &out, const boost::shared_ptr<Vector3d> rhs)
+{
+    out << "(" << rhs->location.x
+    << ", " << rhs->location.y
+    << ", " << rhs->location.z
+    << ")\n";
+    
+    return out;
+}
 
 
 #endif

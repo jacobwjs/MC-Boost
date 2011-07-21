@@ -1,35 +1,59 @@
 //
-//  cylinder.cpp
+//  CylinderAbsorber.cpp
 //  Xcode
 //
 //  Created by jacob on 6/20/11.
 //
 
-#include "cylinder.h"
+#include "CylinderAbsorber.h"
 
 
-
-Cylinder::Cylinder(const double height, const double radius, const coords &center)
+// Cylinder constructor takes the radius and the top and bottom coordinates
+// of the cylinder.
+CylinderAbsorber::CylinderAbsorber(const double radius, const coords &top, const coords &bottom)
 :Absorber(center)
 {
-    this->height = height;
+    // Calculate the length of the cylinder.
+    this->length = sqrt(pow(top.x - bottom.x, 2) +
+                        pow(top.y - bottom.y, 2) +
+                        pow(top.z - bottom.z, 2));
+    
     this->radius = radius;
+    this->topCenter = top;
+    this->bottomCenter = bottom;
+    
 }
 
 
-Cylinder::~Cylinder()
+CylinderAbsorber::~CylinderAbsorber()
 {
     // STUB
 }
 
 
-bool Cylinder::inAbsorber(const coords &center)
+bool CylinderAbsorber::crossedAbsorber(const boost::shared_ptr<Vector3d> photonVector)
 {
     // STUB
 }
 
 
-void Cylinder::cartesianToCylindrical(void)
+bool CylinderAbsorber::hitAbsorberBoundary(const boost::shared_ptr<Vector3d> photonVector)
+{
+    // STUB
+}
+
+// Need to draw a line from top and bottom disc of the cylinder.
+// If the length of the line from the photon to that line is 
+// larger than the cylinder's radius, then return false.  Else
+// return true.
+// Also need to check if the photon had passed through the cylinder.
+bool CylinderAbsorber::inAbsorber(const boost::shared_ptr<Vector3d> photonVector)
+{
+    //
+}
+
+
+void CylinderAbsorber::cartesianToCylindrical(void)
 {
     // STUB
 }

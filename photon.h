@@ -5,12 +5,13 @@
 #include "medium.h"
 #include "layer.h"
 #include "coordinates.h"
+#include "vector3D.h"
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
-#include <boost/random/uniform_real.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/random/mersenne_twister.hpp>
+//#include <boost/random/uniform_real.hpp>
+//#include <boost/random/variate_generator.hpp>
+//#include <boost/random/mersenne_twister.hpp>
 
 #define ALIVE 1		// Value depicting Photon should continue propagation.
 #define DEAD  0	    // Photon has lost all energy and failed roulette.
@@ -70,14 +71,14 @@ public:
 	void	performRoulette(void);
 
 	// Return the cartesian coordinates
-	double	getX(void) {return location.x;}
-	double	getY(void) {return location.y;}
-	double	getZ(void) {return location.z;}
+	//double	getX(void) {return photonVect->location.x;}
+	//double	getY(void) {return photonVect->location.y;}
+	//double	getZ(void) {return photonVect->location.z;}
 
 	// Return the direction cosines
-	double	getDirX(void) {return direction.x;}
-	double	getDirY(void) {return direction.y;}
-	double	getDirZ(void) {return direction.z;}
+	//double	getDirX(void) {return photonVect->direction.x;}
+	//double	getDirY(void) {return photonVect->direction.y;}
+	//double	getDirZ(void) {return photonVect->direction.z;}
 
 	// Return the current weight of the photon
 	double	getWeight(void) {return weight;}
@@ -105,13 +106,23 @@ public:
 	void	specularReflectance(double n1, double n2);
 	
 	// Update the direction cosine when internal reflection occurs on z-axis.
-	void	internallyReflectZ(void) {direction.z = -1*direction.z;}
+	void	internallyReflectZ(void) 
+    {
+        currLocation->setDirZ(-1*currLocation->getDirZ());
+    }
 
 	// Update the direction cosine when internal reflection occurs on y-axis.
-	void	internallyReflectY(void) {direction.y = -1*direction.y;}
+	void	internallyReflectY(void) 
+    {
+        currLocation->setDirY(-1*currLocation->getDirY());
+    }
+                              
     
 	// Update the direction cosine when internal reflection occurs on z-axis.
-	void	internallyReflectX(void) {direction.x = -1*direction.x;}
+	void	internallyReflectX(void) 
+    {
+        currLocation->setDirY(-1*currLocation->getDirY());
+    }
     
 	// Transmit the photon.
 	void	transmit(const char *type);
@@ -151,6 +162,9 @@ public:
 	// Check if photon has left the bounds of the medium.
 	bool	hitMediumBoundary(void);
     
+    // Check if photon has hit the detector during it's step.
+    bool    hitDetector(void);
+    
     
     // Store the energy lost into a local array that will be written to a global array
     // for all photons once they are DEAD.
@@ -169,14 +183,19 @@ private:
 	// Holds value of number of iterations thus far.
 	int cnt;	
 	
-	// Structure that holds the location of the photon.
-    coords location;
-	
 	// Radial position.
 	double r;
+    
+    // A vector object that contains the photon's location and direction.
+    //boost::shared_ptr<Vector3d> photonVect;
+    boost::shared_ptr<Vector3d> currLocation;
+    boost::shared_ptr<Vector3d> prevLocation;
+    
+    // Structure that holds the location of the photon.
+    //coords location;
 	
 	// Structure that holds the direction cosines of the photon.
-    directionCos   direction;
+    //directionCos   direction;
 	
 	// Weight of the photon.
 	double	weight;

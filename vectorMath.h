@@ -15,6 +15,7 @@
 #include "boost/smart_ptr.hpp"
 #include <cmath>
 
+class Vector3d;
 
 namespace VectorMath 
 {
@@ -30,6 +31,17 @@ namespace VectorMath
         return result;
     };
     
+    inline Vector3d crossProduct(const Vector3d &A, const Vector3d &B)
+    {
+        Vector3d result;
+        
+        result.location.x = (A.location.y*B.location.z) - (B.location.y*A.location.z);
+        result.location.y = (B.location.x*B.location.z) - (B.location.x*A.location.z);
+        result.location.z = (A.location.x*B.location.y) - (A.location.y*B.location.x);
+        
+        return result;
+    };
+    
     
     
     inline double dotProduct(const boost::shared_ptr<Vector3d> A, const boost::shared_ptr<Vector3d> B)
@@ -39,15 +51,13 @@ namespace VectorMath
                 A->location.z*B->location.z);
     };
     
-    
-    inline double Length(const boost::shared_ptr<Vector3d> A)
+    inline double dotProduct(const Vector3d &A, const Vector3d &B)
     {
-        double x = A->location.x;
-        double y = A->location.y;
-        double z = A->location.z;
+        return (A.location.x*B.location.x +
+                A.location.y*B.location.y +
+                A.location.z*B.location.z);
+    }
     
-        return sqrt(x*x + y*y + z*z);
-    };
     
     
     inline double Distance(const boost::shared_ptr<Vector3d> A, const boost::shared_ptr<Vector3d> B)
@@ -59,22 +69,22 @@ namespace VectorMath
 		return sqrt(disX*disX + disY*disY + disZ*disZ);
     };
     
-    inline double Distance(const coords &A, const coords &B)
+    inline double Distance(const Vector3d &A, const Vector3d &B)
     {
-        double disX = A.x - B.x;
-		double disY = A.y - B.y;
-		double disZ = A.z - B.z;
+        double disX = A.location.x - B.location.x;
+		double disY = A.location.y - B.location.y;
+		double disZ = A.location.z - B.location.z;
         
 		return sqrt(disX*disX + disY*disY + disZ*disZ);
     }
     
-    inline coords subtractCoords(const coords &A, const coords &B)
+    inline Vector3d subtractCoords(const Vector3d &A, const Vector3d &B)
     {
-        coords result;
+        Vector3d result;
         
-        result.x = A.x - B.x;
-        result.y = A.y - B.y;
-        result.z = A.z - B.z;
+        result.location.x = A.location.x - B.location.x;
+        result.location.y = A.location.y - B.location.y;
+        result.location.z = A.location.z - B.location.z;
         
         return result;
     }
@@ -97,6 +107,15 @@ namespace VectorMath
         return sqrt(A.x*A.x + A.y*A.y + A.z*A.z);
     }
     
+    
+    inline double Length(const boost::shared_ptr<Vector3d> A)
+    {
+        double x = A->location.x;
+        double y = A->location.y;
+        double z = A->location.z;
+        
+        return sqrt(x*x + y*y + z*z);
+    };
     
     
     inline void Normalize(boost::shared_ptr<Vector3d> A)

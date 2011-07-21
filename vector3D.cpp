@@ -48,6 +48,8 @@ Vector3d::~Vector3d()
     
 }
 
+
+
 // Here we overload the - operator so we can subtract vectors 
 boost::shared_ptr<Vector3d> Vector3d::operator-(Vector3d &rhs)
 {
@@ -60,6 +62,8 @@ boost::shared_ptr<Vector3d> Vector3d::operator-(Vector3d &rhs)
     return result;
 }
 
+
+
 // Here we overload the + operator so we can add vectors together 
 boost::shared_ptr<Vector3d> Vector3d::operator+(Vector3d &rhs)
 {
@@ -71,6 +75,8 @@ boost::shared_ptr<Vector3d> Vector3d::operator+(Vector3d &rhs)
     
     return result;
 }
+
+
 
 boost::shared_ptr<Vector3d> Vector3d::operator*(double num)
 {

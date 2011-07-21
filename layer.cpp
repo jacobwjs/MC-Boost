@@ -81,22 +81,27 @@ void Layer::addAbsorber(Absorber * absorber)
     p_absorbers.push_back(absorber);
 }
 
+	
 
 // Returns the absorption coefficient after checking to see if the
 // photon might be within an absorber.
-double Layer::getAbsorpCoeff(coords &location) const
+double Layer::getAbsorpCoeff(const boost::shared_ptr<Vector3d> photonVector)
 {
     // Iterate over all the absorbers in this layer and see if the coordinates
     // of the photon reside within the bounds of the absorber.  If so, we return
     // the absorption coefficient of the absorber, otherwise we return the 
     // absorption coefficient of the ambient layer.
-    /*
-    for (std::vector<Absorber *>::iterator i = p_absorbers.begin(); i != p_absorbers.end(); i++)
+    
+    for (std::vector<Absorber *>::iterator it = p_absorbers.begin(); it != p_absorbers.end(); it++)
     {
-        
+        if ((*it)->inAbsorber(photonVector))
+            return (*it)->getAbsorberAbsorptionCoeff();
     }
-     */
+    
+    // If we make it out of the loop (i.e. the photon is not in an absorber) we 
+    // return the layer's absorption coefficient.
+    return mu_a;
+    
 }
-		
 
 
