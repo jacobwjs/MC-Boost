@@ -6,6 +6,9 @@
 #include "layer.h"
 #include "coordinates.h"
 #include "vector3D.h"
+//#include "absorber.h"
+#include "sphereAbsorber.h"
+#include "logger.h"
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
@@ -22,10 +25,9 @@
 
 #define THRESHOLD	0.01		// Threshold for determining if we should perform roulette
 #define CHANCE      0.1  		// Used in roulette
-#define PI			3.14159265
+#define PI			3.141592653589793238462643383
 
 #define SIGN(x)           ((x)>=0 ? 1:-1)
-
 
 
 
@@ -91,6 +93,9 @@ public:
 
 	// Return the calculated medium reflectance (the boundary of the tissue).
 	double	getMediumReflectance(void);
+    
+    // Return the photon's current location in the medium.
+    boost::shared_ptr<Vector3d> getPhotonCoords(void) {return currLocation;}
 
 	// Return the status of the photon.
 	bool	isAlive(void) {return status;}
@@ -109,19 +114,28 @@ public:
 	void	internallyReflectZ(void) 
     {
         currLocation->setDirZ(-1*currLocation->getDirZ());
+        
+        // Reset the flag.
+        hit_z_bound = false;
     }
 
 	// Update the direction cosine when internal reflection occurs on y-axis.
 	void	internallyReflectY(void) 
     {
         currLocation->setDirY(-1*currLocation->getDirY());
+        
+        // Reset the flag.
+        hit_y_bound = false;
     }
                               
     
 	// Update the direction cosine when internal reflection occurs on z-axis.
 	void	internallyReflectX(void) 
     {
-        currLocation->setDirY(-1*currLocation->getDirY());
+        currLocation->setDirX(-1*currLocation->getDirX());
+        
+        // Reset the flag.
+        hit_x_bound = false;
     }
     
 	// Transmit the photon.
@@ -145,7 +159,7 @@ public:
 	void	initTrajectory(void);
 	
 	// Zero's out the local detection array.
-	void	initDetectionArray(void);
+	void	initAbsorptionArray(void);
 
 	// Initialize the RNG.
 	void	initRNG(unsigned int s1, unsigned int s2, unsigned int s3, unsigned int s4);
@@ -156,11 +170,27 @@ public:
 	double	HybridTaus(void);
 
 
+    // Tests if the photon will come into contact with a layer boundary
+    // after setting the new step size.  If so the process of transmitting or
+    // reflecting the photon begins.
+    bool    checkLayerBoundary(void);
+    
 	// Check if photon has come into contact with a layer boundary.
 	bool 	hitLayerBoundary(void);
 
+    // Tests if the photon will come into contact with a medium boundary
+    // after setting the new step size.  If so the process of transmitting or
+    // reflecting the photon begins.
+    bool    checkMediumBoundary(void);
+    
 	// Check if photon has left the bounds of the medium.
 	bool	hitMediumBoundary(void);
+    
+    // Tests if the photon has crossed the plane defined by the detector.  Since
+    // the detector (at this stage) only is concerned with photons that make their
+    // way to the medium boundary, and would exit through the detector, we only
+    // make this check in the case where the photon has hit the medium boundary.
+    bool    checkDetector(void);
     
     // Check if photon has hit the detector during it's step.
     bool    hitDetector(void);
@@ -191,11 +221,9 @@ private:
     boost::shared_ptr<Vector3d> currLocation;
     boost::shared_ptr<Vector3d> prevLocation;
     
-    // Structure that holds the location of the photon.
-    //coords location;
-	
-	// Structure that holds the direction cosines of the photon.
-    //directionCos   direction;
+    // A boolean value that is set when a photon is "tagged", which in this
+    // case means it interacted with an absorber.
+    bool tagged;
 	
 	// Weight of the photon.
 	double	weight;

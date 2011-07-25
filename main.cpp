@@ -31,7 +31,7 @@ using std::endl;
 
 
 
-const int MAX_PHOTONS = 100000;
+const int MAX_PHOTONS = 10000;
 
 //#define DEBUG 1
 
@@ -42,9 +42,10 @@ int main()
     
     // The logger is a singleton.  To bypass any problems with using singletons in a multi-threaded applicaton
     // initialization occurs in main before any threads are spawned.
-    std::string dataFile = "exit-locations.txt";
-    Logger::getInstance()->openFile(dataFile);
-    
+    std::string file = "exit-locations.txt";
+    Logger::getInstance()->openExitFile(file);
+    file = "absorber-data.txt";
+    Logger::getInstance()->openAbsorberFile(file);
 
     /*
     boost::shared_ptr<Vector3d> p0(new Vector3d(2.0f, 1.0f, 1.0f));
@@ -91,7 +92,7 @@ int main()
     cout << "intersection point = " << intersectPoint;
     
     
-    CircularDetector detector(1.0, Vector3d(1.0f, 1.0f, 11.0f));
+    CircularDetector detector(1.0f, Vector3d(1.0f, 1.0f, 11.0f));
     detector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
     bool hitDetector = detector.photonPassedThroughDetector(p0, p1);
     cout << "hitDetector = " << hitDetector << endl;
@@ -111,9 +112,8 @@ int main()
 //    cout << "cross x = " << z->location.x << "\ncross y = " << z->location.y << "\ncross z = " << z->location.z << endl;
 //    
 
-
     
-/*    
+
 	// The dimensions of the medium.
     double X_dim = 2.0; // [cm]
     double Y_dim = 2.0; // [cm]
@@ -122,57 +122,43 @@ int main()
 	// Create the medium in which the photons will be fired.
 	Medium *tissue = new Medium(X_dim, Y_dim, Z_dim);
 	
-	// Add the layer to the medium.  NOTE:  destruction of the 'Layer' object is
-	// handled in the 'tissue' object.
-    
 
     // Define an air layer.
     double mu_a = 0.0;
     double mu_s = 0.001;
     double refractive_index = 1.0;
     double anisotropy = 1.0;
-    double start_depth = 0; // [cm]
-    double end_depth = 0.5; // [cm]
+    double start_depth = 0.0f; // [cm]
+    double end_depth = 0.1f; // [cm]
     Layer *airLayer = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
     
     // Define a layer in the tissue.
-    mu_a = 1.0;
-    mu_s = 33.3;
+    mu_a = 0.1;
+    mu_s = 7.3;
     refractive_index = 1.33;
     anisotropy = 0.9;
-    start_depth = 0.5; // [cm]
-    end_depth = 1.0;   // [cm]
+    start_depth = end_depth; // [cm]
+    end_depth = Z_dim;   // [cm]
     Layer *tissueLayer1 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
-
     
-    // Define a layer in the tissue.
-    mu_a = 2.0;
-    mu_s = 55;
-    refractive_index = 1.54;
-    anisotropy = 0.8;
-    start_depth = 1.0; // [cm]
-    end_depth = 2.0;   // [cm]
-    Layer *tissueLayer2 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
+    // Define a spherical absorber.
+    SphereAbsorber *absorber0 = new SphereAbsorber(0.6, 1.0, 1.0, 1.0);
+    //SphereAbsorber *absorber1 = new SphereAbsorber(0.5, 1.0, 1.5, 1.0);
+    absorber0->setAbsorberAbsorptionCoeff(2.0f);
+    absorber0->setAbsorberScatterCoeff(mu_s);
+    tissueLayer1->addAbsorber(absorber0);
     
-    // Define an absorber to place in a layer.
-    mu_a = 3.0; // cm^-1
-    mu_s = 100; // cm^-1
-    anisotropy = 0.9;
-    double radius = 0.05;   // [cm]
-    Vector3d sphereCenter;
-    sphereCenter.location.x = 1.5;
-    sphereCenter.location.y = 1.5;
-    sphereCenter.location.z = 1.5;
-    SphereAbsorber *sphereAbsorber = new SphereAbsorber(radius, sphereCenter);
-    
-    // Add absorber to layer 2 at location x=1.5, y=1.5, z=1.5;
-    tissueLayer2->addAbsorber(sphereAbsorber);
+    // Create a spherical detector.
+    Detector *detector;
+    CircularDetector circularExitDetector(1.0f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
+    circularExitDetector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
+    detector = &circularExitDetector;
     
     
     // Add the layers to the medium.
     tissue->addLayer(airLayer);
     tissue->addLayer(tissueLayer1);
-    tissue->addLayer(tissueLayer2);
+    tissue->addDetector(detector);
     
     // Define the initial location of injection of the photons.
     coords injectionCoords;
@@ -180,6 +166,7 @@ int main()
     injectionCoords.y = Y_dim/2; // Centered
     injectionCoords.z = 0.00001;   // Just below the surface of the 'air' layer.
 	
+    
 	
 	// Allocate the planar grid and set it in the tissue.
 	double *Cplanar = (double*)malloc(sizeof(double) * 101);
@@ -192,15 +179,15 @@ int main()
 	clock_t start, end;
 	start = clock();
 	
-
 	// Let boost decide how many threads to run on this architecture.
-	const int NUM_THREADS = boost::thread::hardware_concurrency();
-	//const int NUM_THREADS = 1;
+	//const int NUM_THREADS = boost::thread::hardware_concurrency();
+	const int NUM_THREADS = 1;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
 	const int NUM_PHOTON_OBJECTS = NUM_THREADS;
     
+    // Photon array.
 	Photon photons[NUM_PHOTON_OBJECTS];
 	boost::thread threads[NUM_THREADS];
 
@@ -246,7 +233,6 @@ int main()
     //delete airLayer;
     //delete tissueLayer1;
     //delete tissueLayer2;
-*/
 
      
 	return 0;

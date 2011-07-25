@@ -1,13 +1,14 @@
 #ifndef MEDIUM_H
 #define MEDIUM_H
 
-
+#include "detector.h"
 #include "layer.h"
 #include <vector>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 #include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
 using namespace std;
 
 // Maximum number of bins that hold absorption values.
@@ -42,6 +43,12 @@ public:
 	
 	// Add a layer to the medium.
 	void	addLayer(Layer *layer);
+    
+    // Add a detector to the medium.
+    void    addDetector(Detector *detector);
+    
+    // See if photon has crossed the detector plane.
+    int    photonHitDetectorPlane(const boost::shared_ptr<Vector3d> p0);
 	
 	// Return the grid where absorption was accumulated.
 	double * getPlanarGrid() {return Cplanar;}
@@ -74,7 +81,7 @@ public:
 	Layer * getLayerFromDepth(double depth);
 
 	// Return the layer above the current layer.
-	Layer * getLayerAboveCurrent(double depth);
+	Layer * getLayerAboveCurrent(Layer *currentLayer);
 
 	// Return the layer below the current layer.
 	Layer * getLayerBelowCurrent(double depth);
@@ -104,9 +111,12 @@ private:
     // The total depth of the medium in all dimensions.
     double x_bound, y_bound, z_bound;
 	
-	// Create a vector to hold the layers of the medium.
+	// Create a STL vector to hold the layers of the medium.
     std::vector<Layer *> p_layers;
-
+    
+    // Create a STL vector to hold the detectors in the medium.
+    std::vector<Detector *> p_detectors;
+    
 	// Mutex to serialize access to the sensor array.
 	boost::mutex m_mutex;
     

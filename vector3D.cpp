@@ -99,6 +99,14 @@ boost::shared_ptr<Vector3d> Vector3d::operator*(Vector3d &rhs)
 }
 
 
+bool Vector3d::operator&(Vector3d &rhs)
+{
+    return ((this->location.x && rhs.location.x) ||
+            (this->location.y && rhs.location.y) ||
+            (this->location.z && rhs.location.z));
+}
+
+
 double Vector3d::getDirX(void)
 {
     assert(direction.get() != NULL);

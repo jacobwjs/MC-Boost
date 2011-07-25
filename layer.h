@@ -50,6 +50,13 @@ public:
 	void	updateAlbedo();
     
     void    addAbsorber(Absorber * a);
+    
+    void    updateAbsorbedWeightByAbsorber(const boost::shared_ptr<Vector3d> currLocation, const double absorbed);
+    
+    // Iterate over all absorbers and write their data out to file.
+    void    writeAbsorberData(void);
+    
+    Absorber * getAbsorber(const boost::shared_ptr<Vector3d> currLocation);
 
 	
 private:

@@ -12,7 +12,13 @@
 using std::cout;
 
 
-SphereAbsorber::SphereAbsorber(const double radius, const coords &center)
+SphereAbsorber::SphereAbsorber(const double radius, const double x, const double y, const double z)
+:Absorber(x, y, z)
+{
+    this->radius = radius;
+}
+
+SphereAbsorber::SphereAbsorber(const double radius, const Vector3d &center)
 :Absorber(center)
 {
     this->radius = radius;

@@ -95,7 +95,9 @@ double Layer::getAbsorpCoeff(const boost::shared_ptr<Vector3d> photonVector)
     for (std::vector<Absorber *>::iterator it = p_absorbers.begin(); it != p_absorbers.end(); it++)
     {
         if ((*it)->inAbsorber(photonVector))
+        {
             return (*it)->getAbsorberAbsorptionCoeff();
+        }
     }
     
     // If we make it out of the loop (i.e. the photon is not in an absorber) we 
@@ -104,4 +106,48 @@ double Layer::getAbsorpCoeff(const boost::shared_ptr<Vector3d> photonVector)
     
 }
 
+
+void Layer::updateAbsorbedWeightByAbsorber(const boost::shared_ptr<Vector3d> photonVector, const double absorbed)
+{
+    // Iterate over all the absorbers in this layer and see if the coordinates
+    // of the photon reside within the bounds of the absorber.  If so, we return
+    // the absorption coefficient of the absorber, otherwise we return the 
+    // absorption coefficient of the ambient layer.
+    
+    for (std::vector<Absorber *>::iterator it = p_absorbers.begin(); it != p_absorbers.end(); it++)
+    {
+        if ((*it)->inAbsorber(photonVector))
+        {
+            (*it)->updateAbsorbedWeight(absorbed);
+        }
+    }
+}
+
+Absorber * Layer::getAbsorber(const boost::shared_ptr<Vector3d> photonVector)
+{
+    // Iterate over all the absorbers in this layer and see if the coordinates
+    // of the photon reside within the bounds of the absorber.  If so, we return
+    // the absorption coefficient of the absorber, otherwise we return the 
+    // absorption coefficient of the ambient layer.
+    for (std::vector<Absorber *>::iterator it = p_absorbers.begin(); it != p_absorbers.end(); it++)
+    {
+        if ((*it)->inAbsorber(photonVector))
+        {
+            return *it;
+        }
+    }
+    
+    return NULL;
+}
+
+// Iterate over all absorbers and write their data out to file.
+void Layer::writeAbsorberData(void)
+{
+    // Write out the data for every absorber in the medium.
+    for (std::vector<Absorber *>::iterator it = p_absorbers.begin(); it != p_absorbers.end(); it++)
+    {
+        (*it)->writeData();
+        
+    }
+}
 

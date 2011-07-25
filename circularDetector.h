@@ -21,7 +21,11 @@ public:
 
     virtual bool photonPassedThroughDetector(const boost::shared_ptr<Vector3d> p0,
                                              const boost::shared_ptr<Vector3d> p1);
+    virtual bool photonHitDetector(const boost::shared_ptr<Vector3d> p0);
     virtual void savePhotonExitCoordinates(const boost::shared_ptr<Vector3d> exitCoords);
+    void savePhotonExitData(const boost::shared_ptr<Vector3d> exitCoords,
+                       const double weight,
+                       const bool tagged);
     virtual void savePhotonExitWeight(void);
     
     

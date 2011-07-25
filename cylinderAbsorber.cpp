@@ -10,17 +10,18 @@
 
 // Cylinder constructor takes the radius and the top and bottom coordinates
 // of the cylinder.
-CylinderAbsorber::CylinderAbsorber(const double radius, const coords &top, const coords &bottom)
+CylinderAbsorber::CylinderAbsorber(const double radius, const boost::shared_ptr<Vector3d> top,
+                                                        const boost::shared_ptr<Vector3d> bottom)
 :Absorber(center)
 {
     // Calculate the length of the cylinder.
-    this->length = sqrt(pow(top.x - bottom.x, 2) +
-                        pow(top.y - bottom.y, 2) +
-                        pow(top.z - bottom.z, 2));
+    this->length = sqrt(pow(top->location.x - bottom->location.x, 2) +
+                        pow(top->location.y - bottom->location.y, 2) +
+                        pow(top->location.z - bottom->location.z, 2));
     
     this->radius = radius;
-    this->topCenter = top;
-    this->bottomCenter = bottom;
+    this->topCenter = (*top);
+    this->bottomCenter = (*bottom);
     
 }
 

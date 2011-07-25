@@ -14,16 +14,15 @@
 class CylinderAbsorber : public Absorber 
 {
 public:
-    CylinderAbsorber(const double radius, const coords &top, const coords &bottom); 
+    CylinderAbsorber(const double radius, const double x, const double y, const double z);
+    CylinderAbsorber(const double radius, const boost::shared_ptr<Vector3d> top,
+                                        const boost::shared_ptr<Vector3d>bottom); 
     ~CylinderAbsorber();
     
     virtual bool hitAbsorberBoundary(const boost::shared_ptr<Vector3d> photonVector);
     virtual bool inAbsorber(const boost::shared_ptr<Vector3d> photonVector);
     virtual bool crossedAbsorber(const boost::shared_ptr<Vector3d> photonVector);
     
-    
-    virtual double getAbsorberAbsorptionCoeff(void) {return this->mu_a;}
-    virtual double getAbsorberScatteringCoeff(void) {return this->mu_s;}
     
     void    cartesianToCylindrical(void);
     
@@ -34,11 +33,11 @@ private:
     
     // Cartesian coordinates of the center location of one end
     // of the cyclinder.
-    coords topCenter;       
+    Vector3d topCenter;       
     
     // Cartesian coordinates of center location of the other end
     // of the cyclinder.
-    coords bottomCenter;
+    Vector3d bottomCenter;
 };
 
 #endif

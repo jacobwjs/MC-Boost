@@ -10,9 +10,11 @@
 #define DETECTOR_H
 
 #include "vector3D.h"
-#include "vectorMath.h"
 #include "logger.h"
+#include "vectorMath.h"
 using namespace VectorMath;
+//#include <boost/math/complex/fabs.hpp>
+
 
 class Detector 
 {
@@ -23,7 +25,7 @@ public:
         
     virtual bool photonPassedThroughDetector(const boost::shared_ptr<Vector3d> p0,
                                              const boost::shared_ptr<Vector3d> p1) = 0;
-    
+    virtual bool photonHitDetector(const boost::shared_ptr<Vector3d> p0) = 0;
     virtual void savePhotonExitCoordinates(const boost::shared_ptr<Vector3d> exitCoords) = 0;
     virtual void savePhotonExitWeight(void) = 0;
     
@@ -70,7 +72,7 @@ public:
     
     
 protected:
-    // Center coordinates of the detector in the medium. [millimeters]
+    // Center coordinates of the detector in the medium. [cm]
     Vector3d center;
     
     // Vector that is normal to the plane.
