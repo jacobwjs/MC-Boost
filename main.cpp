@@ -180,8 +180,8 @@ int main()
 	start = clock();
 	
 	// Let boost decide how many threads to run on this architecture.
-	//const int NUM_THREADS = boost::thread::hardware_concurrency();
-	const int NUM_THREADS = 1;
+	const int NUM_THREADS = boost::thread::hardware_concurrency();
+	//const int NUM_THREADS = 1;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
