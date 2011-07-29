@@ -3,6 +3,8 @@
 #include "photon.h"
 
 #undef DEBUG
+//static int drop_cnt;
+//static int hop_cnt;
 
 Photon::Photon(void)
 {
@@ -54,6 +56,9 @@ Photon::~Photon(void)
 #ifdef DEBUG	
 	cout << "Destructing Photon...\n";
 #endif
+    
+    //cout << "drop = " << drop_cnt << "\n";
+    //cout << "hop = " << hop_cnt << "\n";
 }
 
 
@@ -305,7 +310,7 @@ void Photon::setStepSize()
 	// Update the current values of the absorption and scattering coefficients
 	// based on the depth in the medium (i.e. which layer the photon is in).
     double mu_a = currLayer->getAbsorpCoeff(currLocation);
-    double mu_s = currLayer->getScatterCoeff();
+    double mu_s = currLayer->getScatterCoeff(currLocation);
     
     
 	// If last step put the photon on the layer boundary
@@ -390,6 +395,8 @@ void Photon::hop()
 	cout << "Hopping...\n";
 #endif	
     
+    //hop_cnt++;
+    
 	//setStepSize();
     
     // Save the coordinates of the photon before it is moved through
@@ -418,6 +425,8 @@ void Photon::drop()
 #ifdef DEBUG
 	cout << "Dropping...\n";
 #endif	
+    
+    //drop_cnt++;
     
     double mu_a = 0.0f;
     double mu_s = 0.0f;
@@ -874,8 +883,8 @@ double Photon::getLayerReflectance(void)
 bool Photon::hitMediumBoundary(void)
 {
 	double distance_to_boundary = 0.0;
-	//Layer *layer = m_medium->getLayerFromDepth(currLocation->location.z);
-	double mu_t = currLayer->getTotalAttenuationCoeff();
+    
+	double mu_t = currLayer->getTotalAttenuationCoeff(currLocation);
 	double x_bound = m_medium->getXbound();
 	double y_bound = m_medium->getYbound();
 	double z_bound = m_medium->getZbound();
@@ -946,8 +955,7 @@ bool Photon::hitLayerBoundary(void)
     
 	double distance_to_boundary = 0.0;
 	//Layer *layer = m_medium->getLayerFromDepth(currLocation->location.z);
-	double mu_t = currLayer->getTotalAttenuationCoeff();
-    
+	double mu_t = currLayer->getTotalAttenuationCoeff(currLocation);
     
     
 	// If the direction the photon is traveling is towards the deeper boundary

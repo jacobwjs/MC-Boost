@@ -36,6 +36,7 @@ public:
     boost::shared_ptr<Vector3d> operator*(double num);
     boost::shared_ptr<Vector3d> operator*(Vector3d &rhs);
     bool operator&(Vector3d &rhs);
+    inline friend ostream& operator<< (ostream &out, const Vector3d &rhs);
     inline friend ostream& operator<< (ostream &out, const boost::shared_ptr<Vector3d> rhs);
 
     
@@ -67,6 +68,13 @@ private:
 };
 
 
+
+ostream& operator<< (ostream &out, const Vector3d &rhs)
+{
+    out << rhs.location.x << "," << rhs.location.y << "," << rhs.location.z;
+    
+    return out;
+}
 
 
 ostream& operator<<(ostream &out, const boost::shared_ptr<Vector3d> rhs)

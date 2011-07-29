@@ -27,11 +27,11 @@ public:
     
     // Returns the scattering coefficient of the layer.
 	double	getScatterCoeff(void) const	{return mu_s;}
-    double  getScatterCoeff(const boost::shared_ptr<Vector3d> photonVector) const;
+    double  getScatterCoeff(const boost::shared_ptr<Vector3d> photonVector);
     
     // Returns total interaction coefficient (mu_a + mu_s).
 	double	getTotalAttenuationCoeff(void) const	{return mu_t;}
-    double  getTotalAttenuationCoeff(const boost::shared_ptr<Vector3d> photonVector) const;
+    double  getTotalAttenuationCoeff(const boost::shared_ptr<Vector3d> photonVector);
     
     // Return the albedo
 	double	getAlbedo(void) const			{return albedo;}

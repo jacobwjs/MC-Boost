@@ -31,7 +31,7 @@ using std::endl;
 
 
 
-const int MAX_PHOTONS = 10000;
+const int MAX_PHOTONS = 100000;
 
 //#define DEBUG 1
 
@@ -122,7 +122,39 @@ int main()
 	// Create the medium in which the photons will be fired.
 	Medium *tissue = new Medium(X_dim, Y_dim, Z_dim);
 	
+    // Define a layer.
+    double mu_a = 1.0;
+    double mu_s = 30.0;
+    double refractive_index = 1.33;
+    double anisotropy = 0.9;
+    double start_depth = 0.0f; // [cm]
+    double end_depth = Z_dim; // [cm]
+    Layer *tissueLayer1 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
+    
+    
+    // Define a spherical absorber.
+    SphereAbsorber *absorber0 = new SphereAbsorber(0.1, 1.0, 1.0, 1.0);
+    absorber0->setAbsorberAbsorptionCoeff(2.0f);
+    absorber0->setAbsorberScatterCoeff(mu_s);
+    tissueLayer1->addAbsorber(absorber0);
+    
+    // Create a spherical detector.
+    Detector *detector;
+    CircularDetector circularExitDetector(0.15f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
+    circularExitDetector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
+    detector = &circularExitDetector;
+    
+    // Add the layers to the medium.
+    tissue->addLayer(tissueLayer1);
+    tissue->addDetector(detector);
+    
+    // Define the initial location of injection of the photons.
+    coords injectionCoords;
+    injectionCoords.x = X_dim/2; // Centered
+    injectionCoords.y = Y_dim/2; // Centered
+    injectionCoords.z = 0.00001;   // Just below the surface of the layer.
 
+    /*
     // Define an air layer.
     double mu_a = 0.0;
     double mu_s = 0.001;
@@ -165,7 +197,7 @@ int main()
     injectionCoords.x = X_dim/2; // Centered
     injectionCoords.y = Y_dim/2; // Centered
     injectionCoords.z = 0.00001;   // Just below the surface of the 'air' layer.
-	
+	*/
     
 	
 	// Allocate the planar grid and set it in the tissue.

@@ -31,8 +31,12 @@ public:
     
     void openExitFile(std::string filename);
     void openAbsorberFile(std::string filename);
+    void openMetaData(std::string filename);
+    
     
     void write(double val);
+    void writeMetaData(const double absorberRadius, const double detectorRadius, 
+                       const int Nphotons, const double detectorPlane, const Vector3d &absorberLocation);
     void writeExitData(const boost::shared_ptr<Vector3d> vectorCoords);
     void writeExitData(const boost::shared_ptr<Vector3d> vectorCoords,
                        const double weight,
@@ -62,6 +66,7 @@ private:
     // the absorbers.
     ofstream exit_data_stream;
     ofstream absorber_data_stream;
+    ofstream meta_data_stream;
     
     boost::mutex m_mutex;
 };
