@@ -3,28 +3,60 @@
 #define LAYER_H
 
 
+#include "absorber.h"
+#include "coordinates.h"
+#include <vector>
+
+
+
 class Layer
 {	
 
 public:
 	Layer(void);
-	Layer(double mu_a, double mu_s, double ref_index,
+	Layer(double mu_a, double mu_s, double ref_index, double anisotropy,
 		  double depth_start, double depth_end);
 	~Layer(void);
 
 
-	double	getAbsorpCoeff(void) 	{return mu_a;}
-	double	getScatterCoeff(void)	{return mu_s;}
-	double	getTotalAttenuationCoeff(void)	{return mu_t;}
-	double	getAlbedo(void) 		{return albedo;}
-	double	getAnisotropy(void) 	{return g;}
-	double 	getDepthStart(void) 	{return depth_start;}
-	double  getDepthEnd(void)		{return depth_end;}
-	double 	getImpedance(void)		{return impedance;}
+    // Returns the absorption coefficient of the layer.
+	double	getAbsorpCoeff(void) const	{return mu_a;}
+    // Returns the absorption coeffiecient of the layer based on the photon's coordinates
+    // Checks are made to see if the photon has made it's way into an absorber as well.
+    double  getAbsorpCoeff(const boost::shared_ptr<Vector3d> photonVector);
+    
+    // Returns the scattering coefficient of the layer.
+	double	getScatterCoeff(void) const	{return mu_s;}
+    double  getScatterCoeff(const boost::shared_ptr<Vector3d> photonVector) const;
+    
+    // Returns total interaction coefficient (mu_a + mu_s).
+	double	getTotalAttenuationCoeff(void) const	{return mu_t;}
+    double  getTotalAttenuationCoeff(const boost::shared_ptr<Vector3d> photonVector) const;
+    
+    // Return the albedo
+	double	getAlbedo(void) const			{return albedo;}
+    
+	double	getAnisotropy(void) 		{return g;}
+    double  getAnisotropy(const boost::shared_ptr<Vector3d> photonVector) const;
+    
+	double 	getDepthStart(void) const 		{return depth_start;}
+	double  getDepthEnd(void)	const		{return depth_end;}
+    
+	double	getRefractiveIndex(void) const	{return refractive_index;}
+    double  getRefractiveIndex(const boost::shared_ptr<Vector3d> photonVector) const;
 
 	void	setAbsorpCoeff(const double mu_a);
 	void	setScatterCoeff(const double mu_s);
-	void	updateAlbedo(void);
+	void	updateAlbedo();
+    
+    void    addAbsorber(Absorber * a);
+    
+    void    updateAbsorbedWeightByAbsorber(const boost::shared_ptr<Vector3d> currLocation, const double absorbed);
+    
+    // Iterate over all absorbers and write their data out to file.
+    void    writeAbsorberData(void);
+    
+    Absorber * getAbsorber(const boost::shared_ptr<Vector3d> currLocation);
 
 	
 private:
@@ -54,10 +86,10 @@ private:
 	
 	// Albedo of the layer.
 	double albedo;	
+    
+    // A vector that holds all the abosrbers in this layer.
+    std::vector<Absorber *> p_absorbers;
 	
-	// The impedance of the tissue layer.
-	double impedance;
-
 };
 
 #endif // end LAYER_H

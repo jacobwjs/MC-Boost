@@ -1,7 +1,7 @@
 #ifndef MEDIUM_H
 #define MEDIUM_H
 
-
+#include "detector.h"
 #include "layer.h"
 #include "pressureMap.h"
 #include "photon.h" // Photon class is a friend of the Medium class.
@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <fstream>
 #include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
 using namespace std;
 
 // Maximum number of bins that hold absorption values.
@@ -26,13 +27,13 @@ public:
 
 	friend class Photon;
 
-	Medium();
+	Medium(void);
     Medium(const int x, const int y, const int z);
 	~Medium();
+    
+    // Common initializations for the Medium object.  Called from constructors.
+    void    initCommon(void);
 	
-	// Common values to be used with the constructors.
-	void	initCommon(void);
-
 	// Add some portion of the photon's energy that was lost at this interaction
 	// point (i.e. due to absorption) to the medium's grid.
 	void	absorbEnergy(const double z, const double energy);
@@ -46,6 +47,12 @@ public:
 	
 	// Add a layer to the medium.
 	void	addLayer(Layer *layer);
+    
+    // Add a detector to the medium.
+    void    addDetector(Detector *detector);
+    
+    // See if photon has crossed the detector plane.
+    int    photonHitDetectorPlane(const boost::shared_ptr<Vector3d> p0);
 	
 	// Add a pressure map object that holds pressure generated from K-Wave in order to simulate
 	// acousto-optics.
@@ -92,13 +99,18 @@ public:
 	// Return layer from depth passed in.
 	Layer * getLayerFromDepth(double depth);
 
+	// Return the layer above the current layer.
+	Layer * getLayerAboveCurrent(Layer *currentLayer);
+
+	// Return the layer below the current layer.
+	Layer * getLayerBelowCurrent(double depth);
+
     // Return the max depth of the medium.
     double 	getDepth() {return depth;}
 
-    double 	getMediumZaxisBound(void) {return z_bound;}
-    double 	getMediumXaxisBound(void) {return x_bound;}
-    double 	getMediumYaxisBound(void) {return y_bound;}
-	
+    
+    // Return the refractive index of the medium.
+    double getRefractiveIndex(void) {return refractive_index;}
     // Write photon coordinates to file.
     void 	writePhotonCoords(vector<double> &coords);
 
@@ -107,6 +119,11 @@ public:
 
     // Write the photon exit locations, phase and weight to file.
     void	writeExitCoordsLengthWeight(vector<double> &coords_phase_weight);
+
+    // Return the bounds of the medium.
+    double getXbound(void) {return x_bound;}
+    double getYbound(void) {return y_bound;}
+    double getZbound(void) {return z_bound;}
 	
 private:
 	double	radial_size;			// Maximum radial size.
@@ -125,9 +142,12 @@ private:
            y_bound,
            z_bound;
 	
-	// Create a vector to hold the layers of the medium.
-	vector<Layer *>p_layers;
-
+	// Create a STL vector to hold the layers of the medium.
+    std::vector<Layer *> p_layers;
+    
+    // Create a STL vector to hold the detectors in the medium.
+    std::vector<Detector *> p_detectors;
+    
 	// Mutex to serialize access to the sensor array.
 	boost::mutex m_sensor_mutex;
 
@@ -147,6 +167,9 @@ private:
 	// to file for post processing in matlab.
 	ofstream photon_data_file;
 
+    
+    // The refrective index outside of the medium.  We assume air.
+    double refractive_index;
 };
 
 #endif	// MEDIUM_H

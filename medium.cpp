@@ -22,20 +22,35 @@ Medium::Medium(const int x, const int y, const int z)
 
 Medium::~Medium()
 {
+	
 
-	// Free the memory for layers that were added to the medium.
-	for (vector<Layer *>::iterator i = p_layers.begin(); i != p_layers.end(); ++i)
-		delete *i;
 
+	
 	// Free the PressureMap() object.
 	if (pmap) {
 		delete pmap;
 		pmap = NULL;
 	}
 
+	 pmap;
+		pmap = NULL;
+	}
+
+	// Close the various data fi		pmap = NULL;
+	}
+
 	// Close the various data files.
 	coords_file.close();
+
+// Close the various data files.
+	coords_file.close();
 	photon_data_file.close();
+	photon_data_file.close();
+	for (vector<Layer *>::iterator it = p_layers.begin(); it != p_layers.end(); it++)
+    {
+        (*it)->writeAbsorberData();
+        delete *it;
+    }
 }
 
 
@@ -107,6 +122,12 @@ double Medium::getPressureFromGridCoords(int a, int b, int c)
 
 
 
+void Medium::addDetector(Detector *detector)
+{
+    p_detectors.push_back(detector);
+}
+
+
 void Medium::absorbEnergy(const double z, const double energy)
 {
 #ifdef DEBUG
@@ -114,11 +135,7 @@ void Medium::absorbEnergy(const double z, const double energy)
 #endif
 
 	double r = fabs(z);
-	int ir = (r/radial_bin_size);
-	if (ir >= num_radial_pos) {
-		ir = num_radial_pos;
-	}
-	boost::mutex::scoped_lock lock(m_sensor_mutex);
+	int ir = (r/radimutex::scoped_lock lock(m_sensor_mutex);
 	Cplanar[ir] += energy;
 
 }
@@ -135,6 +152,100 @@ void Medium::absorbEnergy(const double *energy_array)
 		// the global planar detection array in the Medium.
 		Cplanar[i] += energy_array[i];
 	}
+}
+
+
+// See if photon has crossed the detector plane.
+int Medium::photonHitDetectorPlane(const boost::shared_ptr<Vector3d> p0)
+{
+    bool hitDetectorNumTimes = 0;
+    // Free the memory for layers that were added to the medium.
+	for (vector<Detector *>::iterator it = p_detectors.begin(); it != p_detectors.end(); it++)
+    {
+		if ((*it)->photonHitDetector(p0))
+            hitDetectorNumTimes++;
+    }
+    
+    return hitDetectorNumTimes;
+}
+
+Layer * Medium::getLayerAboveCurrent(Layer *currentLayer)
+{
+	// Ensure that the photon's z-axis coordinate is sane.  That is,
+	// it has not left the medium.
+	assert(currentLayer != NULL);
+
+	// If we have only one layer, no need to iterate through the vector.
+	// And we should return NULL since there is no layer above us.
+	if (p_layers.size() == 1)
+		return NULL;
+    
+
+
+	// Otherwise we walk the vector and return 'trailer' since it is the
+	// one before the current layer (i.e. 'it').
+	vector<Layer *>::iterator it;
+	vector<Layer *>::iterator trailer;
+	it = p_layers.begin(); // Get the first layer from the array.
+    
+    // If we are at the top of the medium there is no layer above, so return NULL;
+    if (currentLayer == (*it))
+        return NULL;
+    
+	while(it != p_layers.end()) {
+		trailer = it;  // Assign the trailer to the current layer.
+		it++;         // Advance the iterator to the next layer.
+
+		// Find the layer we are in within the medium based on the depth (i.e. z)
+		// that was passed in.  Break from the loop when we find the correct layer
+		// because trailer will be pointing to the previous layer in the medium.
+		//if ((*it)->getDepthStart() <= z && (*it)->getDepthEnd() >= z)
+		if ((*it) == currentLayer)
+            break;
+	}
+
+	// Sanity check.  If the trailer has made it to the end, which means
+	// the iterator made it past the end, then there
+	// was no previous layer found, and something went wrong.
+	if (trailer == p_layers.end())
+		return NULL;
+
+	// If we make it here, we have found the previous layer.
+	return *trailer;
+}
+
+
+Layer * Medium::getLayerBelowCurrent(double z)
+{
+	// Ensure that the photon's z-axis coordinate is sane.  That is,
+	// it has not left the medium.
+	assert(z >= 0 && z <= z_bound);
+
+	// If we have only one layer, no need to iterate through the vector.
+	// And we should return NULL since there is no layer below us.
+	if (p_layers.size() == 1)
+		return NULL;
+    
+    // The case where there is no layer below is since we are at the bottom of the
+    // medium.
+    if (z == z_bound)
+        return NULL;
+
+
+	vector<Layer *>::iterator it;
+	for (it = p_layers.begin(); it != p_layers.end(); it++) {
+		// Find the layer we are in within the medium based on the depth (i.e. z)
+		// that was passed in.  Break from the loop when we find the correct layer.
+		if ((*it)->getDepthStart() <= z && (*it)->getDepthEnd() >= z) {
+			return *(++it);
+		}
+	}
+
+	// If the above loop never returned a layer it means we made it through the list
+	// so there is no layer below us, therefore we return null.
+	return NULL;
+
+
 }
 
 
@@ -177,7 +288,11 @@ double Medium::getLayerAbsorptionCoeff(double z)
 		}
 	}
 
+	// If not found, report error.
+	assert(absorp_coeff != 0);
+	
 	// If not found, fail.
+	// If not found, report error.
 	assert(absorp_coeff != -1);
 
 	// Return the absorption coefficient value.
@@ -202,7 +317,11 @@ double Medium::getLayerScatterCoeff(double z)
 		}
 	}
 
+	// If not found, report error.
+	assert(scatter_coeff != 0);
+	
 	// If not found, fail.
+	// If not found, report error.
 	assert(scatter_coeff != -1);
 
 	// Return the scattering coefficient for the layer that resides at depth 'z'.
@@ -227,7 +346,11 @@ double Medium::getAnisotropyFromDepth(double z)
 		}
 	}
 
+	// If not found, report error.
+	assert(anisotropy != 0);
+	
 	// If not found, fail.
+	// If not found, report error.
 	assert(anisotropy != -1);
 
 	// Return the anisotropy value for the layer that resides at depth 'z'.

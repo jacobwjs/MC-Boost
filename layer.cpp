@@ -2,45 +2,48 @@
 
 #include "layer.h"
 
+
 // Default constructor values if nothing is specified.
 Layer::Layer(void)
 {	
 	// Set scattering and absorption properties of layer.
 	mu_a = 1.0;		// cm^-1
 	mu_s = 100.0;		// cm^-1
-	mu_t = mu_a + mu_s;
+    mu_t = mu_a + mu_s;
+
 	
 	albedo = mu_s/(mu_s + mu_a);
 	g = 0.90;
 	refractive_index = 1.33;
 
 	// The depth at which this layer starts (cm).
-	depth_start = 0;
+	depth_start = 0; // [cm]
 	
 	// The depth at which this layer ends (cm).
-	depth_end = 10;
-
-	// Impedance of the layer.
-	impedance = 1.63e6;
+	depth_end = 10;  // [cm]
+    
 }
 
-Layer::Layer(double mu_a, double mu_s, double refractive_index,
+Layer::Layer(double mu_a, double mu_s, double refractive_index, double anisotropy,
 			 double depth_start, double depth_end)
 {
 	this->mu_a = mu_a;
 	this->mu_s = mu_s;
 	this->mu_t = mu_a + mu_s;
 	albedo = mu_s/(mu_s + mu_a);
-	g = 0.90;
+	g = anisotropy;
 	this->refractive_index = refractive_index;
 	
 	this->depth_start = depth_start;
 	this->depth_end = depth_end;
+    
 }
 
 Layer::~Layer(void)
 {
-		// Free any memory allocated on the heap by this object.
+    // Free any memory allocated on the heap by this object.
+    for (std::vector<Absorber *>::iterator i = p_absorbers.begin(); i < p_absorbers.end(); i++)
+        delete *i;
 }
 
 void Layer::setAbsorpCoeff(double mu_a)
@@ -69,6 +72,81 @@ void Layer::updateAlbedo()
 	albedo = mu_s/(mu_s + mu_a);
 }
 
-		
 
+void Layer::addAbsorber(Absorber * absorber)
+{
+    // FIXME: Ensure the absorber fits within the bounds of the layer.
+    //       
+    p_absorbers.push_back(absorber);
+}
+
+	
+
+// Returns the absorption coefficient after checking to see if the
+// photon might be within an absorber.
+double Layer::getAbsorpCoeff(const boost::shared_ptr<Vector3d> photonVector)
+{
+    // Iterate over all the absorbers in this layer and see if the coordinates
+    // of the photon reside within the bounds of the absorber.  If so, we return
+    // the absorption coefficient of the absorber, otherwise we return the 
+    // absorption coefficient of the ambient layer.
+    
+    for (std::vector<Absorber *>::iterator it = p_absorbers.begin(); it != p_absorbers.end(); it++)
+    {
+        if ((*it)->inAbsorber(photonVector))
+        {
+            return (*it)->getAbsorberAbsorptionCoeff();
+        }
+    }
+    
+    // If we make it out of the loop (i.e. the photon is not in an absorber) we 
+    // return the layer's absorption coefficient.
+    return mu_a;
+    
+}
+
+
+void Layer::updateAbsorbedWeightByAbsorber(const boost::shared_ptr<Vector3d> photonVector, const double absorbed)
+{
+    // Iterate over all the absorbers in this layer and see if the coordinates
+    // of the photon reside within the bounds of the absorber.  If so, we return
+    // the absorption coefficient of the absorber, otherwise we return the 
+    // absorption coefficient of the ambient layer.
+    
+    for (std::vector<Absorber *>::iterator it = p_absorbers.begin(); it != p_absorbers.end(); it++)
+    {
+        if ((*it)->inAbsorber(photonVector))
+        {
+            (*it)->updateAbsorbedWeight(absorbed);
+        }
+    }
+}
+
+Absorber * Layer::getAbsorber(const boost::shared_ptr<Vector3d> photonVector)
+{
+    // Iterate over all the absorbers in this layer and see if the coordinates
+    // of the photon reside within the bounds of the absorber.  If so, we return
+    // the absorption coefficient of the absorber, otherwise we return the 
+    // absorption coefficient of the ambient layer.
+    for (std::vector<Absorber *>::iterator it = p_absorbers.begin(); it != p_absorbers.end(); it++)
+    {
+        if ((*it)->inAbsorber(photonVector))
+        {
+            return *it;
+        }
+    }
+    
+    return NULL;
+}
+
+// Iterate over all absorbers and write their data out to file.
+void Layer::writeAbsorberData(void)
+{
+    // Write out the data for every absorber in the medium.
+    for (std::vector<Absorber *>::iterator it = p_absorbers.begin(); it != p_absorbers.end(); it++)
+    {
+        (*it)->writeData();
+        
+    }
+}
 

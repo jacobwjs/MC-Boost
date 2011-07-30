@@ -3,6 +3,12 @@
 #define PHOTON_H
 
 #include "medium.h"
+#include "layer.h"
+#include "coordinates.h"
+#include "vector3D.h"
+//#include "absorber.h"
+#include "sphereAbsorber.h"
+#include "logger.h"
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
@@ -28,7 +34,12 @@ using namespace std;
 
 
 class Medium;
+#define PI			3.141592653589793238462643383
 
+
+
+
+//typedef struct coords InjectionCoords;
 
 class Photon
 {
@@ -37,9 +48,11 @@ public:
 	Photon(void);
 	Photon(double x, double y, double z,
 		   double dirx, double diry, double dirz);
-	
 	// Destructor
 	~Photon(void);
+    
+    // Common function to initialize basic values of the photon object.
+    void    initCommon(void);
 	
 	// Set the number of iterations this Photon (i.e. thread) will run.
 	void	setIterations(const int n);
@@ -58,7 +71,7 @@ public:
 
 	// Decide whether the photon should be transmitted to another layer
 	// or internally reflected.
-	void	transmitOrReflect(void);
+	void	transmitOrReflect(const char *);
 
 	// Reset the Photon attributes so it can be propogated again.
 	void	reset(void);
@@ -68,14 +81,14 @@ public:
 	void	performRoulette(void);
 
 	// Return the cartesian coordinates
-	double	getX(void) {return x;}
-	double	getY(void) {return y;}
-	double	getZ(void) {return z;}
+	//double	getX(void) {return photonVect->location.x;}
+	//double	getY(void) {return photonVect->location.y;}
+	//double	getZ(void) {return photonVect->location.z;}
 
 	// Return the direction cosines
-	double	getDirX(void) {return dirx;}
-	double	getDirY(void) {return diry;}
-	double	getDirZ(void) {return dirz;}
+	//double	getDirX(void) {return photonVect->direction.x;}
+	//double	getDirY(void) {return photonVect->direction.y;}
+	//double	getDirZ(void) {return photonVect->direction.z;}
 
 	// Return the current weight of the photon
 	double	getWeight(void) {return weight;}
@@ -83,6 +96,15 @@ public:
 	// Returns a random number 'n': 0 < n < 1
 	double	getRandNum(void);
 	
+	// Return the calculated reflectance.
+	double	getLayerReflectance(void);
+
+	// Return the calculated medium reflectance (the boundary of the tissue).
+	double	getMediumReflectance(void);
+    
+    // Return the photon's current location in the medium.
+    boost::shared_ptr<Vector3d> getPhotonCoords(void) {return currLocation;}
+
 	// Return the status of the photon.
 	bool	isAlive(void) {return status;}
 
@@ -96,6 +118,37 @@ public:
 	// Update weight based on specular reflectance.
 	void	specularReflectance(double n1, double n2);
 	
+	// Update the direction cosine when internal reflection occurs on z-axis.
+	void	internallyReflectZ(void) 
+    {
+        currLocation->setDirZ(-1*currLocation->getDirZ());
+        
+        // Reset the flag.
+        hit_z_bound = false;
+    }
+
+	// Update the direction cosine when internal reflection occurs on y-axis.
+	void	internallyReflectY(void) 
+    {
+        currLocation->setDirY(-1*currLocation->getDirY());
+        
+        // Reset the flag.
+        hit_y_bound = false;
+    }
+                              
+    
+	// Update the direction cosine when internal reflection occurs on z-axis.
+	void	internallyReflectX(void) 
+    {
+        currLocation->setDirX(-1*currLocation->getDirX());
+        
+        // Reset the flag.
+        hit_x_bound = false;
+    }
+    
+	// Transmit the photon.
+	void	transmit(const char *type);
+
 	// Plot the photon's path.
 	void	plotPath(void);
 	
@@ -103,13 +156,18 @@ public:
 	// 'state[1,2,3,4]' represent the random initial values for the state
 	// of the random number generator.
 	void	injectPhoton(Medium *m, const int num_iterations, unsigned int state1, unsigned int state2,
-							unsigned int state3, unsigned int state4);
+							unsigned int state3, unsigned int state4, coords &c);
+    
+    
+    // Hop, Drop, Spin, Roulette and everything in between.
+    // NOTE: 'iterations' are the number of photons simulated by this 'Photon' object.
+    void    propagatePhoton(const int iterations);
 	
 	// Sets initial trajectory values.
 	void	initTrajectory(void);
 	
 	// Zero's out the local detection array.
-	void	initDetectionArray(void);
+	void	initAbsorptionArray(void);
 
 	// Initialize the RNG.
 	void	initRNG(unsigned int s1, unsigned int s2, unsigned int s3, unsigned int s4);
@@ -120,9 +178,11 @@ public:
 	double	HybridTaus(void);
 
 
-	// Check if photon is still within the medium.
-	bool	isPhotonInMedium(void);
-
+    // Tests if the photon will come into contact with a layer boundary
+    // after setting the new step size.  If so the process of transmitting or
+    // reflecting the photon begins.
+    bool    checkLayerBoundary(void);
+    
 	// Check if photon has come into contact with a layer boundary.
 	bool 	hitLayerBoundary(void);
 
@@ -158,6 +218,29 @@ public:
 	// Write the x-y coordinates of the exit location when the photon left the medium, as well
 	// as its accumulated path length.
 	void	writeExitLocationsAndLength(void);
+    // Tests if the photon will come into contact with a medium boundary
+    // after setting the new step size.  If so the process of transmitting or
+    // reflecting the photon begins.
+    bool    checkMediumBoundary(void);
+    
+	// Check if photon has left the bounds of the medium.
+	bool	hitMediumBoundary(void);
+    
+    // Tests if the photon has crossed the plane defined by the detector.  Since
+    // the detector (at this stage) only is concerned with photons that make their
+    // way to the medium boundary, and would exit through the detector, we only
+    // make this check in the case where the photon has hit the medium boundary.
+    bool    checkDetector(void);
+    
+    // Check if photon has hit the detector during it's step.
+    bool    hitDetector(void);
+    
+    
+    // Store the energy lost into a local array that will be written to a global array
+    // for all photons once they are DEAD.
+    // This relieves contention between threads trying to update a single global data
+    // structure and improves speed.
+    void    updateLocalWeightArray(const double absorbed);
 
 	// Write the x-y coordinates of the exit location when the photon left the medium, path length
 	// and also the weight of the photon when it exited the medium.
@@ -172,20 +255,23 @@ private:
 	// Holds value of number of iterations thus far.
 	int cnt;	
 	
-	// The number of photons that exit through the detector aperture.
-	int cnt_through_aperture;
 
-	// Location of the photon.
-	double	x, y, z;
 	
 	// Location of the photon with displacement from ultrasound source taken into account.
 	double x_disp, y_disp, z_disp;
 
+
 	// Radial position.
 	double r;
-	
-	// Direction of the photon.
-	double	dirx, diry, dirz;
+    
+    // A vector object that contains the photon's location and direction.
+    //boost::shared_ptr<Vector3d> photonVect;
+    boost::shared_ptr<Vector3d> currLocation;
+    boost::shared_ptr<Vector3d> prevLocation;
+    
+    // A boolean value that is set when a photon is "tagged", which in this
+    // case means it interacted with an absorber.
+    bool tagged;
 	
 	// Weight of the photon.
 	double	weight;
@@ -209,6 +295,14 @@ private:
 	// The azimuthal angle
 	double	psi;
 	
+	// The value of internal reflectance that is compared to a random
+	// number (uniform between (0,1]) to determine if the photon should
+	// be transmitted or reflected on a stochastic basis.
+	double	reflectance;
+    
+    // Transmission angle for a photon when it hits a layer boundary.
+    double transmission_angle;
+
 	
 	// The number of steps this photon has taken while propagating through
 	// the medium.
@@ -234,18 +328,23 @@ private:
 	// Boost Random Number Library implementation of Mersenne-twister RNG.
 	//boost::mt19937 gen;
 
-	// Used with the state for the thread-safe RNG.
+	// Used with the thread safe RNG to track state.
 	unsigned int z1, z2, z3, z4;
 
 	// Tracks the path length of the photon through the medium.
 	double original_path_length;
 	double displaced_path_length;
 
-	// Holds the x,y,z coordinates of the photon for each scattering event.
-	// Used to plot the photon's path.
-	vector<double> coords;
-	vector<double> photon_exit_data;
-
+	// Tracks whether or not a photon has hit a medium boundary.
+	bool hit_x_bound, hit_y_bound, hit_z_bound;
+    
+    
+    // Pointer to the current layer the photon is in.
+    Layer *currLayer;
+    
+    // Structure that contains the cartesian coordinates of the injection point of each
+    // photon into the medium.
+    coords illuminationCoords;
 
 }; 		
 

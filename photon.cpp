@@ -13,36 +13,46 @@ Photon::Photon(void)
 #ifdef DEBUG
 	cout << "Creating Photon...\n";
 #endif
-
-	/*
-	// Photon just created, so it is alive.
-	status = ALIVE;
-
-	// Weight, cartesian coords, and step size default values before photon
-	// is moved through the medium.
-	weight = 1;
-	x = y = z = 0;
-	step = 0;
-	step_remainder = 0;
-
-	// No interactions thus far.
-	num_steps = 0;
-	 */
-	// holds the number of photons that leave through the detection
-	// aperture of the medium.
-	cnt_through_aperture = 0;
-
-	this->reset();
-
-
-
+    
+    // The current location of the photon.
+    currLocation = boost::shared_ptr<Vector3d> (new Vector3d);
+    currLocation->withDirection();  // Enable direction for this vector.
+    
+    // The location before the photon hopped.
+    prevLocation = boost::shared_ptr<Vector3d> (new Vector3d);  // Does not require direction.
+    
+    
+	this->initCommon();
 }
+
+
 
 Photon::Photon(double x, double y, double z,
-		double dirx, double diry, double dirz)
+               double dirx, double diry, double dirz)
 {
+#ifdef DEBUG
 	cout << "Constructor stub...\n";
+#endif
+    
+    coords location;
+    directionCos direction;
+    
+    location.x = x;
+    location.y = y;
+    location.z = z;
+    
+    direction.x = dirx;
+    direction.y = diry;
+    direction.z = dirz;
+    
+    // Location and direction of photon.
+    currLocation = boost::shared_ptr<Vector3d> (new Vector3d(location, direction));
+    
+    // The location before the photon hopped.
+    prevLocation = boost::shared_ptr<Vector3d> (new Vector3d);  // Does not require direction.
+
 }
+
 
 Photon::~Photon(void)
 {
@@ -53,6 +63,38 @@ Photon::~Photon(void)
 }
 
 
+// Common initialization function.
+void Photon::initCommon(void)
+{
+    // Photon just created, so it is alive.
+	status = ALIVE;
+    
+	// Set back to initial weight values.
+	weight = 1;
+    
+    // Default value of tagged to false.
+    tagged = false;
+    
+	r = 0;
+	step = 0;
+	step_remainder = 0;
+    
+	// Reset the number of interactions back to zero.
+	num_steps = 0;
+    
+	// 'cnt' represents the number of times a photon has propogated
+	// through the medium.
+	cnt = 0;
+    
+    // Reset the flags for hitting a layer boundary.
+	hit_x_bound = hit_y_bound = hit_z_bound = false;
+    
+    // Reset the transmission angle for a photon.
+    transmission_angle = 0;
+    
+}
+
+
 // Set the number of iterations this thread will run.
 void Photon::setIterations(const int num)
 {
@@ -60,20 +102,21 @@ void Photon::setIterations(const int num)
 }
 
 
-void Photon::initTrajectory()
+void Photon::initTrajectory(void)
 {
-	// Randomly set photon trajectory to yield isotropic source.
+	// Randomly set photon trajectory to yield anisotropic source.
 	cos_theta = (2.0 * getRandNum()) - 1;
 	sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 	psi = 2.0 * PI * getRandNum();
-	dirx = sin_theta * cos(psi);
-	diry = sin_theta * sin(psi);
-	//dirz = cos_theta;
-	dirz = 1;
-
+    
+    // Set the initial direction cosines for this photon.
+    currLocation->setDirX(sin_theta * cos(psi));
+    currLocation->setDirY(sin_theta * sin(psi));
+    currLocation->setDirZ(1.0f);    
+    
 }
 
-void Photon::initDetectionArray()
+void Photon::initAbsorptionArray()
 {
 	// Zero out the local detection array since it will accumulate
 	// values over many iterations.
@@ -85,7 +128,7 @@ void Photon::initDetectionArray()
 
 
 void Photon::initRNG(unsigned int state1, unsigned int state2,
-		unsigned int state3, unsigned int state4)
+                     unsigned int state3, unsigned int state4)
 {
 	z1 = state1;
 	z2 = state2;
@@ -100,30 +143,47 @@ void Photon::initRNG(unsigned int state1, unsigned int state2,
 // 3) Spin - update trajectory accordingly
 // 4) Roulette - test to see if photon should live or die.
 void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int state1, unsigned int state2,
-		unsigned int state3, unsigned int state4)
+                          unsigned int state3, unsigned int state4, coords &laser)
 {
 	// seed the random number generator.
 	//srand(time(0) + thread_id);
-
+    
 	// Seed the Boost RNG (Random Number Generator).
 	//gen.seed(time(0) + thread_id);
-
+    
 	// Initialize the photon's properties before propagation begins.
 	initTrajectory();
-	initDetectionArray();
+	initAbsorptionArray();
 	initRNG(state1, state2, state3, state4);
-
+    
 	// Before propagation we set the medium which will be used by the photon.
 	this->m_medium = medium;
-
-
+    
 	// Assign local values of the detection grid from the Medium.
 	radial_bin_size = m_medium->getRadialBinSize();
 	num_radial_pos = m_medium->getNumRadialPos();
+    
+    // Set the location of illumination source and the initial cartesian coordinates of the photon
+    // when it is first incident on the medium.
+    currLocation->location.x = this->illuminationCoords.x = laser.x;
+    currLocation->location.y = this->illuminationCoords.y = laser.y;
+    currLocation->location.z = this->illuminationCoords.z = laser.z;
+    
+    // Set the current layer the photon starts propagating through.  This will
+    // be updated as the photon moves through layers by checking 'hitLayerBoundary'.
+    currLayer = m_medium->getLayerFromDepth(currLocation->location.z);
+    
+    // Move the photon through the medium. 'iterations' represents the number of photons this
+    // object (which is a thread) will execute.
+    propagatePhoton(iterations);
+	
+}
 
 
-
-	// Inject 'iterations' number of photons into the medium.
+void Photon::propagatePhoton(const int iterations)
+{
+    
+    // Inject 'iterations' number of photons into the medium.
 	int i;
 	for (i = 0; i < iterations; i++) 
 	{
@@ -131,73 +191,46 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 		// the medium we propagate it through he medium.
 		while (isAlive()) 
 		{
-
+            
 			// Calculate and set the step size for the photon.
 			setStepSize();
+            
+            
+			// Make various checks on the photon to see if layer or medium boundaries
+			// are hit and whether the photon should be transmitted or reflected.
+            
+            // Flags for testing if a photon hit/passed through a layer
+            // or medium boundary.
+			bool hitLayer = checkLayerBoundary();
+            bool hitMedium = checkMediumBoundary();
 
-			// XXX: NOT CURRENTLY IN USE.
-			// If the step size caused the photon to cross a boundary of the
-			// layer, and therefore potentially needing to take into account
-			// reflection, transmission and refraction, we account for these
-			// phonomenon accordingly.
-			/*
-			if (hitLayerBoundary())
+   
+            
+			if (!hitLayer && !hitMedium)
 			{
-				hop();	// Move the photon to the boundary.
-				transmitOrReflect();	// Calculate whether to transmit the
-										// photon or reflect it.
+                // sanity check.
+                assert(this->status == ALIVE);
 
-			}
-			 */
-
-
-
-
-			// FIXME: Should probably have all weight deposited at surface if
-			//		  photon leaves medium by total internal reflection.  Also
-			//        the case where it reaches the max depth.
-
-			// Ensure the photon has not left the medium by either total internal
-			// reflection or transmission (only looking at z-axis).
-			//if (z_disp > 0 && z_disp < 10 && x_disp > 0 && x_disp < 10 && y_disp > 0 && y_disp < 10) {
-			if (isPhotonInMedium()) {
+                
+				// Ensure the photon has not left the medium by either total internal
+				// reflection or transmission (only looking at z-axis).
+				//if (z >= 0 && z <= m_medium->getDepth()) {
 				// Move the photon in the medium.
 				hop();
-
-
+                
 				// Drop weight of the photon due to an interaction with the medium.
 				drop();
-
+                
 				// Calculate the new coordinates of photon propagation.
 				spin();
-
+                
 				// Test whether the photon should continue propagation from the
 				// Roulette rule.
 				performRoulette();
-
-				// Capture the locations of all interactions of the photon.
-				//captureLocationCoords();
-
+                
 			}
-			else {
-				hop(); // need to make the move to the boundary,
-				// otherwise the check for 'didExitThroughDetectorAperture()'
-				// will never be true.
-
-				if (didExitThroughDetectorAperture()) {
-
-					// Capture the location of where the photon exited from the medium
-					// as well as its path length when that occured.
-					captureExitCoordsLengthWeight();
-				}
-
-
-				// If photon has left the medium we kill it and break from the while loop.
-				this->status = DEAD;
-				break;  // break from while loop and execute reset().
-			}
-
-
+            
+            
 		} // end while() loop
 
 
@@ -209,124 +242,50 @@ void Photon::injectPhoton(Medium *medium, const int iterations, unsigned int sta
 
 		// Reset the photon and start propogation over from the beginning.
 		reset();
-
+        
 	} // end for() loop
-
-	writeExitLocationsLengthWeight();
-
+    
+    
 	// This thread has executed all of it's photons, so now we update the global
 	// absorption array in the medium.
-	// m_medium->absorbEnergy(local_Cplanar);
-}
-
-// FIXME: *** should eventually take into account reflectance since we always
-//			  assume transmission once a photon reaches the boundary of the
-//			  medium.
-//        ***
-// Return a boolean value if the photon is still within the bounds of the
-// medium (true) or if it has left the medium (false).
-// NOTE: setStepSize() must occur before this test is made.
-bool Photon::isPhotonInMedium(void)
-{
-	double temp_x = this->x_disp + step*dirx;
-	double temp_y = this->y_disp + step*diry;
-	double temp_z = this->z_disp + step*dirz;
-
-	// See if the step produced from 'setStepSize()' put the photon
-	// outside of the bounds of the medium.
-	if (!(temp_x <= (*m_medium).x_bound && temp_x >= 0))
-	{
-		// If the photon step size moved the photon past the x-bounds
-		// of the medium, move to the x-boundary, update the status of
-		// the photon (DEAD), and return false since it is no longer in the medium.
-		// This same check is made for the y-bound and z-bound's of the medium below.
-		this->x = (*m_medium).x_bound;
-		this->status = DEAD;
-		return false;
-	}
-	else if (!(temp_y <= (*m_medium).y_bound && temp_y >= 0))
-	{
-		this->y = (*m_medium).y_bound;
-		this->status = DEAD;
-		return false;
-	}
-	else if (!(temp_z <= (*m_medium).z_bound && temp_z >= 0))
-	{
-		//cout << "exited through x-y plane\n";
-		this->z = (*m_medium).z_bound;
-		this->status = DEAD;
-		return false;
-	}
-	else
-	{
-		// If all other tests fail, then we are still in the medium
-		// so we return true.
-		return true;
-	}
+	//m_medium->absorbEnergy(local_Cplanar);
+    
 }
 
 
-// Check the location of departure from the medium and if it falls
-// within the bounds of the aperture, then record the position and
-// phase of the photon.
-bool Photon::didExitThroughDetectorAperture(void)
-{
-	// Note: z-axis is along the path of initial propagation (i.e. injection into the medium)
-	//       and the x-axis is taken to be the axis of displacement.
 
-	// Defining the aperture to be 1x1 cm and centered
-	// around the injection point (5,5) and sitting on the x-y plane.
-	if (z_disp >= (*m_medium).z_bound) {
-		if ((x_disp >= 3.5 && x_disp <= 5.5) &&
-				(y_disp >= 3.5 && y_disp <= 5.5))
-		{
+void Photon::plotPath(void)
 
-			//cout << "hit aperture" << endl;
-			cnt_through_aperture++;
-			return true;
-		}
-	}
-
-	// If above is not true, photon has exited somewhere else in the medium
-	// so return false.
-	return false;
-}
-
-void Photon::plotPath()
 {
 	// STUB
 }
 
 
+
+
 void Photon::reset()
 {
 #ifdef DEBUG
-	cout << "Reseting Photon...\n";
+	cout << "Resetting Photon...\n";
 #endif
-
+    
 	// Photon just created, so it is alive.
 	status = ALIVE;
-
+    
 	// Set back to initial weight values.
 	weight = 1;
-
-	// FIXME: ASSUMES GRID IS 10x10x10 cm.
-	// need to reset to the photons initial location.
-	x = 5;
-	y = 5;
-	z = 1;
-
-	// FIXME: ASSUMES GRID IS 10x10x10 cm.
-	// Reset the displaced ('displaced path') coordinates for the photon.
-	x_disp = 5;
-	y_disp = 5;
-	z_disp = 1;
-
-
+    
+    // Set tagged boolean back to false.
+    tagged = false;
+    // Set the vector that contains the current location of the photon.
+	currLocation->location.x = illuminationCoords.x;
+    currLocation->location.y = illuminationCoords.y;
+    currLocation->location.z = illuminationCoords.z;
+    
 	r = 0;
 	step = 0;
 	step_remainder = 0;
-
+    
 	// Reset the number of interactions back to zero.
 	num_steps = 0;
 
@@ -334,9 +293,6 @@ void Photon::reset()
 	original_path_length = 0;
 	displaced_path_length = 0;
 
-	// 'cnt' represents the number of times a photon has propogated
-	// through the medium.
-	cnt = 0;
 
 
 
@@ -350,6 +306,8 @@ void Photon::reset()
 	// Randomly set photon trajectory to yield isotropic or anisotropic source.
 	initTrajectory();
 
+    // Reset the current layer from the injection coordinates of the photon.
+    currLayer = m_medium->getLayerFromDepth(currLocation->location.z);
 
 }
 
@@ -357,17 +315,12 @@ void Photon::reset()
 // Update the step size for the photon.
 void Photon::setStepSize()
 {
-
 	// Update the current values of the absorption and scattering coefficients
 	// based on the depth in the medium (i.e. which layer the photon is in).
-	// FIXME: *** when simulating AO we inject photons normal to the z-axis,
-	//			  since the ultrasound propagates al
-	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
-	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
-
-	//double mu_a = 1.0;		// cm^-1
-	//double mu_s = 100.0;		// cm^-1
-
+    double mu_a = currLayer->getAbsorpCoeff(currLocation);
+    double mu_s = currLayer->getScatterCoeff();
+    
+    
 	// If last step put the photon on the layer boundary
 	// then we need a new step size.  Otherwise, the step
 	// is set to remainder size and update step_remainder to zero.
@@ -378,7 +331,7 @@ void Photon::setStepSize()
 	}
 	else
 	{
-		step = step_remainder;
+		step = step_remainder/(mu_a + mu_s);
 		step_remainder = 0.0;
 	}
 }
@@ -419,6 +372,65 @@ void Photon::captureExitCoordsLengthWeight(void)
 	photon_exit_data.push_back(weight);
 }
 
+
+// Tests if the photon will come into contact with a layer boundary
+// after setting the new step size.  If so the process of transmitting or
+// reflecting the photon begins.
+bool Photon::checkLayerBoundary(void)
+{
+    if (hitLayerBoundary())
+    {
+#ifdef DEBUG
+        cout << "Hit layer boundary\n";
+#endif
+        
+        hop();	// Move the photon to the layer boundary.
+        transmitOrReflect("layer");
+        return true;
+    }
+    
+    return false;
+}
+
+bool Photon::checkMediumBoundary(void)
+{
+    if (hitMediumBoundary())
+    {
+#ifdef DEBUG			
+        cout << "Hit medium boundary\n";
+#endif
+        hop();  // Move the photon to the medium boundary.
+        transmitOrReflect("medium");
+        return true;
+    }
+    
+    return false;
+}
+
+
+// Check if the photon passed through the detection window.
+// Returns the number of detectors that were crossed in this
+// hop in the case of multiple detectors present.
+bool Photon::checkDetector(void)
+{
+    
+    // We have to hop() once to move the currentLocation to what was calculated
+    // from setStepSize(), since we made it here after verifying that the new
+    // step size would have put the photon outside of the medium, but it was
+    // never made to move to the new position.  Therefore prevLocation == currLocation
+    // until hop is made.
+    //hop();
+    int cnt =  m_medium->photonHitDetectorPlane(this->currLocation);
+    // If cnt > 0 the photon exited through the bounds of the detector.
+    if (cnt > 0) 
+    {
+        return true;
+    }
+    else
+        return false;
+}
+
+
 // Step photon to new position.
 void Photon::hop()
 {
@@ -428,6 +440,7 @@ void Photon::hop()
 
 	cnt++;
 
+/*
 	// Record the location of the photon during this interaction.
 	//captureLocationCoords();
 
@@ -463,7 +476,21 @@ void Photon::hop()
 
 	// Calculate the path length of the photon WITH displacement.
 	displaced_path_length += getPathLength((x_disp - temp_x), (y_disp - temp_y), (z_disp - temp_z));
-
+*/
+    
+	//setStepSize();
+    
+    // Save the coordinates of the photon before it is moved through
+    // the medium.  This allows us to check if the photon passed through
+    // an absorber.
+    prevLocation->location.x = currLocation->location.x;
+    prevLocation->location.y = currLocation->location.y;
+    prevLocation->location.z = currLocation->location.z;
+    
+    // Move the photon to the new location in the medium.
+    currLocation->location.x += step*currLocation->getDirX();
+	currLocation->location.y += step*currLocation->getDirY();
+	currLocation->location.z += step*currLocation->getDirZ();
 }
 
 
@@ -473,36 +500,76 @@ void Photon::drop()
 #ifdef DEBUG
 	cout << "Dropping...\n";
 #endif	
-
-	// Update the current values of the absorption and scattering coefficients
-	// based on the depth in the medium (i.e. which layer the photon is in).
-	double mu_a = m_medium->getLayerAbsorptionCoeff(z);  // cm^-1
-	double mu_s = m_medium->getLayerScatterCoeff(z);	  // cm^-1
-
-
-
-	// Calculate the albedo and remove a portion of the photon's weight for this
-	// interaction.
-	double albedo = mu_s / (mu_a + mu_s);
-	double absorbed = weight * (1 - albedo);
-
+    
+    double mu_a = 0.0f;
+    double mu_s = 0.0f;
+    double albedo = 0.0f;
+    double absorbed = 0.0f;
+    
+    
+    Absorber *absorber;
+    absorber = currLayer->getAbsorber(currLocation);
+    // If an absorber was returned, then we get the absorption and
+    // scattering coefficients from it.  Otherwise we use the values
+    // from the background layer.
+    if (absorber != NULL)
+    {
+        mu_a = absorber->getAbsorberAbsorptionCoeff();
+        mu_s = absorber->getAbsorberScatteringCoeff();
+        
+        // Calculate the albedo and remove a portion of the photon's weight for this
+        // interaction.
+        albedo = mu_s / (mu_a + mu_s);
+        absorbed = weight * (1 - albedo);
+        
+        // Update the absorbed weight in this absorber.
+        absorber->updateAbsorbedWeight(absorbed);
+        
+        // If this photon hit an absorber we set tagged to true, which
+        // assumes our tagging volume completely encompasses the absorber
+        // and is the same shape.
+        tagged = true;
+    }
+    else
+    {
+        // Update the current values of the absorption and scattering coefficients
+        // based on the depth in the medium (i.e. which layer the photon is in).
+        mu_a = currLayer->getAbsorpCoeff();
+        mu_s = currLayer->getScatterCoeff();
+        
+        // Calculate the albedo and remove a portion of the photon's weight for this
+        // interaction.
+        albedo = mu_s / (mu_a + mu_s);
+        absorbed = weight * (1 - albedo);
+    }
+    
+    
+    
 	// Remove the portion of energy lost due to absorption at this location.
 	weight -= absorbed;
-
+    
 	// Deposit lost energy in the grid of the medium.
 	//m_medium->absorbEnergy(z, absorbed);
-
-
-//	double r = fabs(z);
-//	int ir = (r/radial_bin_size);
-//	if (ir >= num_radial_pos) {
-//		ir = num_radial_pos;
-//	}
-//	// Deposit lost energy of the photon into the local detection grid.
-//	local_Cplanar[ir] += absorbed;
-
-
+    
+    
+	// Deposit lost energy.
+    //updateLocalWeightArray(absorbed);
+    
 }
+
+
+// Update the local absorbed energy array.
+void Photon::updateLocalWeightArray(const double absorbed)
+{
+    double r = fabs(currLocation->location.z);
+	int ir = (r/radial_bin_size);
+	if (ir >= num_radial_pos) {
+		ir = num_radial_pos;
+	}
+	// Deposit lost energy of the photon into the local detection grid.
+	local_Cplanar[ir] += absorbed;
+}
+
 
 // Calculate the new trajectory of the photon.
 void Photon::spin()
@@ -510,14 +577,18 @@ void Photon::spin()
 #ifdef DEBUG
 	cout << "Spinning...\n";
 #endif	
-
+    
 	// Get the anisotropy factor from the layer that resides at depth 'z' in
 	// the medium.
-	//double g = m_medium->getAnisotropyFromDepth(z);
-	double g = 0.90;
+	// FIXME: Need to index into layer and check if absorber causes this to change.
+    double g = currLayer->getAnisotropy();
 
 	double rnd = getRandNum();
-
+    
+    double dirZ = currLocation->getDirZ();
+    double dirY = currLocation->getDirY();
+    double dirX = currLocation->getDirX();
+    
 	if (g == 0.0) {
 		cos_theta = (2.0 * rnd) - 1.0;
 	} 
@@ -526,7 +597,7 @@ void Photon::spin()
 		cos_theta = (1.0 + g*g - temp*temp)/(2.0*g);
 	}
 	sin_theta = sqrt(1.0 - cos_theta*cos_theta); /* sqrt() is faster than sin(). */
-
+    
 	// Sample 'psi'.
 	psi = 2.0 * PI * getRandNum();
 	double cos_psi = cos(psi);
@@ -537,26 +608,28 @@ void Photon::spin()
 	else {
 		sin_psi = -sqrt(1.0 - cos_psi*cos_psi);
 	}
-
+    
 	double uxx, uyy, uzz;
 	double temp;
 	/* New trajectory. */
-	if (1 - fabs(dirz) <= ONE_MINUS_COSZERO) {      /* close to perpendicular. */
+	if (1 - fabs(dirZ) <= ONE_MINUS_COSZERO) {      /* close to perpendicular. */
 		uxx = sin_theta * cos_psi;
 		uyy = sin_theta * sin_psi;
-		uzz = cos_theta * SIGN(dirz);   /* SIGN() is faster than division. */
+		uzz = cos_theta * SIGN(dirZ);   /* SIGN() is faster than division. */
 	} 
 	else {					/* usually use this option */
-		temp = sqrt(1.0 - dirz * dirz);
-		uxx = sin_theta * (dirx * dirz * cos_psi - diry * sin_psi) / temp + dirx * cos_theta;
-		uyy = sin_theta * (diry * dirz * cos_psi + dirx * sin_psi) / temp + diry * cos_theta;
-		uzz = -sin_theta * cos_psi * temp + dirz * cos_theta;
+        
+        
+		temp = sqrt(1.0 - dirZ * dirZ);
+		uxx = sin_theta * (dirX * dirZ * cos_psi - dirY * sin_psi) / temp + dirX * cos_theta;
+		uyy = sin_theta * (dirY * dirZ * cos_psi + dirX * sin_psi) / temp + dirY * cos_theta;
+		uzz = -sin_theta * cos_psi * temp + dirZ * cos_theta;
 	}
-
+    
 	// Update trajectory.
-	dirx = uxx;
-	diry = uyy;
-	dirz = uzz;
+	currLocation->setDirX(uxx);
+	currLocation->setDirY(uyy);
+	currLocation->setDirZ(uzz);
 }
 
 
@@ -568,10 +641,12 @@ void Photon::performRoulette(void)
 			weight /= CHANCE;
 		}
 		else {
+#ifdef DEBUG
+            cout << "Photon died in Roulette\n";
+#endif
 			status = DEAD;
 		}
 	}
-
 }
 
 
@@ -633,9 +708,363 @@ void Photon::specularReflectance(double n1, double n2)
 }
 
 
-void Photon::transmitOrReflect(void)
+
+// FIXME:
+// - The photon, if moving back up to the 'Air' layer, should be able to transmit out of the medium.
+//   Currently this does not happen (maybe because of reflection on the layer boundary?).
+// - If the photon hits the layer at the bottom of the medium, it gets stuck there until
+//   it pobabilistically is transmitted through the medium.  It should hit the layer, check
+//   the medium, and determine if it should transmit or reflect.  This bug only arises occasionally.
+void Photon::transmit(const char *type)
 {
-	// XXX: FINISH ME
+    // 'tempLayer' is used 
+    Layer *tempLayer = NULL;
+    
+    if (strcmp("layer", type) == 0)
+    {
+#ifdef DEBUG
+        cout << "Transmitting through layer\n";
+        cout << currLocation;
+#endif
+        
+        
+        // If we transmit through the layer to another we must update
+        // the current layer pointer of the photon so it will correctly 
+        // calculate the next step size.
+        if (currLocation->getDirZ() > 0)
+            tempLayer = m_medium->getLayerBelowCurrent(currLocation->location.z);
+        else
+            tempLayer = m_medium->getLayerAboveCurrent(currLayer);
+        
+        // Set the direction cosine.
+        currLocation->setDirZ(cos(transmission_angle));
+        
+        
+        // If 'tempLayer' is NULL we are at the edge of the medium since
+        // the layer above or below does not exist.  Therefore we decide if the
+        // photon should reflect or transmit from the medium boundary.
+        if (tempLayer == NULL) 
+        {
+            // Since 'tempLayer' is NULL we have tried to retrieve a layer outside of the
+            // medium's bounds.  Therefore 'currLayer' still is valid (i.e. not NULL) and we check
+            // if the photon should reflect or transmit through the medium.
+            if (hitMediumBoundary())
+            {
+                hop(); // Move the photon to the medium boundary.
+                transmitOrReflect("medium");
+            }
+        }
+        else
+        {
+            currLayer = tempLayer;
+        }
+                    
+    }
+    else if (strcmp("medium", type) == 0)
+    {
+#ifdef DEBUG
+        cout << "Transmitting through medium boundary\n";
+        cout << currLocation;
+#endif
+        // If we transmit through the medium, meaning the photon exits the medium
+        // we see if the exit location passed through the detector.  If so, the exit
+        // location and exit angle are written out to file, but only when this photon
+        // has been tagged (i.e. interacted with an absorber).
+        if (checkDetector() && tagged)
+        {
+            // If we hit the detector when transmitting the photon, then we write the exit
+            // data to file.
+            Logger::getInstance()->writeExitData(this->currLocation, 
+                                                 this->weight);
+        }
+        
+        // The photon has left the medium, so kill it.
+        this->status = DEAD;
+    }
+    else
+    {
+        cout << "Error:  Wrong paramater passed to Photon::transmit()\n";
+    }
+    
+}
+
+
+void Photon::transmitOrReflect(const char *type)
+{
+	// Test whether to transmit the photon or reflect it.  If the reflectance is
+	// greater than the random number generated, we internally reflect, otherwise
+	// transmit.
+	// Case when interaction is with a layer boundary.
+	if (strcmp("layer", type) == 0)
+	{
+		// Stochastically determine if the photon should be transmitted or reflected.
+		if (getLayerReflectance() > getRandNum())
+		{
+#ifdef DEBUG
+            cout << "Internally reflecting on layer boundary\n";
+#endif
+			internallyReflectZ();
+            
+			// Since the photon has interacted with the tissue we deposit weight.
+			drop();
+            
+			// Perform roulette to determine if the photon should continue propagation.
+			// NOTE: spin() is not performed since the photon has been internally reflected
+			//	   	and the new direction has been taken care of by internallyReflect().
+			performRoulette();
+            
+		}
+		else
+		{
+#ifdef DEBUG
+            cout << "Transmitting through layer\n";
+#endif
+			transmit("layer");
+		}
+	}
+	// Case when interaction is with a medium boundary.
+	else if (strcmp("medium", type) == 0)
+	{
+		// Stochastically determine if the photon should be transmitted or reflected.
+		if (getMediumReflectance() > getRandNum())
+		{
+#ifdef DEBUG
+            cout << "Reflecting photon on medium boundary\n";
+#endif
+			// Depending on which medium boundary was hit, we reflect on that axis,
+            // change the direction of the direction cosign, and reset the boolean flag.
+            if (hit_x_bound)
+            {
+				internallyReflectX();
+            }
+			else if (hit_y_bound)
+            {
+				internallyReflectY();
+            }
+			else if (hit_z_bound)
+            {
+				internallyReflectZ();
+            }
+            else
+            {
+                cout << "Error, no medium boundary hit\n";
+            }
+            
+            
+			// Since the photon has interacted with the tissue we deposit weight.
+			drop();
+            
+			// Perform roulette to determine if the photon should continue propagation.
+			// NOTE: spin() is not performed since the photon has been internally reflected
+			//	   	and the new direction has been taken care of by internallyReflect().
+			performRoulette();
+		}
+        else
+        {
+            transmit("medium");
+        }
+	}
+	else
+	{
+		cout << "Error: transmitOrReflect()\n";
+	}
+}
+
+
+
+// XXX: *** Need to verify the logic below is correct ***
+double Photon::getMediumReflectance(void)
+{
+	// Sanity check.
+	assert((hit_x_bound == true) ||
+           (hit_y_bound == true) ||
+           (hit_z_bound == true));
+    
+    
+	//Layer *currLayer = m_medium->getLayerFromDepth(currLocation->location.z);
+	double refract_index_n1 = currLayer->getRefractiveIndex();	// Current layer's refractive index.
+	double refract_index_n2 = 1.0;	// Outside of the medium is only air.
+    
+    
+	double axis_direction = 0.0;
+	if (hit_x_bound)
+		axis_direction = currLocation->getDirX();
+	else if (hit_y_bound)
+		axis_direction = currLocation->getDirY();
+	else
+		axis_direction = currLocation->getDirZ();
+    
+	// Calculate the incident angle based on the axis in which the photon hit the medium.
+	double incident_angle = acos(abs(axis_direction));
+    
+	// Calculate the critical angle.
+	double critical_angle = asin(refract_index_n2 / refract_index_n1);
+    
+	// If the incident angle is larger than the critical angle, the reflectance
+	// is set to 1, otherwise the reflectance is calculated from Fresnel's equation.
+	if (incident_angle > critical_angle)
+	{
+		reflectance = 1;
+	}
+	else
+	{
+        // Calculate the transmission angle through the layer boundary.
+		this->transmission_angle = asin(refract_index_n1/refract_index_n2 * sin(incident_angle));
+		
+        // Calcualte the Fresnel reflection 
+        reflectance = 0.5 * (pow(sin(incident_angle-transmission_angle), 2)/pow(sin(incident_angle+transmission_angle), 2)
+                             + pow(tan(incident_angle-transmission_angle), 2)/pow(tan(incident_angle+transmission_angle), 2));
+	}
+    
+    
+	return reflectance;
+    
+}
+
+
+double Photon::getLayerReflectance(void)
+{
+	double refract_index_n1 = 0.0;	// Current layer's refractive index.
+	double refract_index_n2 = 0.0;	// Next layer's refractive index.
+	//Layer *currLayer = m_medium->getLayerFromDepth(currLocation->location.z);
+	Layer *nextLayer;
+    
+	double incident_angle = acos(abs(currLocation->getDirZ()));
+	refract_index_n1 = currLayer->getRefractiveIndex();
+    
+	// If the photon is moving towards a deeper layer.
+	if (currLocation->getDirZ() > 0)
+	{
+		nextLayer = m_medium->getLayerBelowCurrent(currLocation->location.z);
+	}
+	// If the photon is moving towards a more shallow layer.
+	else if (currLocation->getDirZ() < 0)
+	{
+		nextLayer = m_medium->getLayerAboveCurrent(currLayer);
+	}
+	// Perpendicular propagation.
+	else
+	{
+		// FIXME:
+		// This is where propagation is normal to the boundary/layer
+		// and should be transmitted regardless.
+		cout << "Photon should transmit...\n";
+	}
+    
+    
+    // If the layer above or below is outside of the medium
+    // we assign the refractive index to be air, otherwise
+    // use the value from the layer.
+    if (nextLayer == NULL)
+        refract_index_n2 = 1.0;
+    else
+        refract_index_n2 = nextLayer->getRefractiveIndex();
+
+    
+	// Calculate the critical angle.
+    if (refract_index_n2 > refract_index_n1)
+    {
+        // For specular refection we always remove some portion of the weight and transmit the photon
+        // to the next layer.
+        transmission_angle = asin(refract_index_n1/refract_index_n2 * sin(incident_angle));
+        specularReflectance(refract_index_n1, refract_index_n2);
+
+        // Since we know we transmit, set reflectance to zero.
+        reflectance = 0;
+    }
+    else
+    {
+        double critical_angle = asin(refract_index_n2 / refract_index_n1);
+        // If the incident angle is larger than the critical angle, the reflectance
+        // is set to 1, otherwise the reflectance is calculated from Fresnel's equation.
+        if (incident_angle > critical_angle)
+        {
+            reflectance = 1;
+        }
+        else
+        {
+            transmission_angle = asin(refract_index_n1/refract_index_n2 * sin(incident_angle));
+            
+            reflectance = 0.5 * (pow(sin(incident_angle-transmission_angle), 2)/pow(sin(incident_angle+transmission_angle), 2)
+                                 + pow(tan(incident_angle-transmission_angle), 2)/pow(tan(incident_angle+transmission_angle), 2));
+        }
+    }
+    
+	return reflectance;
+}
+
+
+
+
+
+// Note: We take the absolute value in the case where the direction 
+//       cosine is negative, since the distance to boundary would be
+//       negative otherwise, which is untrue.  This arises due to assuming
+//       the lower axis bound in each dimension (x, y, z) begins at zero.
+//       This could also be achieved by simply subtracting the current location
+//       from zero (e.g. 0-y/diry), which would change the sign as well.
+bool Photon::hitMediumBoundary(void)
+{
+	double distance_to_boundary = 0.0;
+	//Layer *layer = m_medium->getLayerFromDepth(currLocation->location.z);
+	double mu_t = currLayer->getTotalAttenuationCoeff();
+	double x_bound = m_medium->getXbound();
+	double y_bound = m_medium->getYbound();
+	double z_bound = m_medium->getZbound();
+    
+	// Check if the photon has been given a step size past the outer edges of the medium.
+	// If so we calculate the distance to the boundary.
+	
+    
+    if (step*currLocation->getDirX() + currLocation->location.x >= x_bound || 
+        step*currLocation->getDirX() + currLocation->location.x <= 0)
+	{
+		hit_x_bound = true;
+		if (currLocation->getDirX() > 0) // Moving towards positive x_bound
+			distance_to_boundary = (x_bound - currLocation->location.x) / currLocation->getDirX();
+		else
+			distance_to_boundary = abs(currLocation->location.x / currLocation->getDirX());
+	}
+	else if	(step*currLocation->getDirY() + currLocation->location.y >= y_bound || 
+             step*currLocation->getDirY() + currLocation->location.y <= 0)
+	{
+		hit_y_bound = true;
+		if (currLocation->getDirY() > 0) // Moving towards positive y_bound
+			distance_to_boundary = (y_bound - currLocation->location.y) / currLocation->getDirY();
+		else
+			distance_to_boundary = abs(currLocation->location.y / currLocation->getDirY());
+	}
+	else if (step*currLocation->getDirZ() + currLocation->location.z >= z_bound || 
+             step*currLocation->getDirZ() + currLocation->location.z <= 0)
+	{
+		hit_z_bound = true;
+		if (currLocation->getDirZ() > 0) // Moving towards positive z_bound
+			distance_to_boundary = (z_bound - currLocation->location.z) / currLocation->getDirZ();
+		else
+			distance_to_boundary = abs(currLocation->location.z / currLocation->getDirZ());
+	}
+	// No boundaries have been crossed, so return false.
+	else
+	{
+		return false;
+	}
+
+    
+	// If the step size of the photon is larger than the distance
+	// to the boundary and we are moving in some direction along
+	// the axis we calculate the left over step size and then step
+	// the photon to the boundary with the next call to 'hop()'.
+	//if (step > distance_to_boundary && distance_to_boundary != 0)
+	if (step > distance_to_boundary)
+    {
+		step_remainder = (step - distance_to_boundary)*mu_t;
+		step = distance_to_boundary;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 
@@ -646,35 +1075,39 @@ bool Photon::hitLayerBoundary(void)
 	// 2) If distance to boundary is less than the current step_size of the
 	//   photon, we move the photon to the boundary and keep track of how
 	//   much distance is left over from step_size - distance_to_boundary.
-
+    
 	double distance_to_boundary = 0.0;
-	Layer *layer = m_medium->getLayerFromDepth(z);
-
-
+	//Layer *layer = m_medium->getLayerFromDepth(currLocation->location.z);
+	double mu_t = currLayer->getTotalAttenuationCoeff();
+    
+    
+    
 	// If the direction the photon is traveling is towards the deeper boundary
 	// of the layer, we execute the first clause.  Otherwise we are moving to
 	// the more superficial boundary of the layer.
-	if (dirz > 0.0)
+	if (currLocation->getDirZ() > 0.0)
 	{
-		distance_to_boundary = (layer->getDepthEnd() - z) / dirz;
+		distance_to_boundary = (currLayer->getDepthEnd() - currLocation->location.z) / currLocation->getDirZ();
 	}
-	else if (dirz < 0.0)
+	else if (currLocation->getDirZ() < 0.0)
 	{
-		distance_to_boundary = (layer->getDepthStart() - z) / dirz;
+		distance_to_boundary = (currLayer->getDepthStart() - currLocation->location.z) / currLocation->getDirZ();
 	}
-
+    
+    
 	// If the step size of the photon is larger than the distance
 	// to the boundary and we are moving in some direction along
 	// the z-axis (i.e. not parallel to the layer boundary) we calculate
 	// the left over step size and then step the photon to the boundary.
-	if (dirz != 0.0 && step > distance_to_boundary * layer->getTotalAttenuationCoeff())
+	if (currLocation->getDirZ() != 0.0 && step > distance_to_boundary)
 	{
-		step_remainder = step - (distance_to_boundary * layer->getTotalAttenuationCoeff());
+		step_remainder = (step - distance_to_boundary)*mu_t;
 		step = distance_to_boundary;
 		return true;
 	}
 	else
 	{
+        
 		return false;
 	}
 }
@@ -699,11 +1132,11 @@ double Photon::HybridTaus(void)
 {
 	// Combined period is lcm(p1,p2,p3,p4)~ 2^121
 	return 2.3283064365387e-10 * (              // Periods for the RNG.
-			TausStep(z1, 13, 19, 12, 4294967294UL) 	^  // p1=2^31-1
-			TausStep(z2, 2, 25, 4, 4294967288UL) 	^    // p2=2^30-1
-			TausStep(z3, 3, 11, 17, 4294967280UL) 	^   // p3=2^28-1
-			LCGStep(z4, 1664525, 1013904223UL)        // p4=2^32
-	);
+                                  TausStep(z1, 13, 19, 12, 4294967294UL) 	^  // p1=2^31-1
+                                  TausStep(z2, 2, 25, 4, 4294967288UL) 	^    // p2=2^30-1
+                                  TausStep(z3, 3, 11, 17, 4294967280UL) 	^   // p3=2^28-1
+                                  LCGStep(z4, 1664525, 1013904223UL)        // p4=2^32
+                                  );
 }
 
 
@@ -711,20 +1144,20 @@ double Photon::getRandNum(void)
 {
 	// Thread safe RNG.
 	return HybridTaus();
-
-
-
-
+    
+    
+    
+    
 	// Non-thread safe RNG
 	//	double rnd = (double)rand()/(double)RAND_MAX;
 	//	while ((rnd == 0) || (rnd == 1)) { // produces 0 < rnd < 1
 	//		rnd = (double)rand()/(double)RAND_MAX;
 	//	}
 	//	return rnd;
-
-
-
-
+    
+    
+    
+    
 	// FIXME:  Using the Boost Random Library is MUCH slower when generating
 	//			random numbers.  Questions to answer,
 	//			- Is it the algorithm used (i.e. Mersenne-twister)?
