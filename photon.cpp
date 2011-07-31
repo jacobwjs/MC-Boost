@@ -59,7 +59,6 @@ Photon::~Photon(void)
 #ifdef DEBUG	
 	cout << "Destructing Photon...\n";
 #endif
-	cout << "Number of photons that passed to detector = " << cnt_through_aperture << endl;
 }
 
 
@@ -277,6 +276,7 @@ void Photon::reset()
     
     // Set tagged boolean back to false.
     tagged = false;
+    
     // Set the vector that contains the current location of the photon.
 	currLocation->location.x = illuminationCoords.x;
     currLocation->location.y = illuminationCoords.y;
@@ -292,15 +292,6 @@ void Photon::reset()
 	// Reset the path lengths of the photon.
 	original_path_length = 0;
 	displaced_path_length = 0;
-
-
-
-
-	// Clear the coordinate vector so it does not continuously accumulate
-	// positions and grow for each photon.
-	// NOTE: We don't need to clear the photon_exit_data each time since
-	//       it only happens once for each photon.
-	coords.clear();
 
 
 	// Randomly set photon trajectory to yield isotropic or anisotropic source.
@@ -346,9 +337,7 @@ double Photon::getPathLength(double x_dist, double y_dist, double z_dist)
 void Photon::captureLocationCoords(void)
 {
 	// Add the coordinates to the STL vector for the displaced scattering locations.
-	coords.push_back(x_disp);
-	coords.push_back(y_disp);
-	coords.push_back(z_disp);
+    cout << "captureLocationCoords() stub\n";
 }
 
 
@@ -356,9 +345,10 @@ void Photon::captureExitCoordsAndLength(void)
 {
 	// Add the coordinates to the STL vector for the displaced scattering locations
 	// and the displaced length.
-	photon_exit_data.push_back(x_disp);
-	photon_exit_data.push_back(y_disp);
-	photon_exit_data.push_back(displaced_path_length);
+//	photon_exit_data.push_back(x_disp);
+//	photon_exit_data.push_back(y_disp);
+//	photon_exit_data.push_back(displaced_path_length);
+    cout << "captureExitCoordsAndLength() stub\n";
 }
 
 
@@ -366,10 +356,11 @@ void Photon::captureExitCoordsLengthWeight(void)
 {
 	// Add the coordinates to the STL vector for the displaced scattering locations
 	// and the displaced length.
-	photon_exit_data.push_back(x_disp);
-	photon_exit_data.push_back(y_disp);
-	photon_exit_data.push_back(displaced_path_length);
-	photon_exit_data.push_back(weight);
+//	photon_exit_data.push_back(x_disp);
+//	photon_exit_data.push_back(y_disp);
+//	photon_exit_data.push_back(displaced_path_length);
+//	photon_exit_data.push_back(weight);
+    cout << "captureExitCoordsLengthWeight() stub\n";
 }
 
 
@@ -661,19 +652,22 @@ void Photon::writeCoordsToFile(void)
 	//		 << displaced_path_length - original_path_length << endl;
 
 
-	m_medium->writePhotonCoords(coords);
+	//m_medium->writePhotonCoords(coords);
+    cout << "writeCoordsToFile() stub\n";
 }
 
 
 // Write exit locations and path lenghts of photons to file.
 void Photon::writeExitLocationsAndLength(void)
 {
-	m_medium->writeExitCoordsAndLength(photon_exit_data);
+	//m_medium->writeExitCoordsAndLength(photon_exit_data);
+    cout << "Photon::writeExitLocationsAndLength(void) stub\n";
 }
 
 void Photon::writeExitLocationsLengthWeight(void)
 {
-	m_medium->writeExitCoordsLengthWeight(photon_exit_data);
+	//m_medium->writeExitCoordsLengthWeight(photon_exit_data);
+    cout << "Photon::writeExitLocationsLengthWeight(void) stub\n";
 }
 
 // FIXME: CURRENTLY ONLY DISPLACING IN ONE DIRECTION.  SHOULD USE A TENSOR.
@@ -683,9 +677,8 @@ void Photon::displacePhotonFromPressure(void)
 	double pressure = m_medium->getPressureFromCartCoords(x_disp, y_disp, z_disp);
 
 
-	Layer *layer = m_medium->getLayerFromDepth(z_disp);
 	// Impedance of the tissue.
-	double impedance = layer->getImpedance();
+	double impedance = currLayer->getImpedance();
 
 	// Frequency of the ultrasound transducer.
 	static double transducer_freq = m_medium->pmap->getTransducerFreq();
@@ -694,17 +687,9 @@ void Photon::displacePhotonFromPressure(void)
 	// Note: Since we are firing the photons into the medium normal
 	//		 to the propagation of the ultrasound wave, we displace on the
 	//		 x-axis.  Also, multiplication by 100 puts the displacement from meters to cm.
-	double displacement = 100*(pressure*1e6)/(2*Pi*transducer_freq*impedance); // [cm]
+	double displacement = 100*(pressure)/(2*Pi*transducer_freq*impedance); // [cm]
 	x_disp += displacement;
 
-}
-
-
-// XXX: Currently not in use
-void Photon::specularReflectance(double n1, double n2)
-{
-	// update the weight after specular reflectance has occurred.
-	weight = weight - (pow((n1 - n2), 2) / pow((n1 + n2), 2)) * weight;
 }
 
 
@@ -1110,6 +1095,13 @@ bool Photon::hitLayerBoundary(void)
         
 		return false;
 	}
+}
+
+
+void Photon::specularReflectance(double n1, double n2)
+{
+	// update the weight after specular reflectance has occurred.
+	weight = weight - (pow((n1 - n2), 2) / pow((n1 + n2), 2)) * weight;
 }
 
 

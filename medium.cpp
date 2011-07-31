@@ -32,20 +32,7 @@ Medium::~Medium()
 		pmap = NULL;
 	}
 
-	 pmap;
-		pmap = NULL;
-	}
 
-	// Close the various data fi		pmap = NULL;
-	}
-
-	// Close the various data files.
-	coords_file.close();
-
-// Close the various data files.
-	coords_file.close();
-	photon_data_file.close();
-	photon_data_file.close();
 	for (vector<Layer *>::iterator it = p_layers.begin(); it != p_layers.end(); it++)
     {
         (*it)->writeAbsorberData();
@@ -134,9 +121,10 @@ void Medium::absorbEnergy(const double z, const double energy)
 	cout << "Updating bin...\n";
 #endif
 
+    boost::mutex::scoped_lock lock(m_sensor_mutex);
 	double r = fabs(z);
-	int ir = (r/radimutex::scoped_lock lock(m_sensor_mutex);
-	Cplanar[ir] += energy;
+	int ir = (r/radial_size);
+    Cplanar[ir] += energy;
 
 }
 

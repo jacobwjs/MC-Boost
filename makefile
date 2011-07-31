@@ -9,7 +9,7 @@ RM =/bin/rm -rf
 LIBS =-lboost_thread
 
 
-OBJS = main.o photon.o layer.o boundary.o medium.o absorber.o sphereAbsorber.o cylinderAbsorber.o vector3D.o logger.o detector.o circularDetector.o
+OBJS = main.o photon.o layer.o boundary.o medium.o absorber.o sphereAbsorber.o cylinderAbsorber.o vector3D.o logger.o detector.o circularDetector.o pressureMap.o
 #OBJS := $(wildcard *.o)
 
 .cpp.o:

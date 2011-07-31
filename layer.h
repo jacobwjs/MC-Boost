@@ -13,7 +13,6 @@ class Layer
 {	
 
 public:
-	Layer(void);
 	Layer(double mu_a, double mu_s, double ref_index, double anisotropy,
 		  double depth_start, double depth_end);
 	~Layer(void);
@@ -56,10 +55,16 @@ public:
     // Iterate over all absorbers and write their data out to file.
     void    writeAbsorberData(void);
     
+    // Return the absorber at this location 'currLocation' in the medium.
     Absorber * getAbsorber(const boost::shared_ptr<Vector3d> currLocation);
+    
+    double  getImpedance(void) {return this->impedance;}
 
 	
 private:
+    // Impedance of this layer.
+    double impedance;
+    
 	// Anisotropy factor.
 	double g;
 	

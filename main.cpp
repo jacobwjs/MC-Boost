@@ -117,28 +117,15 @@ int main()
 
     
 
-	// The bounds of the simulation grid (i.e. medium).
-	const int X = 2;
-	const int Y = 2;
-	const int Z = 2;
 	// The dimensions of the medium.
     double X_dim = 2.0; // [cm]
     double Y_dim = 2.0; // [cm]
     double Z_dim = 2.0; // [cm]
     
 	// Create the medium in which the photons will be fired.
-	Medium *tissue = new Medium();
-	Medium *tissue = new Medium(X, Y, Z);
+	
 	Medium *tissue = new Medium(X_dim, Y_dim, Z_dim);
 	
-	// Add the layer to the medium.  NOTE:  destruction of the 'Layer' object is
-	// handled in the 'tissue' object.
-	tissue->addLayer(new Layer());
-	// Add the layer to the medium.
-	// NOTE:  destruction of the 'Layer' object is
-	// 		  handled in the 'tissue' object.
-							//mu_a, mu_s,  n,  start, end
-	tissue->addLayer(new Layer(0.1, 100.0, 1.33, 0,  2));
 
     // Define an air layer.
     double mu_a = 0.0;
