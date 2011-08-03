@@ -32,12 +32,7 @@ Medium::~Medium()
 		pmap = NULL;
 	}
 
-	 pmap;
-		pmap = NULL;
-	}
 
-	// Close the various data fi		pmap = NULL;
-	}
 
 	// Close the various data files.
 	coords_file.close();
@@ -96,7 +91,7 @@ void Medium::loadPressure(void)
 {
 	//cout << "LoadPressure\n";
 	assert(pmap != NULL);
-	pmap->loadPressureFromKWave();
+	pmap->loadPressureMap();
 }
 
 
@@ -106,7 +101,7 @@ double Medium::getPressureFromCartCoords(double a, double b, double c)
 {
 	//cout << "getPressureFromCartCoords\n";
 	assert(pmap != NULL);
-	return pmap->getPressureCartCords(a, b, c);
+	return pmap->getPressureCartCoords(a, b, c);
 
 }
 
@@ -134,8 +129,9 @@ void Medium::absorbEnergy(const double z, const double energy)
 	cout << "Updating bin...\n";
 #endif
 
+	boost::mutex::scoped_lock lock(m_sensor_mutex);
 	double r = fabs(z);
-	int ir = (r/radimutex::scoped_lock lock(m_sensor_mutex);
+	int ir = (r/radial_size);
 	Cplanar[ir] += energy;
 
 }

@@ -27,14 +27,13 @@ using namespace std;
 /* If 1+cos(theta) <= ONE_MINUS_COSZERO, fabs(PI-theta) <= 1e-6 rad. */
 #define THRESHOLD	0.01		// Threshold for determining if we should perform roulette
 #define CHANCE      0.1  		// Used in roulette
-#define PI			3.1415926
+#define PI			3.141592653589793238462643383
 #define SIGN(x)           ((x)>=0 ? 1:-1)
 //const int MAX_BINS = 101;
 
 
 
 class Medium;
-#define PI			3.141592653589793238462643383
 
 
 
@@ -345,6 +344,10 @@ private:
     // Structure that contains the cartesian coordinates of the injection point of each
     // photon into the medium.
     coords illuminationCoords;
+
+
+    // Count through the layer.
+    double cnt_through_aperture;
 
 }; 		
 

@@ -8,8 +8,11 @@ CC = g++
 RM =/bin/rm -rf
 LIBS =-lboost_thread
 
+SRCS=$(wildcard *.cpp)
+OBJS=$(SRCS:.cpp=.o)
 
-OBJS = main.o photon.o layer.o boundary.o medium.o absorber.o sphereAbsorber.o cylinderAbsorber.o vector3D.o logger.o detector.o circularDetector.o
+
+#OBJS = main.o photon.o layer.o boundary.o medium.o absorber.o sphereAbsorber.o cylinderAbsorber.o vector3D.o logger.o detector.o circularDetector.o
 #OBJS := $(wildcard *.o)
 
 .cpp.o:

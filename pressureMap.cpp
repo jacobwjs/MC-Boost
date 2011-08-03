@@ -10,7 +10,7 @@
 PressureMap::PressureMap()
 {
 	// Initialize the data structures and values for the pressure map.
-	this->init();
+	initCommon();
 }
 
 
@@ -29,11 +29,11 @@ PressureMap::PressureMap(const string &filename, const int Nx, const int Nz, con
 	p_file = filename;
 
 	// Initialize the data structures and values for the pressure map.
-	this->init();
+	initCommon();
 }
 
 
-void PressureMap::init(void)
+void PressureMap::initCommon(void)
 {
 
 	dx = x_bound/Nx; // [cm] (note: 20e-3/Nx in centimeters is 0.16;
@@ -49,7 +49,7 @@ PressureMap::~PressureMap()
 }
 
 
-void PressureMap::loadPressureFromKWave(void)
+void PressureMap::loadPressureMap(void)
 {
 
 
@@ -102,7 +102,7 @@ double PressureMap::getPressureFromGrid(int a, int b, int c)
 
 // FIXME: NEED TO DO ERROR CHECKING TO ENSURE BOUNDS OF THE GRID ARE RESPECTED.
 // Returns the pressure from the grid based on supplied coordinates.
-double PressureMap::getPressureCartCords(double a, double b, double c)
+double PressureMap::getPressureCartCoords(double a, double b, double c)
 {
 	int _x = floor(a/dx);
 	int _z = floor(b/dz);

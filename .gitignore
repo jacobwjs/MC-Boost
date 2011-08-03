@@ -6,6 +6,7 @@ Xcode/*
 *.xcodeproj
 mc-boost
 *.txt
+*.exe
 *.mexmaci64
 .settings
 .project

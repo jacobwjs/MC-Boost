@@ -36,12 +36,18 @@ public:
     // Return the albedo
 	double	getAlbedo(void) const			{return albedo;}
     
+	// Return the anisotropy of the layer.
 	double	getAnisotropy(void) 		{return g;}
     double  getAnisotropy(const boost::shared_ptr<Vector3d> photonVector) const;
     
+
+    // Return the impedance of the layer.
+    double 	getImpedance(void) {return impedance;}
+
 	double 	getDepthStart(void) const 		{return depth_start;}
 	double  getDepthEnd(void)	const		{return depth_end;}
     
+	// Return the refractive index of the layer.
 	double	getRefractiveIndex(void) const	{return refractive_index;}
     double  getRefractiveIndex(const boost::shared_ptr<Vector3d> photonVector) const;
 
@@ -86,6 +92,9 @@ private:
 	
 	// Albedo of the layer.
 	double albedo;	
+
+	// The impedance of the layer.
+	double impedance;
     
     // A vector that holds all the abosrbers in this layer.
     std::vector<Absorber *> p_absorbers;

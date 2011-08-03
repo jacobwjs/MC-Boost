@@ -201,12 +201,13 @@ void Photon::propagatePhoton(const int iterations)
             
             // Flags for testing if a photon hit/passed through a layer
             // or medium boundary.
-			bool hitLayer = checkLayerBoundary();
+			//bool hitLayer = checkLayerBoundary();
             bool hitMedium = checkMediumBoundary();
 
    
             
-			if (!hitLayer && !hitMedium)
+			//if (!hitLayer && !hitMedium)
+            if (!hitMedium)
 			{
                 // sanity check.
                 assert(this->status == ALIVE);
@@ -300,7 +301,7 @@ void Photon::reset()
 	// positions and grow for each photon.
 	// NOTE: We don't need to clear the photon_exit_data each time since
 	//       it only happens once for each photon.
-	coords.clear();
+	//coords.clear();
 
 
 	// Randomly set photon trajectory to yield isotropic or anisotropic source.
@@ -345,31 +346,34 @@ double Photon::getPathLength(double x_dist, double y_dist, double z_dist)
 
 void Photon::captureLocationCoords(void)
 {
+	cout << "Photon::captureLocationCoords() stub\n";
 	// Add the coordinates to the STL vector for the displaced scattering locations.
-	coords.push_back(x_disp);
-	coords.push_back(y_disp);
-	coords.push_back(z_disp);
+//	coords.push_back(x_disp);
+//	coords.push_back(y_disp);
+//	coords.push_back(z_disp);
 }
 
 
 void Photon::captureExitCoordsAndLength(void)
 {
+	cout << "Photon::captureExitCoordsAndLength() stub\n";
 	// Add the coordinates to the STL vector for the displaced scattering locations
 	// and the displaced length.
-	photon_exit_data.push_back(x_disp);
-	photon_exit_data.push_back(y_disp);
-	photon_exit_data.push_back(displaced_path_length);
+//	photon_exit_data.push_back(x_disp);
+//	photon_exit_data.push_back(y_disp);
+//	photon_exit_data.push_back(displaced_path_length);
 }
 
 
 void Photon::captureExitCoordsLengthWeight(void)
 {
+	cout << "Photon::captureExitCoordsLengthWeight() stub\n";
 	// Add the coordinates to the STL vector for the displaced scattering locations
 	// and the displaced length.
-	photon_exit_data.push_back(x_disp);
-	photon_exit_data.push_back(y_disp);
-	photon_exit_data.push_back(displaced_path_length);
-	photon_exit_data.push_back(weight);
+//	photon_exit_data.push_back(x_disp);
+//	photon_exit_data.push_back(y_disp);
+//	photon_exit_data.push_back(displaced_path_length);
+//	photon_exit_data.push_back(weight);
 }
 
 
@@ -439,6 +443,11 @@ void Photon::hop()
 #endif	
 
 	cnt++;
+
+	// Save the location before making the hop.
+	prevLocation = currLocation;
+
+	// Update the location
 
 /*
 	// Record the location of the photon during this interaction.
@@ -654,6 +663,7 @@ void Photon::performRoulette(void)
 // to file for postprocessing with matlab.
 void Photon::writeCoordsToFile(void)
 {
+	cout << "Photon::writeCoordsToFile() stub\n";
 
 	//	cout << "Non-displaced path length: " << scientific << setprecision(12) <<  original_path_length << endl;
 	//	cout << "Displaced path length: " << scientific << setprecision(12) << displaced_path_length << endl;
@@ -661,19 +671,21 @@ void Photon::writeCoordsToFile(void)
 	//		 << displaced_path_length - original_path_length << endl;
 
 
-	m_medium->writePhotonCoords(coords);
+	//m_medium->writePhotonCoords(coords);
 }
 
 
 // Write exit locations and path lenghts of photons to file.
 void Photon::writeExitLocationsAndLength(void)
 {
-	m_medium->writeExitCoordsAndLength(photon_exit_data);
+	cout << "Photon::writeExitLocationsAndLength() stub\n";
+	//m_medium->writeExitCoordsAndLength(photon_exit_data);
 }
 
 void Photon::writeExitLocationsLengthWeight(void)
 {
-	m_medium->writeExitCoordsLengthWeight(photon_exit_data);
+	cout << "Photon::writeExitLocationsLengthWeight() stub\n";
+	//m_medium->writeExitCoordsLengthWeight(photon_exit_data);
 }
 
 // FIXME: CURRENTLY ONLY DISPLACING IN ONE DIRECTION.  SHOULD USE A TENSOR.
