@@ -15,6 +15,7 @@
 #include "medium.h"
 #include "layer.h"
 #include "pressureMap.h"
+#include "displacementMap.h"
 #include "sphereAbsorber.h"
 #include "cylinderAbsorber.h"
 #include "coordinates.h"

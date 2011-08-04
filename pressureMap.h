@@ -10,23 +10,33 @@
 
 #include <boost/multi_array.hpp>
 #include <iostream>
+using std::cout;
 #include <fstream>
+using std::fstream;
 #include <string>
-using namespace std;
 
 
+
+// Boost array that holds the pressure values after being
+// loaded in from file.
 typedef boost::multi_array<double, 3> three_dim_array;
 typedef three_dim_array::index array_index;
 
 
+// Forward decleration of Vector3d class.
+class Vector3d;
+
 class PressureMap
 {
 public:
-	PressureMap();
-	PressureMap(const string &filename, const int x, const int z, const int y, const int dimension);
+
+	PressureMap(const std::string &filename, const int Nx, const int Nz, const int Ny, const int grid_size);
+	PressureMap(const int Nx, const int Nz, const int Ny, const int grid_size);
 	~PressureMap();
 
 	void 	loadPressureMap(void);
+	void	loadPressureMap(const std::string &filename, const int time_step);
+
 	double 	getPressureFromGrid(int x, int z, int y);
 	double 	getPressureCartCoords(double x, double z, double y);
 	int		getXBound(void) {return x_bound;}
@@ -40,12 +50,11 @@ public:
 
 
 private:
-	void initCommon(void);	// Common init function for constructors of the class.
+	// Ensure the default constructor is private.
+	PressureMap();
 
-	// Holds the pressure values obtained from k-Wave in a 3-dimensional grid
-	// allowing us to index into the grid based on the coordinates of the phton
-	// and retrieve the localized pressure.
-	three_dim_array * pgrid;
+	// Common init function for constructors of the class.
+	void initCommon(void);
 
 	// The bounds of the pressure grid [cm].
 	int x_bound, y_bound, z_bound;
@@ -60,10 +69,15 @@ private:
 	double freq;
 
 	// Input stream
-	ifstream pressure_file;
+	std::ifstream pressure_file_stream;
 
 	// Holds the name of the text file that contains the pressure values.
-	string p_file;
+	std::string pressure_file;
+
+	// Holds the pressure values obtained from k-Wave in a 3-dimensional grid
+	// allowing us to index into the grid based on the coordinates of the phton
+	// and retrieve the localized pressure.
+	three_dim_array * pressure_grid;
 
 };
 
