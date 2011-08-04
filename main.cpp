@@ -39,6 +39,10 @@ const int MAX_PHOTONS = 1000;
 //#define DEBUG 1
 
 void testVectorMath(void);
+void testDisplacements(void);
+
+
+
 
 int main()
 {
@@ -50,11 +54,11 @@ int main()
     Logger::getInstance()->openExitFile(file);
     file = "absorber-data.txt";
     Logger::getInstance()->openAbsorberFile(file);
-
-
     
-
-
+    
+    testDisplacements();
+    
+    /*
 	// The dimensions of the medium.
     //
     double X_dim = 2.0; // [cm]
@@ -66,7 +70,7 @@ int main()
 	Medium *tissue = new Medium(X_dim, Y_dim, Z_dim);
 	
     
-
+    
     // Define a layer in the tissue.
     //
     double mu_a = 0.1f;
@@ -76,8 +80,8 @@ int main()
     double start_depth = 0.0f; // [cm]
     double end_depth = Z_dim; // [cm]
     Layer *tissueLayer0 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
-
-
+    
+    
     
     // Define a spherical absorber.
     //
@@ -107,7 +111,7 @@ int main()
 	
     
 	
-
+    
 	// Add the pressure map object to the medium and load the pressure data.
 	//tissue->addPressureMap(new PressureMap("testing.txt"));
 	const int pgrid_x = 64;  // Number of pixels in the kWave pressure grid.
@@ -119,20 +123,20 @@ int main()
 	pmap->setTransducerFreq(2.0e6); // The frequency of the transducer used to generate the pressure map.
 	tissue->addPressureMap(pmap);
 	tissue->loadPressure();
-
-
-										// x,  y,  z (photon)
+    
+    
+    // x,  y,  z (photon)
 	//cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
-															// z , y , x (pressure)
-
-
+    // z , y , x (pressure)
+    
+    
 	// Allocate the planar grid and set it in the tissue.
 	double *Cplanar = (double*)malloc(sizeof(double) * 101);
 	tissue->setPlanarArray(Cplanar);
-		
+    
 	// Notify user of execution.
 	cout << "Launching photons (" << MAX_PHOTONS << ")...\n";
-
+    
 	// Capture the time before launching photons into the medium.
 	clock_t start, end;
 	start = clock();
@@ -148,13 +152,13 @@ int main()
     // Photon array.
 	Photon photons[NUM_PHOTON_OBJECTS];
 	boost::thread threads[NUM_THREADS];
-
+    
 	// Init the random number generator.
 	srand(time(0));
-
+    
 	// Used to seed the RNG.
 	unsigned int s1, s2, s3, s4;
-
+    
 	// Create the threads and give them photon objects to run.
 	// Each photon object is run MAX_PHOTONS/NUM_THREADS times, which essentially
 	// splits up the work (i.e. photon propagation) amongst many workers.
@@ -165,25 +169,25 @@ int main()
 		s2 = rand() + 128;
 		s3 = rand() + 128;
 		s4 = rand() + 128;
-
+        
 		cout << "Launching photon object" << i << " iterations: " << MAX_PHOTONS/NUM_THREADS << endl;
 		threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS,
-									s1, s2, s3, s4, injectionCoords);
-
+                                   s1, s2, s3, s4, injectionCoords);
+        
 	}
-
+    
 	// Join all created threads once they have done their work.
 	for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
 	{
 		threads[i].join();
 	}
-
+    
 	
 	// Print out the elapsed time it took from beginning to end.
 	end = ((double)clock() - start) / CLOCKS_PER_SEC;
 	cout << "Time elapsed: " << end << endl;
-
-     
+    
+    
 	// Print the matrix of the photon absorptions to file.
 	//tissue->printGrid(MAX_PHOTONS);
 	
@@ -193,66 +197,86 @@ int main()
 	if (pmap)
 		delete pmap;
      
+     */
+    
 	return 0;
 }
 
 
 
+void testDisplacements(void)
+{
+    // Add the pressure map object to the medium and load the pressure data.
+	//tissue->addPressureMap(new PressureMap("testing.txt"));
+	const int dgrid_x = 64;  // Number of pixels in the kWave pressure grid.
+	const int dgrid_y = 64;
+	const int dgrid_z = 64;
+    const int grid_size = 2;
+	//string pressure_file = "C:/Users/StaleyJW/Desktop/Software/MC-Boost/kWave-pressure/pressure-at-25us.txt";
+	string displacement_file = "kWave-displacements/disp";
+    DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, grid_size);
+    dmap->loadDisplacementMaps(displacement_file, 151);
+    //tissue->addPressureMap(pmap);
+	//tissue->loadPressure();
+    
+    
+}
+
 
 // Simple routine to test the vectorMath library.
 void testVectorMath(void)
 {
-
-	    boost::shared_ptr<Vector3d> p0(new Vector3d(2.0f, 1.0f, 1.0f));
-	    boost::shared_ptr<Vector3d> p1(new Vector3d(3.5f, 1.5f, 11.0f));
-	    boost::shared_ptr<Vector3d> dir;
-	    boost::shared_ptr<Vector3d> c0(new Vector3d(0.0f, 0.0f, 11.0f));
-	    boost::shared_ptr<Vector3d> c1(new Vector3d(2.0f, 3.0f, 11.0f));
-	    boost::shared_ptr<Vector3d> c2(new Vector3d(11.0f, 13.5f, 11.0f));
-	    boost::shared_ptr<Vector3d> n;
-
-
-	    n = VectorMath::crossProduct((*c1 - *c0), (*c2 - *c0));
-	    //n.reset(new Vector3d(1.0f, 2.0f, 3.0f));
-	    VectorMath::Normalize(n);
-
-	    double u = VectorMath::dotProduct(n, (*c0 - *p0)) / VectorMath::dotProduct(n, (*p1 - *p0));
-	    double THRESH = 0.0000000000001;
-	    if (u < 0.0f || u > 1.0f + THRESH)
-	        cout << "FALSE\n";
-
-	    cout << "n = " << n;
-	    cout << "u = " << u << endl;
-
-
-	    double z0 = p0->location.z;
-	    double z1 = p1->location.z;
-
-	    double y0 = p0->location.y;
-	    double y1 = p1->location.y;
-
-	    double x0 = p0->location.x;
-	    double x1 = p1->location.x;
-
-	    double distToPlane = abs(VectorMath::dotProduct(n, (*c0-*p0)) / VectorMath::Length(n));
-	    //D = VectorMath::Distance(c0, p0);
-	    cout << "distance to plane = " << distToPlane << endl;
-	    cout << (*c0 - *p0);
-
-	    double z= z0 + (z1-z0)*u;
-	    double y = y0 + (y1-y0)*u;
-	    double x = x0 + (x1-x0)*u;
-
-	    boost::shared_ptr<Vector3d> intersectPoint(new Vector3d(x, y, z));
-	    cout << "intersection point = " << intersectPoint;
-
-
-	    CircularDetector detector(1.0f, Vector3d(1.0f, 1.0f, 11.0f));
-	    detector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
-	    bool hitDetector = detector.photonPassedThroughDetector(p0, p1);
-	    cout << "hitDetector = " << hitDetector << endl;
-
-
+    
+    boost::shared_ptr<Vector3d> p0(new Vector3d(2.0f, 1.0f, 1.0f));
+    boost::shared_ptr<Vector3d> p1(new Vector3d(3.5f, 1.5f, 11.0f));
+    boost::shared_ptr<Vector3d> dir;
+    boost::shared_ptr<Vector3d> c0(new Vector3d(0.0f, 0.0f, 11.0f));
+    boost::shared_ptr<Vector3d> c1(new Vector3d(2.0f, 3.0f, 11.0f));
+    boost::shared_ptr<Vector3d> c2(new Vector3d(11.0f, 13.5f, 11.0f));
+    boost::shared_ptr<Vector3d> n;
+    
+    
+    n = VectorMath::crossProduct((*c1 - *c0), (*c2 - *c0));
+    //n.reset(new Vector3d(1.0f, 2.0f, 3.0f));
+    VectorMath::Normalize(n);
+    
+    double u = VectorMath::dotProduct(n, (*c0 - *p0)) / VectorMath::dotProduct(n, (*p1 - *p0));
+    double THRESH = 0.0000000000001;
+    if (u < 0.0f || u > 1.0f + THRESH)
+        cout << "FALSE\n";
+    
+    cout << "n = " << n;
+    cout << "u = " << u << endl;
+    
+    
+    double z0 = p0->location.z;
+    double z1 = p1->location.z;
+    
+    double y0 = p0->location.y;
+    double y1 = p1->location.y;
+    
+    double x0 = p0->location.x;
+    double x1 = p1->location.x;
+    
+    double distToPlane = abs(VectorMath::dotProduct(n, (*c0-*p0)) / VectorMath::Length(n));
+    //D = VectorMath::Distance(c0, p0);
+    cout << "distance to plane = " << distToPlane << endl;
+    cout << (*c0 - *p0);
+    
+    double z= z0 + (z1-z0)*u;
+    double y = y0 + (y1-y0)*u;
+    double x = x0 + (x1-x0)*u;
+    
+    boost::shared_ptr<Vector3d> intersectPoint(new Vector3d(x, y, z));
+    cout << "intersection point = " << intersectPoint;
+    
+    
+    CircularDetector detector(1.0f, Vector3d(1.0f, 1.0f, 11.0f));
+    detector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
+    bool hitDetector = detector.photonPassedThroughDetector(p0, p1);
+    cout << "hitDetector = " << hitDetector << endl;
+    
+    
 	//    z = (*p) - (*x);
 	//    cout << "p - x = " << z->X() << endl;
 	//

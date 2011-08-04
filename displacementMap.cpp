@@ -18,10 +18,33 @@ DisplacementMap::DisplacementMap()
 }
 
 
-DisplacementMap::DisplacementMap(const std::string &filename, const int x, const int z, const int y, const int grid_size)
+DisplacementMap::DisplacementMap(const std::string &filename, const int Nx, const int Nz, const int Ny, const int grid_size)
 {
-	initCommon();
+    // Assign the number of grid points (pixels in k-wave) used in the simulation.
+	this->Nx = Nx;
+	this->Ny = Ny;
+	this->Nz = Nz;
+    
+	x_bound = y_bound = z_bound = grid_size;  // [cm]
+	
+    
+    initCommon();
 }
+
+
+DisplacementMap::DisplacementMap(const int Nx, const int Nz, const int Ny, const int grid_size)
+{
+    // Assign the number of grid points (pixels in k-wave) used in the simulation.
+	this->Nx = Nx;
+	this->Ny = Ny;
+	this->Nz = Nz;
+    
+	x_bound = y_bound = z_bound = grid_size;  // [cm]
+	
+    initCommon();
+}
+
+
 
 DisplacementMap::~DisplacementMap()
 {
@@ -73,7 +96,7 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 			file_to_open.clear();
 
 			// Concatonate the values passed in to form a filename to read in.
-			std::string file_to_open = filename + 'X' + boost::lexical_cast<std::string>(timeStep);
+			file_to_open = filename + "X-" + boost::lexical_cast<std::string>(timeStep);
 			disp_file_stream.open(file_to_open.c_str());
 
 			// The appropriate displacement grid is assigned to be filled below.
@@ -86,7 +109,7 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 			file_to_open.clear();
 
 			// Concatonate the values passed in to form a filename to read in.
-			std::string file_to_open = filename + 'Y' + boost::lexical_cast<std::string>(timeStep);
+			file_to_open = filename + "Y-" + boost::lexical_cast<std::string>(timeStep);
 			disp_file_stream.open(file_to_open.c_str());
 
 			// The appropriate displacement grid is assigned to be filled below.
@@ -97,7 +120,7 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 			file_to_open.clear();
 
 			// Concatonate the values passed in to form a filename to read in.
-			std::string file_to_open = filename + 'Z' + boost::lexical_cast<std::string>(timeStep);
+			file_to_open = filename + "Z-" + boost::lexical_cast<std::string>(timeStep);
 			disp_file_stream.open(file_to_open.c_str());
 
 			// The appropriate displacement grid is assigned to be filled below.
@@ -105,9 +128,10 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 		}
 
 
+        // Check for successful opening of the file.
 		if (!disp_file_stream)
 		{
-			cout << "!!! Error opening displacement map file " << file_to_open << "!!!\n";
+			cout << "!!! Error opening displacement map file " << file_to_open.c_str() << "!!!\n";
 			exit(1);
 		}
 		else
@@ -118,22 +142,19 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 
 
 		double data = 0.0;
-
+        // Read in data to the proper displacement array.
 		for (array_index a = 0; a < Nx && disp_file_stream.good(); a++)
+        {
 			for (array_index b = 0; b < Nz; b++)
+            {
 				for (array_index c = 0; c < Ny; c++)
 				{
 					disp_file_stream >> data;
 					(*p_displacement_grid)[a][b][c] = data;
+                    cout << (*p_displacement_grid)[a][b][c] << endl;
 				}
-
-		//	// Dump loaded pressure to stdout to see values.
-		//	for (array_index x = 0; x < Nx; x++)
-		//			for (array_index z = 0; z < Nz; z++)
-		//				for (array_index y = 0; y < Ny; y++)
-		//				{
-		//					cout << (*p_displacement_grid)[x][z][y] << endl;
-		//				}
+            }
+        }
 
 
 		disp_file_stream.close();
@@ -143,6 +164,10 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 
 void DisplacementMap::initCommon()
 {
+    assert(Nx != 0 &&
+           Ny != 0 &&
+           Nz != 0);
+    
 	dx = x_bound/Nx; // [cm] (note: 20e-3/Nx in centimeters is 0.16;
 	dy = y_bound/Ny;
 	dz = z_bound/Nz;

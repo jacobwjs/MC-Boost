@@ -34,7 +34,9 @@ class Vector3d;
 class DisplacementMap
 {
 public:
-	DisplacementMap(const std::string &filename, const int x, const int z, const int y, const int grid_size);
+	DisplacementMap(const std::string &filename, const int Nx, const int Nz, const int Ny, const int grid_size);
+    DisplacementMap(const int Nx, const int Nz, const int Ny, const int grid_size);
+
 	~DisplacementMap();
 
 	// Loads a text file containing discrete displacement values at a given time step
