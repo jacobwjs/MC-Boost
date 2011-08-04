@@ -61,7 +61,7 @@ int main()
     double Z_dim = 2.0; // [cm]
     
 	// Create the medium in which the photons will be fired.
-    //
+	
 	Medium *tissue = new Medium(X_dim, Y_dim, Z_dim);
 	
     

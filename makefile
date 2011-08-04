@@ -12,9 +12,6 @@ SRCS=$(wildcard *.cpp)
 OBJS=$(SRCS:.cpp=.o)
 
 
-#OBJS = main.o photon.o layer.o boundary.o medium.o absorber.o sphereAbsorber.o cylinderAbsorber.o vector3D.o logger.o detector.o circularDetector.o
-#OBJS := $(wildcard *.o)
-
 .cpp.o:
 	 $(CC) -c $(CFLAGS) $*.cpp
 

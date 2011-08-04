@@ -13,7 +13,6 @@ class Layer
 {	
 
 public:
-	Layer(void);
 	Layer(double mu_a, double mu_s, double ref_index, double anisotropy,
 		  double depth_start, double depth_end);
 	~Layer(void);
@@ -27,18 +26,18 @@ public:
     
     // Returns the scattering coefficient of the layer.
 	double	getScatterCoeff(void) const	{return mu_s;}
-    double  getScatterCoeff(const boost::shared_ptr<Vector3d> photonVector) const;
+    double  getScatterCoeff(const boost::shared_ptr<Vector3d> photonVector);
     
     // Returns total interaction coefficient (mu_a + mu_s).
 	double	getTotalAttenuationCoeff(void) const	{return mu_t;}
-    double  getTotalAttenuationCoeff(const boost::shared_ptr<Vector3d> photonVector) const;
+    double  getTotalAttenuationCoeff(const boost::shared_ptr<Vector3d> photonVector);
     
     // Return the albedo
 	double	getAlbedo(void) const			{return albedo;}
     
 	// Return the anisotropy of the layer.
 	double	getAnisotropy(void) 		{return g;}
-    double  getAnisotropy(const boost::shared_ptr<Vector3d> photonVector) const;
+    double  getAnisotropy(const boost::shared_ptr<Vector3d> photonVector);
     
 
     // Return the impedance of the layer.
@@ -49,7 +48,7 @@ public:
     
 	// Return the refractive index of the layer.
 	double	getRefractiveIndex(void) const	{return refractive_index;}
-    double  getRefractiveIndex(const boost::shared_ptr<Vector3d> photonVector) const;
+    double  getRefractiveIndex(const boost::shared_ptr<Vector3d> photonVector);
 
 	void	setAbsorpCoeff(const double mu_a);
 	void	setScatterCoeff(const double mu_s);
@@ -62,10 +61,13 @@ public:
     // Iterate over all absorbers and write their data out to file.
     void    writeAbsorberData(void);
     
+    // Return the absorber at this location 'currLocation' in the medium.
     Absorber * getAbsorber(const boost::shared_ptr<Vector3d> currLocation);
+    
 
 	
 private:
+    
 	// Anisotropy factor.
 	double g;
 	
