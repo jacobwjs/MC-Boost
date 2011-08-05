@@ -3,18 +3,44 @@
 
 #include "detector.h"
 #include "layer.h"
-#include "pressureMap.h"
 #include "photon.h" // Photon class is a friend of the Medium class.
 #include <vector>
+#include <string>
 #include <iostream>
+using std::cout;
+using std::endl;
 #include <iomanip>
 #include <fstream>
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
-using namespace std;
 
 // Maximum number of bins that hold absorption values.
 const int MAX_BINS = 101;
+
+
+// Forward declaration of PressureMap and DisplacementMap objects.
+class PressureMap;
+class DisplacementMap;
+
+
+
+typedef struct {
+    // Create a pointer to a PressureMap object.  For use with
+	// modeling acousto-optics.
+	PressureMap * pmap;
+    
+    // Create a pointer to a Displacement object.  For use with
+    // modeling acousto-optics.
+    DisplacementMap * dmap;
+    
+    // Frequency of the transducer used.
+    double transducerFreq;
+    
+    // Number of time steps in the simulation.
+    int totalTimeSteps;
+    
+} kWaveSim;
+
 
 
 // Medium is a container object that holds one or many layer objects that the
@@ -44,6 +70,9 @@ public:
 
 	// Print the grid for this medium.
 	void	printGrid(const int num_photons);
+    
+    // Set the number of time steps that occurred in the K-Wave simulation.
+    void    setKWaveTimeSteps(const int timeSteps) {kwave.totalTimeSteps = timeSteps;}
 	
 	// Add a layer to the medium.
 	void	addLayer(Layer *layer);
@@ -54,16 +83,27 @@ public:
     // See if photon has crossed the detector plane.
     int    photonHitDetectorPlane(const boost::shared_ptr<Vector3d> p0);
 	
-	// Add a pressure map object that holds pressure generated from K-Wave in order to simulate
-	// acousto-optics.
-	void 	addPressureMap(PressureMap *pmap);
-
-	// Load the pressure data generated from K-Wave into the pressure map object.
-	void 	loadPressure(void);
-
+	// Add a pressure map object that holds pressure generated from K-Wave
+    void 	addPressureMap(PressureMap *p_map);
+    
+    // Add a displacement map object that holds pressure generated from k-Wave
+    void    addDisplacementMap(DisplacementMap *d_map);
+    
+	// Load the pressure data generated from K-Wave (at simulation time step 'dt') into the pressure map object.
+	void 	loadPressure(std::string &filename, const int dt);
+    
+	// Load the displacement data generated from K-Wave (at simulation time step 'dt') into the displacement map object.
+    void    loadDisplacement(std::string &filename, const int dt);
+    
 	// Return the pressure from the pressure grid based on cartesian coordinates
 	// of the current location of the photon in the medium.
 	double	getPressureFromCartCoords(double x, double z, double y);
+    
+    // Return the pressure from the pressure grid based on the location of the photon.
+    double  getPressureFromPhotonLocation(const boost::shared_ptr<Vector3d> photonCoords);
+    
+    // Return the displacement vector coordinates from the location of the photon in the medium.
+    boost::shared_ptr<Vector3d> getDisplacementFromPhotonLocation(const boost::shared_ptr<Vector3d> photonCoords);
 
 	// Return the pressure from the pressure grid based on array index into
 	// the matrix.
@@ -107,18 +147,18 @@ public:
 
     // Return the max depth of the medium.
     double 	getDepth() {return depth;}
-
     
     // Return the refractive index of the medium.
-    double getRefractiveIndex(void) {return refractive_index;}
+    double  getRefractiveIndex(void) {return refractive_index;}
+    
     // Write photon coordinates to file.
-    void 	writePhotonCoords(vector<double> &coords);
+    void 	writePhotonCoords(std::vector<double> &coords);
 
     // Write photon exit locations and phases to file.
-    void	writeExitCoordsAndLength(vector<double> &coords_phase);
+    void	writeExitCoordsAndLength(std::vector<double> &coords_phase);
 
     // Write the photon exit locations, phase and weight to file.
-    void	writeExitCoordsLengthWeight(vector<double> &coords_phase_weight);
+    void	writeExitCoordsLengthWeight(std::vector<double> &coords_phase_weight);
 
     // Return the bounds of the medium.
     double getXbound(void) {return x_bound;}
@@ -155,21 +195,19 @@ private:
 	// by photons.
 	boost::mutex m_data_file_mutex;
 
-	// Create a pointer to a PressureMap object.  For use with
-	// modeling acousto-optics.
-	PressureMap * pmap;
-
 
 	// File for dumping photon paths to.  Used in the Photon class.
-	ofstream coords_file;
+    std::ofstream coords_file;
 
 	// File for dumping data regarding exit location, path length, weight, etc.
 	// to file for post processing in matlab.
-	ofstream photon_data_file;
-
+    std::ofstream photon_data_file;
     
     // The refrective index outside of the medium.  We assume air.
     double refractive_index;
+    
+    // A structure that holds K-Wave simulation data and attributes
+    kWaveSim kwave;
 };
 
 #endif	// MEDIUM_H

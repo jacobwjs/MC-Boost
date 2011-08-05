@@ -695,18 +695,7 @@ void Photon::displacePhotonFromPressure(void)
 	double pressure = m_medium->getPressureFromCartCoords(x_disp, y_disp, z_disp);
 
 
-	// Impedance of the tissue.
-	double impedance = currLayer->getImpedance();
-
-	// Frequency of the ultrasound transducer.
-	static double transducer_freq = m_medium->pmap->getTransducerFreq();
-
-	// Displace the photon in the x-axis based on the pressure.
-	// Note: Since we are firing the photons into the medium normal
-	//		 to the propagation of the ultrasound wave, we displace on the
-	//		 x-axis.  Also, multiplication by 100 puts the displacement from meters to cm.
-	double displacement = 100*(pressure)/(2*Pi*transducer_freq*impedance); // [cm]
-	x_disp += displacement;
+    cout << "Photon::displacePhotonFromPressure() stub\n";
 
 }
 

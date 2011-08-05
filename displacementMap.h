@@ -43,11 +43,16 @@ public:
 	// that were obtained from kWave simulation post-processed data.
 	void	loadDisplacementMaps(const std::string &filename, const int timeStep);
 
-
 	// Returns a Vector3d object holding values for displacements in all axes.
 	// That is the returned Vector3d objects holds the values the coordinates of
 	// the photon should be displaced accordingly.
-	Vector3d	getDisplacements(const Vector3d &photonLocation);
+    boost::shared_ptr<Vector3d>	getDisplacements(const Vector3d &photonLocation);
+    boost::shared_ptr<Vector3d> getDisplacements(const double x, const double y, const double z);
+    
+    // Returns the individual axis displacements.
+    double  getDisplacementFromGridXaxis(const int a, const int b, const int c);
+    double  getDisplacementFromGridYaxis(const int a, const int b, const int c);
+    double  getDisplacementFromGridZaxis(const int a, const int b, const int c);
 
 
 

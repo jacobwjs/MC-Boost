@@ -6,6 +6,8 @@
  */
 
 #include "pressureMap.h"
+#include "vector3D.h"
+#include <boost/lexical_cast.hpp>
 
 
 
@@ -42,7 +44,7 @@ PressureMap::PressureMap(const std::string &filename, const int Nx, const int Nz
 }
 
 
-PressureMap::PressureMap( const int Nx, const int Nz, const int Ny, const int grid_size)
+PressureMap::PressureMap(const int Nx, const int Nz, const int Ny, const int grid_size)
 {
 	// Assign the number of grid points (pixels in k-wave) used in the simulation.
 		this->Nx = Nx;
@@ -103,17 +105,50 @@ void PressureMap::loadPressureMap(void)
 			{
 				pressure_file_stream >> data;
 				(*pressure_grid)[a][b][c] = data;
+#ifdef DEBUG
+                cout << (*pressure_grid)[a][b][c] << endl;
+#endif
 			}
 
-//	// Dump loaded pressure to stdout to see values.
-//	for (array_index x = 0; x < Nx; x++)
-//			for (array_index z = 0; z < Nz; z++)
-//				for (array_index y = 0; y < Ny; y++)
-//				{
-//					cout << (*pressure_grid)[x][z][y] << endl;
-//				}
+
+	pressure_file_stream.close();
+}
 
 
+void PressureMap::loadPressureMap(const std::string &filename, const int timeStep)
+{
+    
+    // Concatonate the values passed in to form a filename to read in.
+    std::string file_to_open = filename + boost::lexical_cast<std::string>(timeStep);
+    pressure_file_stream.open(file_to_open.c_str());
+    
+    
+    // Check for successful opening of the file.
+    if (!pressure_file_stream)
+    {
+        cout << "!!! Error opening displacement map file " << file_to_open.c_str() << "!!!\n";
+        exit(1);
+    }
+    else
+    {
+        cout << "Displacement map " << file_to_open.c_str() << "...  opened successfully\n";
+        cout << "Loading displacement values...\n";
+    }
+    
+    
+    double data = 0.0;
+    
+	for (array_index a = 0; a < Nx && pressure_file_stream.good(); a++)
+		for (array_index b = 0; b < Nz; b++)
+			for (array_index c = 0; c < Ny; c++)
+			{
+				pressure_file_stream >> data;
+				(*pressure_grid)[a][b][c] = data;
+#ifdef DEBUG
+                cout << (*pressure_grid)[a][b][c] << endl;
+#endif
+			}
+    
 	pressure_file_stream.close();
 }
 
@@ -130,10 +165,12 @@ double PressureMap::getPressureFromGrid(int a, int b, int c)
 	return (*pressure_grid)[(array_index)a][(array_index)b][(array_index)c];
 }
 
-// FIXME: NEED TO DO ERROR CHECKING TO ENSURE BOUNDS OF THE GRID ARE RESPECTED.
 // Returns the pressure from the grid based on supplied coordinates.
-double PressureMap::getPressureCartCoords(double a, double b, double c)
+double PressureMap::getPressure(double a, double b, double c)
 {
+    // NOTE:
+    // - There is an effective transformation of the y (photon)
+    //   and z (grid) transformation due to the grid orientation in kWave.
 	int _x = floor(a/dx);
 	int _z = floor(b/dz);
 	int _y = floor(c/dy);
@@ -147,6 +184,30 @@ double PressureMap::getPressureCartCoords(double a, double b, double c)
 	//cout << "a=" << _x << ", b=" << _z << ", c=" << _y << endl;
 	return getPressureFromGrid(_x, _z, _y);
 
+}
+
+
+// FIXME:
+// - Remove the transformation since it is confusing in the monte carlo
+//   simulation.  Instread, have kWave tranform it's output to match
+//   the grid orientation here.
+double PressureMap::getPressure(const Vector3d &photonCoords)
+{
+    // NOTE:
+    // - There is an effective transformation of the y (photon)
+    //   and z (grid) transformation due to the grid orientation in kWave.
+    int _x = floor(photonCoords.location.x/dx);
+	int _z = floor(photonCoords.location.y/dz);
+	int _y = floor(photonCoords.location.z/dy);
+    
+	// Sanity check.
+	assert((_x <= Nx && _x >= 0) &&
+           (_y <= Ny && _y >= 0) &&
+           (_z <= Nz && _z >= 0));
+    
+    //	cout << "PressureMap::getPressureCartCords\n";
+	//cout << "a=" << _x << ", b=" << _z << ", c=" << _y << endl;
+	return getPressureFromGrid(_x, _z, _y);
 }
 
 

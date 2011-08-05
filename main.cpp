@@ -213,9 +213,9 @@ void testDisplacements(void)
 	const int dgrid_z = 64;
     const int grid_size = 2;
 	//string pressure_file = "C:/Users/StaleyJW/Desktop/Software/MC-Boost/kWave-pressure/pressure-at-25us.txt";
-	string displacement_file = "kWave-displacements/disp";
+	string displacement_file = "kWave-displacements/test";
     DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, grid_size);
-    dmap->loadDisplacementMaps(displacement_file, 151);
+    dmap->loadDisplacementMaps(displacement_file, 100);
     //tissue->addPressureMap(pmap);
 	//tissue->loadPressure();
     

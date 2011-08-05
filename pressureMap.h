@@ -38,7 +38,8 @@ public:
 	void	loadPressureMap(const std::string &filename, const int time_step);
 
 	double 	getPressureFromGrid(int x, int z, int y);
-	double 	getPressureCartCoords(double x, double z, double y);
+	double 	getPressure(double x, double z, double y);
+    double  getPressure(const Vector3d &location);
 	int		getXBound(void) {return x_bound;}
 	int		getYBound(void)	{return y_bound;}
 	int		getZBound(void) {return z_bound;}
