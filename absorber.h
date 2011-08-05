@@ -22,20 +22,24 @@ public:
     void InitCommon(void);
     virtual ~Absorber();
     
+
     virtual bool hitAbsorberBoundary(const boost::shared_ptr<Vector3d> photonVector) = 0;
     virtual bool inAbsorber(const boost::shared_ptr<Vector3d> photonVector) = 0;
     virtual bool crossedAbsorber(const boost::shared_ptr<Vector3d> currPoint, 
                                  const boost::shared_ptr<Vector3d> prevPoint) = 0;
     
+
     double getAbsorberAbsorptionCoeff(void) {return this->mu_a;}
     double getAbsorberScatteringCoeff(void) {return this->mu_s;}
     
+
     void setAbsorberAbsorptionCoeff(const double mu_a) {this->mu_a = mu_a;}
     void setAbsorberScatterCoeff(const double mu_s) {this->mu_s = mu_s;}
     
+    // Update absorber weight.
     void updateAbsorbedWeight(const double absorbed);
     
-    // Write the absorbers data out to file to be used in post-processing.
+    // Write the absorber data out to file to be used in post-processing.
     void writeData(void);
     
     

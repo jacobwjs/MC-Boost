@@ -55,10 +55,10 @@ int main()
     file = "absorber-data.txt";
     Logger::getInstance()->openAbsorberFile(file);
     
+    //testVectorMath();
+    //testDisplacements();
     
-    testDisplacements();
-    
-    /*
+
 	// The dimensions of the medium.
     //
     double X_dim = 2.0; // [cm]
@@ -112,22 +112,30 @@ int main()
     
 	
     
-	// Add the pressure map object to the medium and load the pressure data.
-	//tissue->addPressureMap(new PressureMap("testing.txt"));
-	const int pgrid_x = 64;  // Number of pixels in the kWave pressure grid.
+	// Create and add the pressure map object to the medium and load the pressure data.
+	// tissue->addPressureMap(new PressureMap("testing.txt"));
+	//
+    const int pgrid_x = 64;  // Number of pixels in the kWave pressure grid.
 	const int pgrid_y = 64;
 	const int pgrid_z = 64;
-	//string pressure_file = "C:/Users/StaleyJW/Desktop/Software/MC-Boost/kWave-pressure/pressure-at-25us.txt";
-	string pressure_file = "pressure-at-25us.txt";
-    PressureMap *pmap = new PressureMap(pressure_file, pgrid_x, pgrid_z, pgrid_y, 2);
+	string pressure_file = "./kWave-pressure/pressure";
+    PressureMap *pmap = new PressureMap(pgrid_x, pgrid_z, pgrid_y, (int)X_dim);
 	pmap->setTransducerFreq(2.0e6); // The frequency of the transducer used to generate the pressure map.
 	tissue->addPressureMap(pmap);
-	tissue->loadPressure();
-    
-    
-    // x,  y,  z (photon)
+	tissue->loadPressure(pressure_file, 25);
 	//cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
-    // z , y , x (pressure)
+
+
+	// Create and add the displacement map object to the medium and load the displacement data.
+	const int dgrid_x = pgrid_x; // Displacements are calculated from same simulation grid, therefore same size.
+	const int dgrid_y = pgrid_y;
+	const int dgrid_z = pgrid_y;
+	string displacement_file = "d:/Displacement_Data/disp";
+	DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, (int)X_dim);
+	dmap->loadDisplacementMaps(displacement_file, 25);
+    
+
+
     
     
 	// Allocate the planar grid and set it in the tissue.
@@ -137,13 +145,10 @@ int main()
 	// Notify user of execution.
 	cout << "Launching photons (" << MAX_PHOTONS << ")...\n";
     
-	// Capture the time before launching photons into the medium.
-	clock_t start, end;
-	start = clock();
 	
 	// Let boost decide how many threads to run on this architecture.
-	const int NUM_THREADS = boost::thread::hardware_concurrency();
-	//const int NUM_THREADS = 1;
+	//const int NUM_THREADS = boost::thread::hardware_concurrency();
+	const int NUM_THREADS = 1;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
@@ -159,6 +164,12 @@ int main()
 	// Used to seed the RNG.
 	unsigned int s1, s2, s3, s4;
     
+	// Capture the time before launching photons into the medium.
+	clock_t start, end;
+	start = clock();
+
+
+
 	// Create the threads and give them photon objects to run.
 	// Each photon object is run MAX_PHOTONS/NUM_THREADS times, which essentially
 	// splits up the work (i.e. photon propagation) amongst many workers.
@@ -197,7 +208,6 @@ int main()
 	if (pmap)
 		delete pmap;
      
-     */
     
 	return 0;
 }
@@ -213,7 +223,7 @@ void testDisplacements(void)
 	const int dgrid_z = 64;
     const int grid_size = 2;
 	//string pressure_file = "C:/Users/StaleyJW/Desktop/Software/MC-Boost/kWave-pressure/pressure-at-25us.txt";
-	string displacement_file = "kWave-displacements/test";
+	string displacement_file = "d:/Displacement_Data/disp";
     DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, grid_size);
     dmap->loadDisplacementMaps(displacement_file, 100);
     //tissue->addPressureMap(pmap);

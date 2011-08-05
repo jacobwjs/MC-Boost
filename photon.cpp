@@ -295,15 +295,6 @@ void Photon::reset()
 	displaced_path_length = 0;
 
 
-
-
-	// Clear the coordinate vector so it does not continuously accumulate
-	// positions and grow for each photon.
-	// NOTE: We don't need to clear the photon_exit_data each time since
-	//       it only happens once for each photon.
-	//coords.clear();
-
-
 	// Randomly set photon trajectory to yield isotropic or anisotropic source.
 	initTrajectory();
 
@@ -319,7 +310,7 @@ void Photon::setStepSize()
 	// Update the current values of the absorption and scattering coefficients
 	// based on the depth in the medium (i.e. which layer the photon is in).
     double mu_a = currLayer->getAbsorpCoeff(currLocation);
-    double mu_s = currLayer->getScatterCoeff();
+    double mu_s = currLayer->getScatterCoeff(currLocation);
     
     
 	// If last step put the photon on the layer boundary
@@ -449,27 +440,22 @@ void Photon::hop()
 	prevLocation = currLocation;
 
 	// Update the location
+	currLocation->location.x += step * currLocation->getDirX();
+	currLocation->location.y += step * currLocation->getDirY();
+	currLocation->location.z += step * currLocation->getDirZ();
+
+	this->displacePhotonFromPressure();
+
+	displaced_path_length += VectorMath::Distance(prevLocation, currLocation);
+
 
 /*
-	// Record the location of the photon during this interaction.
-	//captureLocationCoords();
-
-	// Locations before the photon is moved.
-	double temp_x = x;
-	double temp_y = y;
-	double temp_z = z;
 
 
-	// Update position of the photon.
-	x += step*dirx;
-	y += step*diry;
-	z += step*dirz;
 
-	// Update positon for the 'displaced' position of the photon.  Allows us to track
-	// displaced and non-displaced separately.
-	x_disp += step*dirx;
-	y_disp += step*diry;
-	z_disp += step*dirz;
+
+
+
 
 	// Calculate the path length of the photon WITHOUT displacement.
 	original_path_length += getPathLength((x - temp_x), (y - temp_y), (z - temp_z));
@@ -488,19 +474,6 @@ void Photon::hop()
 	displaced_path_length += getPathLength((x_disp - temp_x), (y_disp - temp_y), (z_disp - temp_z));
 */
     
-	//setStepSize();
-    
-    // Save the coordinates of the photon before it is moved through
-    // the medium.  This allows us to check if the photon passed through
-    // an absorber.
-    prevLocation->location.x = currLocation->location.x;
-    prevLocation->location.y = currLocation->location.y;
-    prevLocation->location.z = currLocation->location.z;
-    
-    // Move the photon to the new location in the medium.
-    currLocation->location.x += step*currLocation->getDirX();
-	currLocation->location.y += step*currLocation->getDirY();
-	currLocation->location.z += step*currLocation->getDirZ();
 }
 
 
@@ -517,8 +490,7 @@ void Photon::drop()
     double absorbed = 0.0f;
     
     
-    Absorber *absorber;
-    absorber = currLayer->getAbsorber(currLocation);
+    Absorber * absorber = currLayer->getAbsorber(currLocation);
     // If an absorber was returned, then we get the absorption and
     // scattering coefficients from it.  Otherwise we use the values
     // from the background layer.
@@ -544,6 +516,10 @@ void Photon::drop()
     {
         // Update the current values of the absorption and scattering coefficients
         // based on the depth in the medium (i.e. which layer the photon is in).
+    	// NOTE:
+    	// - No need to index into the layer and see if absorption and scattering coefficients
+    	//   should be pulled from absorber, because we verified above in the if() that this was
+    	//   not the case.  Saves a small amount of time searching through the absorbers.
         mu_a = currLayer->getAbsorpCoeff();
         mu_s = currLayer->getScatterCoeff();
         
@@ -692,11 +668,15 @@ void Photon::writeExitLocationsLengthWeight(void)
 void Photon::displacePhotonFromPressure(void)
 {
 	// Get the local pressure from the grid based on the coordinate of the photon.
-	double pressure = m_medium->getPressureFromCartCoords(x_disp, y_disp, z_disp);
+	boost::shared_ptr<Vector3d> displacement = m_medium->getDisplacementFromPhotonLocation(currLocation);
 
+	cout << "before displacement: " << currLocation;
 
-    cout << "Photon::displacePhotonFromPressure() stub\n";
+	// Add the displacement values to the current location in order to move the photon (in all dimension)
+	// to its displaced location that occurred from the pressure wave.
+	currLocation = (*currLocation) + (*displacement);
 
+	cout << "after displacement: " << currLocation;
 }
 
 
