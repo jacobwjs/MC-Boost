@@ -49,9 +49,9 @@ bool SphereAbsorber::hitAbsorberBoundary(const boost::shared_ptr<Vector3d> photo
     
     // If the distance from the center of the absorber to the location of the photon is
     // larger than the radius of the absorber we know the photon hasn't crossed into the
-    cout << "Hit spherical absorber\n";
+    cout << "SphereAbsorber::hitAbsorberBoundary() Hit spherical absorber\n";
     
-    
+    return false;
     
     /*
     // Check if the photon has been given a step size past the outer edges of the medium.
@@ -132,6 +132,11 @@ bool SphereAbsorber::crossedAbsorber(const boost::shared_ptr<Vector3d> A,
     // from A-B and A-C
     boost::shared_ptr<Vector3d> result = VectorMath::crossProduct(AB, AC);
     
+    //
+    cout << "SphereAbsorber::crossedAbsorber() stub\n";
+    
+    return false;
+    
 }
 
 
@@ -148,15 +153,6 @@ bool SphereAbsorber::inSphereVolume(const boost::shared_ptr<Vector3d> photonLoca
 {
     // Calculate the distance from the photon to the center location
     // of the absorber.
-    
-//    double disX = photon_coords.x - center.x;
-//    double disY = photon_coords.y - center.y;
-//    double disZ = photon_coords.z - center.z;
-//    
-//    double dist_to_radius = sqrt(disX*disX +
-//                                 disY*disY +
-//                                 disZ*disZ);
-    
     double dist_to_radius = VectorMath::Distance(photonLocation, center);
     
     // If the distance of the photon to the absorber's center is

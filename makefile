@@ -1,8 +1,8 @@
 # CFLAGS for running
-#CFLAGS = -Wall -v -O3
+CFLAGS = -Wall -v -O3
 
 # CFLAGS for debugging
-CFLAGS = -Wall -v -O0 -g
+#CFLAGS = -Wall -v -O0 -g
 
 CC = g++
 RM =/bin/rm -rf

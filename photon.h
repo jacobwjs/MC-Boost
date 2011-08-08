@@ -2,13 +2,9 @@
 #ifndef PHOTON_H
 #define PHOTON_H
 
-#include "medium.h"
-#include "layer.h"
 #include "coordinates.h"
-#include "vector3D.h"
-//#include "absorber.h"
-#include "sphereAbsorber.h"
-#include "logger.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
@@ -33,7 +29,10 @@ using namespace std;
 
 
 
+// Forward decleration of objects.
 class Medium;
+class Vector3d;
+class Layer;
 
 
 
@@ -118,32 +117,13 @@ public:
 	void	specularReflectance(double n1, double n2);
 	
 	// Update the direction cosine when internal reflection occurs on z-axis.
-	void	internallyReflectZ(void) 
-    {
-        currLocation->setDirZ(-1*currLocation->getDirZ());
-        
-        // Reset the flag.
-        hit_z_bound = false;
-    }
+	void	internallyReflectZ(void);
 
 	// Update the direction cosine when internal reflection occurs on y-axis.
-	void	internallyReflectY(void) 
-    {
-        currLocation->setDirY(-1*currLocation->getDirY());
-        
-        // Reset the flag.
-        hit_y_bound = false;
-    }
-                              
+	void	internallyReflectY(void);                              
     
 	// Update the direction cosine when internal reflection occurs on z-axis.
-	void	internallyReflectX(void) 
-    {
-        currLocation->setDirX(-1*currLocation->getDirX());
-        
-        // Reset the flag.
-        hit_x_bound = false;
-    }
+	void	internallyReflectX(void);
     
 	// Transmit the photon.
 	void	transmit(const char *type);
@@ -253,8 +233,6 @@ private:
 	
 	// Holds value of number of iterations thus far.
 	int cnt;	
-	
-
 	
 	// Location of the photon with displacement from ultrasound source taken into account.
 	double x_disp, y_disp, z_disp;

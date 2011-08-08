@@ -6,6 +6,9 @@
 //
 
 #include "absorber.h"
+#include "vector3D.h"
+#include "logger.h"
+
 
 
 Absorber::Absorber(const double x, const double y, const double z)

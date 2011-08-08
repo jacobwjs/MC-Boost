@@ -136,7 +136,7 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 		}
 		else
 		{
-			cout << "Displacement map " << file_to_open.c_str() << "...  opened successfully\n";
+			cout << "Displacement map " << file_to_open.c_str() << " opened successfully. ";
 			cout << "Loading displacement values...\n";
 		}
 
@@ -168,9 +168,9 @@ void DisplacementMap::initCommon()
            Ny != 0 &&
            Nz != 0);
     
-	dx = x_bound/Nx; // [cm] (note: 20e-3/Nx in centimeters is 0.16;
-	dy = y_bound/Ny;
-	dz = z_bound/Nz;
+	dx = (double)x_bound / (double)Nx; // [cm] (note: 20e-3/Nx in centimeters is 0.16;
+	dy = (double)y_bound / (double)Ny;
+	dz = (double)z_bound / (double)Nz;
 	displacement_gridX = new three_dim_array (boost::extents[Nx][Nz][Ny]);
 	displacement_gridY = new three_dim_array (boost::extents[Nx][Nz][Ny]);
 	displacement_gridZ = new three_dim_array (boost::extents[Nx][Nz][Ny]);
@@ -180,7 +180,7 @@ void DisplacementMap::initCommon()
 // Returns a Vector3d object holding values for displacements in all axes.
 boost::shared_ptr<Vector3d> DisplacementMap::getDisplacements(const Vector3d &photonLocation)
 {
-    boost::shared_ptr<Vector3d> result;
+    boost::shared_ptr<Vector3d> result(new Vector3d);
     
     // Indices into the displacement grids.
     // NOTE:
@@ -190,6 +190,11 @@ boost::shared_ptr<Vector3d> DisplacementMap::getDisplacements(const Vector3d &ph
 	int _z = floor(photonLocation.location.y/dz);
 	int _y = floor(photonLocation.location.z/dy);
 
+    
+    // Sanity check.
+	assert((_x < Nx && _x >= 0) &&
+           (_y < Ny && _y >= 0) &&
+           (_z < Nz && _z >= 0));
     
     result->location.x = getDisplacementFromGridXaxis(_x, _z, _y);
     result->location.y = getDisplacementFromGridYaxis(_x, _z, _y);
@@ -211,6 +216,11 @@ boost::shared_ptr<Vector3d> DisplacementMap::getDisplacements(const double x, co
     int _x = floor(x/dx);
 	int _z = floor(y/dz);
 	int _y = floor(z/dy);
+    
+    // Sanity check.
+	assert((_x < Nx && _x >= 0) &&
+           (_y < Ny && _y >= 0) &&
+           (_z < Nz && _z >= 0));
     
     
     result->location.x = getDisplacementFromGridXaxis(_x, _z, _y);

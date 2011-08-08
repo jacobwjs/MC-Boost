@@ -1,8 +1,6 @@
 #ifndef MEDIUM_H
 #define MEDIUM_H
 
-#include "detector.h"
-#include "layer.h"
 #include "photon.h" // Photon class is a friend of the Medium class.
 #include <vector>
 #include <string>
@@ -21,6 +19,9 @@ const int MAX_BINS = 101;
 // Forward declaration of PressureMap and DisplacementMap objects.
 class PressureMap;
 class DisplacementMap;
+class Detector;
+class Layer;
+class Vector3d;
 
 
 
@@ -93,7 +94,7 @@ public:
 	void 	loadPressure(std::string &filename, const int dt);
     
 	// Load the displacement data generated from K-Wave (at simulation time step 'dt') into the displacement map object.
-    void    loadDisplacement(std::string &filename, const int dt);
+    void    loadDisplacements(std::string &filename, const int dt);
     
 	// Return the pressure from the pressure grid based on cartesian coordinates
 	// of the current location of the photon in the medium.

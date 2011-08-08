@@ -7,11 +7,15 @@
 #ifndef ABSORBER_H
 #define ABSORBER_H
 
-#include "vector3D.h"
 #include "vectorMath.h"
-#include "logger.h"
 using namespace VectorMath;
 #include <boost/thread/mutex.hpp>
+
+
+// Forward declerations of objects.
+class Vector3d;
+class Logger;
+
 
 class Absorber 
 {

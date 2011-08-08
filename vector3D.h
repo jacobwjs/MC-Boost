@@ -29,12 +29,15 @@ public:
     // of this vector class for objects that have position or position and direction.
     void withDirection(void) {direction = boost::shared_ptr<directionCos> (new directionCos);}
     
+    // Check if vector object was initialized to have direction.
+    bool hasDirection(void) {return direction==NULL ? false:true;}
     
     // Overloaded operators for working with Vector3d.
     boost::shared_ptr<Vector3d> operator-(Vector3d &rhs);
     boost::shared_ptr<Vector3d> operator+(Vector3d &rhs);
     boost::shared_ptr<Vector3d> operator*(double num);
     boost::shared_ptr<Vector3d> operator*(Vector3d &rhs);
+    boost::shared_ptr<Vector3d> operator/(double num);
     bool operator&(Vector3d &rhs);
     inline friend ostream& operator<< (ostream &out, const boost::shared_ptr<Vector3d> rhs);
 
@@ -44,6 +47,9 @@ public:
     double getDirX(void);
     double getDirY(void);
     double getDirZ(void);
+    
+    // Return the direction cosines vector.
+    boost::shared_ptr<directionCos> getDirection();
     
     // Set the coordinates.
     void setDirX(double x);

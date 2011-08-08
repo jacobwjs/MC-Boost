@@ -6,11 +6,9 @@
  *
  */
 
+
 //#define DEBUG 1
 
-
-
-#include "stdio.h"
 #include "photon.h"
 #include "medium.h"
 #include "layer.h"
@@ -27,17 +25,24 @@
 #include <time.h>
 #include <vector>
 #include <boost/thread/thread.hpp> 
+#include <boost/lexical_cast.hpp>
 #include <string>
 #include <iostream>
 using std::cout;
 using std::endl;
 
 
+// Number of time steps that were executed in the K-Wave simulation
+// that produced displacement and pressure data.
+const int KWAVESIM_TIME_STEPS = 200;
 
-const int MAX_PHOTONS = 1000;
+// Number of photons to simulate.
+const int MAX_PHOTONS = 100000;
 
-//#define DEBUG 1
 
+
+
+// Test routines.
 void testVectorMath(void);
 void testDisplacements(void);
 
@@ -50,10 +55,9 @@ int main()
     
     // The logger is a singleton.  To bypass any problems with using singletons in a multi-threaded applicaton
     // initialization occurs in main before any threads are spawned.
-    std::string file = "exit-locations.txt";
-    Logger::getInstance()->openExitFile(file);
-    file = "absorber-data.txt";
-    Logger::getInstance()->openAbsorberFile(file);
+    std::string exit_data_file;
+    //file = "Absorber-data.txt";
+    //Logger::getInstance()->openAbsorberFile(file);
     
     //testVectorMath();
     //testDisplacements();
@@ -65,16 +69,16 @@ int main()
     double Y_dim = 2.0; // [cm]
     double Z_dim = 2.0; // [cm]
     
-	// Create the medium in which the photons will be fired.
-	
+    
+	// Create the medium in which the photons will be propagate.
+    //
 	Medium *tissue = new Medium(X_dim, Y_dim, Z_dim);
 	
     
-    
     // Define a layer in the tissue.
     //
-    double mu_a = 0.1f;
-    double mu_s = 7.3f;
+    double mu_a = 1.0f;
+    double mu_s = 70.0f;
     double refractive_index = 1.33f;
     double anisotropy = 0.9;
     double start_depth = 0.0f; // [cm]
@@ -85,10 +89,10 @@ int main()
     
     // Define a spherical absorber.
     //
-    SphereAbsorber *absorber0 = new SphereAbsorber(0.6, 1.0, 1.0, 1.0);
-    absorber0->setAbsorberAbsorptionCoeff(2.0f);
-    absorber0->setAbsorberScatterCoeff(mu_s);
-    tissueLayer0->addAbsorber(absorber0);
+//    SphereAbsorber *absorber0 = new SphereAbsorber(.5, X_dim/2, Y_dim/2, Z_dim/2);
+//    absorber0->setAbsorberAbsorptionCoeff(3.0f);
+//    absorber0->setAbsorberScatterCoeff(mu_s);
+//    tissueLayer0->addAbsorber(absorber0);
     
     // Create a spherical detector.
     Detector *detector;
@@ -97,7 +101,7 @@ int main()
     detector = &circularExitDetector;
     
     
-    // Add the layers to the medium.
+    // Add the objects to the medium.
     //
     tissue->addLayer(tissueLayer0);
     tissue->addDetector(detector);
@@ -107,7 +111,7 @@ int main()
     coords injectionCoords;
     injectionCoords.x = X_dim/2; // Centered
     injectionCoords.y = Y_dim/2; // Centered
-    injectionCoords.z = 0.00001;   // Just below the surface of the 'air' layer.
+    injectionCoords.z = 0.0000001;   // Just below the surface of the 'air' layer.
 	
     
 	
@@ -122,81 +126,105 @@ int main()
     PressureMap *pmap = new PressureMap(pgrid_x, pgrid_z, pgrid_y, (int)X_dim);
 	pmap->setTransducerFreq(2.0e6); // The frequency of the transducer used to generate the pressure map.
 	tissue->addPressureMap(pmap);
-	tissue->loadPressure(pressure_file, 25);
+	//tissue->loadPressure(pressure_file, 101);
 	//cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
 
 
 	// Create and add the displacement map object to the medium and load the displacement data.
+    //
 	const int dgrid_x = pgrid_x; // Displacements are calculated from same simulation grid, therefore same size.
 	const int dgrid_y = pgrid_y;
 	const int dgrid_z = pgrid_y;
-	string displacement_file = "d:/Displacement_Data/disp";
+	string displacement_file = "./kWave-displacements/disp";
 	DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, (int)X_dim);
-	dmap->loadDisplacementMaps(displacement_file, 25);
+    tissue->addDisplacementMap(dmap);
+    //tissue->loadDisplacements(displacement_file, 101);
     
 
 
     
     
-	// Allocate the planar grid and set it in the tissue.
-	double *Cplanar = (double*)malloc(sizeof(double) * 101);
-	tissue->setPlanarArray(Cplanar);
-    
-	// Notify user of execution.
-	cout << "Launching photons (" << MAX_PHOTONS << ")...\n";
+	// Allocate the planar fluence grid and set it in the tissue.
+//	double *Cplanar = (double*)malloc(sizeof(double) * 101);
+//	tissue->setPlanarArray(Cplanar);
     
 	
 	// Let boost decide how many threads to run on this architecture.
-	//const int NUM_THREADS = boost::thread::hardware_concurrency();
-	const int NUM_THREADS = 1;
+	const int NUM_THREADS = boost::thread::hardware_concurrency();
+	//const int NUM_THREADS = 1;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
 	const int NUM_PHOTON_OBJECTS = NUM_THREADS;
     
-    // Photon array.
+    // Photon array.  Each object in the array will be assigned their own seperate CPU core to run on.
 	Photon photons[NUM_PHOTON_OBJECTS];
 	boost::thread threads[NUM_THREADS];
     
-	// Init the random number generator.
-	srand(time(0));
     
 	// Used to seed the RNG.
+    //
 	unsigned int s1, s2, s3, s4;
     
 	// Capture the time before launching photons into the medium.
-	clock_t start, end;
+    //
+	clock_t start, start_per_simulation, end;
 	start = clock();
 
 
+    for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
+    {
+        // Capture the time at the beginning of this simulation step.
+        start_per_simulation = clock();
+        
+        // Init the random number generator.
+        //
+        srand(time(0));
 
-	// Create the threads and give them photon objects to run.
-	// Each photon object is run MAX_PHOTONS/NUM_THREADS times, which essentially
-	// splits up the work (i.e. photon propagation) amongst many workers.
-	for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
-	{
-		// The state variables need to be >= 128.
-		s1 = rand() + 128;
-		s2 = rand() + 128;
-		s3 = rand() + 128;
-		s4 = rand() + 128;
+        // Open a file for each time step which holds exit data of photons
+        // when they leave the medium through the detector aperture.
+        //
+        exit_data_file = "./Log/Exit-data/exit-aperture" + boost::lexical_cast<std::string>(dt) + ".txt";
+        Logger::getInstance()->openExitFile(exit_data_file);
         
-		cout << "Launching photon object" << i << " iterations: " << MAX_PHOTONS/NUM_THREADS << endl;
-		threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS,
-                                   s1, s2, s3, s4, injectionCoords);
+        // Load a pressure map and displacement maps at time step number 'dt'.
+        tissue->loadPressure(pressure_file, dt);
+        tissue->loadDisplacements(displacement_file, dt);
+
         
-	}
-    
-	// Join all created threads once they have done their work.
-	for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
-	{
-		threads[i].join();
-	}
-    
+        // Create the threads and give them photon objects to run.
+        // Each photon object is run MAX_PHOTONS/NUM_THREADS times, which essentially
+        // splits up the work (i.e. photon propagation) amongst many workers.
+        //
+        for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
+        {
+            // The state variables need to be >= 128.
+            s1 = rand() + 128;
+            s2 = rand() + 128;
+            s3 = rand() + 128;
+            s4 = rand() + 128;
+            
+            cout << "Launching photon object" << i << " iterations: " << MAX_PHOTONS/NUM_THREADS << endl;
+            threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS,
+                                       s1, s2, s3, s4, injectionCoords);
+            
+        }
+        
+        // Join all created threads once they have done their work.
+        for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
+        {
+            threads[i].join();
+        }
+        
+        // Print out the elapsed time it took for this simulation step.
+        end = ((double)clock() - start_per_simulation) / CLOCKS_PER_SEC;
+        cout << "Time elapsed for simulation (" << dt << "): " << end << endl;
+        
+    }
 	
 	// Print out the elapsed time it took from beginning to end.
 	end = ((double)clock() - start) / CLOCKS_PER_SEC;
-	cout << "Time elapsed: " << end << endl;
+	cout << "\n\nTotal time elapsed: " << end << endl;
     
     
 	// Print the matrix of the photon absorptions to file.
@@ -205,8 +233,7 @@ int main()
 	// Clean up memory allocated memory on the heap.
 	if (tissue)
 		delete tissue;
-	if (pmap)
-		delete pmap;
+	
      
     
 	return 0;

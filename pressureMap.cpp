@@ -62,9 +62,9 @@ PressureMap::PressureMap(const int Nx, const int Nz, const int Ny, const int gri
 void PressureMap::initCommon(void)
 {
 
-	dx = x_bound/Nx; // [cm] (note: 20e-3/Nx in centimeters is 0.16;
-	dy = y_bound/Ny;
-	dz = z_bound/Nz;
+	dx = (double)x_bound / (double)Nx; // [cm] (note: 20e-3/Nx in centimeters is 0.16;
+	dy = (double)y_bound / (double)Ny;
+	dz = (double)z_bound / (double)Nz;
 	pressure_grid = new three_dim_array (boost::extents[Nx][Nz][Ny]);
 }
 
@@ -72,7 +72,10 @@ void PressureMap::initCommon(void)
 PressureMap::~PressureMap()
 {
 	if (pressure_grid)
+    {
 		delete pressure_grid;
+        pressure_grid = NULL;
+    }
 }
 
 
@@ -126,13 +129,13 @@ void PressureMap::loadPressureMap(const std::string &filename, const int timeSte
     // Check for successful opening of the file.
     if (!pressure_file_stream)
     {
-        cout << "!!! Error opening displacement map file " << file_to_open.c_str() << "!!!\n";
+        cout << "!!! Error opening pressure map file " << file_to_open.c_str() << "!!!\n";
         exit(1);
     }
     else
     {
-        cout << "Displacement map " << file_to_open.c_str() << "...  opened successfully\n";
-        cout << "Loading displacement values...\n";
+        cout << "Pressure map " << file_to_open.c_str() << " opened successfully. ";
+        cout << "Loading pressure values...\n";
     }
     
     

@@ -1,11 +1,16 @@
 
 #include "debug.h"
+#include "logger.h"
+#include "absorber.h"
+#include "vector3D.h"
+#include "layer.h"
+#include "medium.h"
 #include "photon.h"
+
+
 
 #undef DEBUG
 
-
-double const Pi=4*atan(1);
 
 
 Photon::Photon(void)
@@ -50,7 +55,7 @@ Photon::Photon(double x, double y, double z,
     
     // The location before the photon hopped.
     prevLocation = boost::shared_ptr<Vector3d> (new Vector3d);  // Does not require direction.
-
+    
 }
 
 
@@ -202,21 +207,21 @@ void Photon::propagatePhoton(const int iterations)
             // or medium boundary.
 			//bool hitLayer = checkLayerBoundary();
             bool hitMedium = checkMediumBoundary();
-
-   
+            
+            
             
 			//if (!hitLayer && !hitMedium)
             if (!hitMedium)
 			{
                 // sanity check.
                 assert(this->status == ALIVE);
-
                 
-				// Ensure the photon has not left the medium by either total internal
-				// reflection or transmission (only looking at z-axis).
-				//if (z >= 0 && z <= m_medium->getDepth()) {
 				// Move the photon in the medium.
 				hop();
+                
+                // Now displace the photon at its new location some distance depending on
+                // how the pressure has moved scattering particles.
+                displacePhotonFromPressure();
                 
 				// Drop weight of the photon due to an interaction with the medium.
 				drop();
@@ -232,14 +237,14 @@ void Photon::propagatePhoton(const int iterations)
             
             
 		} // end while() loop
-
-
-
+        
+        
+        
 		// Write out the x,y,z coordinates of the photons path as it propagated through
 		// the medium.
 		//writeCoordsToFile();
-
-
+        
+        
 		// Reset the photon and start propogation over from the beginning.
 		reset();
         
@@ -289,18 +294,22 @@ void Photon::reset()
     
 	// Reset the number of interactions back to zero.
 	num_steps = 0;
-
+    
 	// Reset the path lengths of the photon.
 	original_path_length = 0;
 	displaced_path_length = 0;
-
-
+    
+    // Reset the flags for hitting a layer boundary.
+	hit_x_bound = hit_y_bound = hit_z_bound = false;
+    
+    // Reset the transmission angle for a photon.
+    transmission_angle = 0;
+    
 	// Randomly set photon trajectory to yield isotropic or anisotropic source.
 	initTrajectory();
-
+    
     // Reset the current layer from the injection coordinates of the photon.
     currLayer = m_medium->getLayerFromDepth(currLocation->location.z);
-
 }
 
 
@@ -339,9 +348,9 @@ void Photon::captureLocationCoords(void)
 {
 	cout << "Photon::captureLocationCoords() stub\n";
 	// Add the coordinates to the STL vector for the displaced scattering locations.
-//	coords.push_back(x_disp);
-//	coords.push_back(y_disp);
-//	coords.push_back(z_disp);
+    //	coords.push_back(x_disp);
+    //	coords.push_back(y_disp);
+    //	coords.push_back(z_disp);
     cout << "captureLocationCoords() stub\n";
 }
 
@@ -350,9 +359,9 @@ void Photon::captureExitCoordsAndLength(void)
 {
 	// Add the coordinates to the STL vector for the displaced scattering locations
 	// and the displaced length.
-//	photon_exit_data.push_back(x_disp);
-//	photon_exit_data.push_back(y_disp);
-//	photon_exit_data.push_back(displaced_path_length);
+    //	photon_exit_data.push_back(x_disp);
+    //	photon_exit_data.push_back(y_disp);
+    //	photon_exit_data.push_back(displaced_path_length);
     cout << "captureExitCoordsAndLength() stub\n";
 }
 
@@ -361,10 +370,10 @@ void Photon::captureExitCoordsLengthWeight(void)
 {
 	// Add the coordinates to the STL vector for the displaced scattering locations
 	// and the displaced length.
-//	photon_exit_data.push_back(x_disp);
-//	photon_exit_data.push_back(y_disp);
-//	photon_exit_data.push_back(displaced_path_length);
-//	photon_exit_data.push_back(weight);
+    //	photon_exit_data.push_back(x_disp);
+    //	photon_exit_data.push_back(y_disp);
+    //	photon_exit_data.push_back(displaced_path_length);
+    //	photon_exit_data.push_back(weight);
     cout << "captureExitCoordsLengthWeight() stub\n";
 }
 
@@ -409,14 +418,7 @@ bool Photon::checkMediumBoundary(void)
 // hop in the case of multiple detectors present.
 bool Photon::checkDetector(void)
 {
-    
-    // We have to hop() once to move the currentLocation to what was calculated
-    // from setStepSize(), since we made it here after verifying that the new
-    // step size would have put the photon outside of the medium, but it was
-    // never made to move to the new position.  Therefore prevLocation == currLocation
-    // until hop is made.
-    //hop();
-    int cnt =  m_medium->photonHitDetectorPlane(this->currLocation);
+    int cnt =  m_medium->photonHitDetectorPlane(currLocation);
     // If cnt > 0 the photon exited through the bounds of the detector.
     if (cnt > 0) 
     {
@@ -433,46 +435,17 @@ void Photon::hop()
 #ifdef DEBUG
 	cout << "Hopping...\n";
 #endif	
-
+    
 	cnt++;
-
+    
+    
 	// Save the location before making the hop.
 	prevLocation = currLocation;
-
+    
 	// Update the location
 	currLocation->location.x += step * currLocation->getDirX();
 	currLocation->location.y += step * currLocation->getDirY();
 	currLocation->location.z += step * currLocation->getDirZ();
-
-	this->displacePhotonFromPressure();
-
-	displaced_path_length += VectorMath::Distance(prevLocation, currLocation);
-
-
-/*
-
-
-
-
-
-
-
-	// Calculate the path length of the photon WITHOUT displacement.
-	original_path_length += getPathLength((x - temp_x), (y - temp_y), (z - temp_z));
-
-	// FIXME: Does this still need to be here???
-	if (z_disp > 0 && z_disp < 10 && x_disp > 0 && x_disp < 10 && y_disp > 0 && y_disp < 10) {
-		// Move the photon to the new position based on the displacement from
-		// the ultrasound wave.
-		this->displacePhotonFromPressure();
-	}
-	else {
-		this->status = DEAD;
-	}
-
-	// Calculate the path length of the photon WITH displacement.
-	displaced_path_length += getPathLength((x_disp - temp_x), (y_disp - temp_y), (z_disp - temp_z));
-*/
     
 }
 
@@ -568,7 +541,7 @@ void Photon::spin()
 	// the medium.
 	// FIXME: Need to index into layer and check if absorber causes this to change.
     double g = currLayer->getAnisotropy();
-
+    
 	double rnd = getRandNum();
     
     double dirZ = currLocation->getDirZ();
@@ -641,13 +614,13 @@ void Photon::performRoulette(void)
 void Photon::writeCoordsToFile(void)
 {
 	cout << "Photon::writeCoordsToFile() stub\n";
-
+    
 	//	cout << "Non-displaced path length: " << scientific << setprecision(12) <<  original_path_length << endl;
 	//	cout << "Displaced path length: " << scientific << setprecision(12) << displaced_path_length << endl;
 	//	cout << "Displaced - Original = " << scientific << setprecision(12)
 	//		 << displaced_path_length - original_path_length << endl;
-
-
+    
+    
 }
 
 
@@ -666,17 +639,21 @@ void Photon::writeExitLocationsLengthWeight(void)
 
 // FIXME: CURRENTLY ONLY DISPLACING IN ONE DIRECTION.  SHOULD USE A TENSOR.
 void Photon::displacePhotonFromPressure(void)
-{
+{    
 	// Get the local pressure from the grid based on the coordinate of the photon.
 	boost::shared_ptr<Vector3d> displacement = m_medium->getDisplacementFromPhotonLocation(currLocation);
-
-	cout << "before displacement: " << currLocation;
-
+    
+	//cout << "before displacement: " << currLocation;
+    
 	// Add the displacement values to the current location in order to move the photon (in all dimension)
 	// to its displaced location that occurred from the pressure wave.
 	currLocation = (*currLocation) + (*displacement);
-
-	cout << "after displacement: " << currLocation;
+    
+    // Update the path length of the photon through the medium.
+    displaced_path_length += VectorMath::Distance(prevLocation, currLocation);
+    
+    
+	//cout << "after displacement: " << currLocation;
 }
 
 
@@ -730,7 +707,7 @@ void Photon::transmit(const char *type)
         {
             currLayer = tempLayer;
         }
-                    
+        
     }
     else if (strcmp("medium", type) == 0)
     {
@@ -742,12 +719,15 @@ void Photon::transmit(const char *type)
         // we see if the exit location passed through the detector.  If so, the exit
         // location and exit angle are written out to file, but only when this photon
         // has been tagged (i.e. interacted with an absorber).
-        if (checkDetector() && tagged)
+        if (checkDetector())
         {
             // If we hit the detector when transmitting the photon, then we write the exit
             // data to file.
-            Logger::getInstance()->writeExitData(this->currLocation, 
-                                                 this->weight);
+            Logger::getInstance()->writeWeightAngleLengthCoords(this->weight,
+                                                                this->transmission_angle,
+                                                                this->displaced_path_length,
+                                                                this->currLocation);
+             
         }
         
         // The photon has left the medium, so kill it.
@@ -880,7 +860,7 @@ double Photon::getMediumReflectance(void)
 	}
 	else
 	{
-        // Calculate the transmission angle through the layer boundary.
+        // Calculate the transmission angle through the medium boundary.
 		this->transmission_angle = asin(refract_index_n1/refract_index_n2 * sin(incident_angle));
 		
         // Calcualte the Fresnel reflection 
@@ -931,7 +911,7 @@ double Photon::getLayerReflectance(void)
         refract_index_n2 = 1.0;
     else
         refract_index_n2 = nextLayer->getRefractiveIndex();
-
+    
     
 	// Calculate the critical angle.
     if (refract_index_n2 > refract_index_n1)
@@ -940,7 +920,7 @@ double Photon::getLayerReflectance(void)
         // to the next layer.
         transmission_angle = asin(refract_index_n1/refract_index_n2 * sin(incident_angle));
         specularReflectance(refract_index_n1, refract_index_n2);
-
+        
         // Since we know we transmit, set reflectance to zero.
         reflectance = 0;
     }
@@ -968,7 +948,13 @@ double Photon::getLayerReflectance(void)
 
 
 
-
+// FIXME:
+// - It is possible that one or MORE of the steps in a corresponding axis (x, y, z)
+//   can simultaneously cross the bounds of the grid, but depending on which order
+//   the if() statements below occurr, the step size to the boundary might be for
+//   the one that just touches the medium boundary, but moving the other the similar
+//   distance would put it beyond the boundary, effectively moving the photon not
+//   to the edge (i.e. plane of exit), but beyond.
 // Note: We take the absolute value in the case where the direction 
 //       cosine is negative, since the distance to boundary would be
 //       negative otherwise, which is untrue.  This arises due to assuming
@@ -978,8 +964,12 @@ double Photon::getLayerReflectance(void)
 bool Photon::hitMediumBoundary(void)
 {
 	double distance_to_boundary = 0.0;
+    double distance_to_boundary_X = 0.0;
+    double distance_to_boundary_Y = 0.0;
+    double distance_to_boundary_Z = 0.0;
+    
 	//Layer *layer = m_medium->getLayerFromDepth(currLocation->location.z);
-	double mu_t = currLayer->getTotalAttenuationCoeff();
+	double mu_t = currLayer->getTotalAttenuationCoeff(currLocation);
 	double x_bound = m_medium->getXbound();
 	double y_bound = m_medium->getYbound();
 	double z_bound = m_medium->getZbound();
@@ -987,40 +977,112 @@ bool Photon::hitMediumBoundary(void)
 	// Check if the photon has been given a step size past the outer edges of the medium.
 	// If so we calculate the distance to the boundary.
 	
+    // The step that puts the photon in a new location based on its current location.
+    double x_step = step*currLocation->getDirX() + currLocation->location.x;
+    double y_step = step*currLocation->getDirY() + currLocation->location.y;
+    double z_step = step*currLocation->getDirZ() + currLocation->location.z;    
     
-    if (step*currLocation->getDirX() + currLocation->location.x >= x_bound || 
-        step*currLocation->getDirX() + currLocation->location.x <= 0)
+    
+    
+    
+    if (x_step >= x_bound || x_step <= 0.0f)
 	{
 		hit_x_bound = true;
 		if (currLocation->getDirX() > 0) // Moving towards positive x_bound
-			distance_to_boundary = (x_bound - currLocation->location.x) / currLocation->getDirX();
+			distance_to_boundary_X = (x_bound - currLocation->location.x) / currLocation->getDirX();
 		else
-			distance_to_boundary = abs(currLocation->location.x / currLocation->getDirX());
+			distance_to_boundary_X = abs(currLocation->location.x / currLocation->getDirX());
 	}
-	else if	(step*currLocation->getDirY() + currLocation->location.y >= y_bound || 
-             step*currLocation->getDirY() + currLocation->location.y <= 0)
+    
+	if (y_step >= y_bound || y_step <= 0.0f)
 	{
 		hit_y_bound = true;
 		if (currLocation->getDirY() > 0) // Moving towards positive y_bound
-			distance_to_boundary = (y_bound - currLocation->location.y) / currLocation->getDirY();
+			distance_to_boundary_Y = (y_bound - currLocation->location.y) / currLocation->getDirY();
 		else
-			distance_to_boundary = abs(currLocation->location.y / currLocation->getDirY());
+			distance_to_boundary_Y = abs(currLocation->location.y / currLocation->getDirY());
 	}
-	else if (step*currLocation->getDirZ() + currLocation->location.z >= z_bound || 
-             step*currLocation->getDirZ() + currLocation->location.z <= 0)
+    
+	if (z_step >= z_bound || z_step <= 0.0f)
 	{
 		hit_z_bound = true;
 		if (currLocation->getDirZ() > 0) // Moving towards positive z_bound
-			distance_to_boundary = (z_bound - currLocation->location.z) / currLocation->getDirZ();
+			distance_to_boundary_Z = (z_bound - currLocation->location.z) / currLocation->getDirZ();
 		else
-			distance_to_boundary = abs(currLocation->location.z / currLocation->getDirZ());
+			distance_to_boundary_Z = abs(currLocation->location.z / currLocation->getDirZ());
 	}
-	// No boundaries have been crossed, so return false.
-	else
-	{
-		return false;
-	}
-
+    
+    // If none were hit, we can return false and forego any further checking.
+    if (!hit_x_bound && !hit_y_bound && !hit_z_bound)
+        return false;
+    
+    
+    // Need to take care of the rare case that photons can be at a corner edge and step
+    // past the boundary of the medium in 2 or more dimensions.  If it is found that
+    // the photon has passed through the bounds of the grid in more than 2 bounds we always
+    // want to move it the smallest distance (i.e. to the closest bounds), therefore we should
+    // never cross 2 bounds (or more!) simultaneously.
+    if (hit_x_bound && hit_y_bound)
+    {
+        if (distance_to_boundary_X < distance_to_boundary_Y)
+        {
+            distance_to_boundary = distance_to_boundary_X;
+            hit_x_bound = true; 
+            hit_y_bound = false;
+            hit_z_bound = false;
+        }
+        else
+        {
+            distance_to_boundary = distance_to_boundary_Y;
+            hit_x_bound = false; 
+            hit_y_bound = true;
+            hit_z_bound = false;
+        }
+    }
+    else if (hit_x_bound && hit_z_bound)
+    {
+        if (distance_to_boundary_X < distance_to_boundary_Z)
+        {
+            distance_to_boundary = distance_to_boundary_X;
+            hit_x_bound = true;
+            hit_y_bound = false; 
+            hit_z_bound = false;
+        }
+        else
+        {
+            distance_to_boundary = distance_to_boundary_Z;
+            hit_x_bound = false;
+            hit_y_bound = false;
+            hit_z_bound = true;
+        } 
+    }
+    else if (hit_y_bound && hit_z_bound)
+    {
+        if (distance_to_boundary_Y < distance_to_boundary_Z)
+        {
+            distance_to_boundary = distance_to_boundary_Y;
+            hit_x_bound = false;
+            hit_y_bound = true;
+            hit_z_bound = false;
+        }
+        else
+        {
+            distance_to_boundary = distance_to_boundary_Z;
+            hit_x_bound = false;
+            hit_y_bound = false;
+            hit_z_bound = true;
+        }
+        
+    }
+    else
+    {
+        // If we make it here, we have hit only one boundary, which means the other 2 have values
+        // of zero for their distances.  Therefore, without checking we can simply add them all together
+        // to get the single distance to boundary.
+        distance_to_boundary = distance_to_boundary_X + distance_to_boundary_Y + distance_to_boundary_Z;
+    }
+    
+    
     
 	// If the step size of the photon is larger than the distance
 	// to the boundary and we are moving in some direction along
@@ -1050,7 +1112,7 @@ bool Photon::hitLayerBoundary(void)
     
 	double distance_to_boundary = 0.0;
 	//Layer *layer = m_medium->getLayerFromDepth(currLocation->location.z);
-	double mu_t = currLayer->getTotalAttenuationCoeff();
+	double mu_t = currLayer->getTotalAttenuationCoeff(currLocation);
     
     
     
@@ -1079,7 +1141,6 @@ bool Photon::hitLayerBoundary(void)
 	}
 	else
 	{
-        
 		return false;
 	}
 }
@@ -1091,6 +1152,34 @@ void Photon::specularReflectance(double n1, double n2)
 	weight = weight - (pow((n1 - n2), 2) / pow((n1 + n2), 2)) * weight;
 }
 
+
+// Update the direction cosine when internal reflection occurs on z-axis.
+void Photon::internallyReflectZ(void) 
+{
+    currLocation->setDirZ(-1*currLocation->getDirZ());
+    
+    // Reset the flag.
+    hit_z_bound = false;
+}
+
+// Update the direction cosine when internal reflection occurs on y-axis.
+void Photon::internallyReflectY(void) 
+{
+    currLocation->setDirY(-1*currLocation->getDirY());
+    
+    // Reset the flag.
+    hit_y_bound = false;
+}
+
+
+// Update the direction cosine when internal reflection occurs on z-axis.
+void Photon::internallyReflectX(void) 
+{
+    currLocation->setDirX(-1*currLocation->getDirX());
+    
+    // Reset the flag.
+    hit_x_bound = false;
+}
 
 
 // Everything below deals with the random number generator.

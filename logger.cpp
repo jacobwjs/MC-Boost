@@ -3,10 +3,15 @@
 //  Xcode
 //
 //  Created by jacob on 7/18/11.
-//  Copyright 2011 __MyCompanyName__. All rights reserved.
+//  Copyright 2011 BMPI. All rights reserved.
 //
 
+#include "vector3D.h"
+#include "photon.h"
 #include "logger.h"
+
+
+
 
 Logger * Logger::pInstance = 0;
 
@@ -37,11 +42,19 @@ Logger * Logger::getInstance(void)
 
 void Logger::openExitFile(std::string filename)
 {
+    // Ensure file stream is not already open.
+    if (exit_data_stream.is_open())
+        exit_data_stream.close();
+    
     exit_data_stream.open(filename.c_str());
 }
 
 void Logger::openAbsorberFile(std::string filename)
 {
+    // Ensure file stream is not already open.
+    if (absorber_data_stream.is_open())
+        absorber_data_stream.close();
+    
     absorber_data_stream.open(filename.c_str());
 }
 
@@ -81,7 +94,10 @@ void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector,
                      << photonVector->getDirZ() << ","
                      << photonVector << "\n";
     
+    exit_data_stream.flush();
 }
+
+
 
 void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector,
                            const double weight)
@@ -96,6 +112,57 @@ void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector,
                      << photonVector->getDirZ() << "," 
                      << photonVector << "\n";
     
+}
+
+
+
+void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector,
+                           const double weight,
+                           const double transmissionAngle
+                           )
+{
+    // Grab the lock to ensure that the logger doesn't get interrupted by a thread
+    // in the middle of a write, causing the output to be corrupted.
+    boost::mutex::scoped_lock lock(m_mutex);
+    
+    // Write out the location (x,y,z), transmission angle (theta), weight of photon
+    exit_data_stream << weight << "," 
+                     << transmissionAngle << "," 
+                     << photonVector << "\n";
+    
+    exit_data_stream.flush();
+}
+
+
+
+void Logger::writeWeightAngleLengthCoords(const double exitWeight,
+                                          const double transmissionAngle,
+                                          const double modulatedPathLength,
+                                          const boost::shared_ptr<Vector3d> photonVector)
+{
+    // Grab the lock to ensure that the logger doesn't get interrupted by a thread
+    // in the middle of a write, causing the output to be corrupted.
+    boost::mutex::scoped_lock lock(m_mutex);
+    
+    // Write out the location (x,y,z), transmission angle (theta), weight of photon
+    exit_data_stream << exitWeight << "," 
+                     << transmissionAngle << ","
+                     << modulatedPathLength << ","
+                     << photonVector << "\n";
+    
+    exit_data_stream.flush();
+    
+}
+
+                                          
+                                  
+void Logger::writePhoton(Photon *p)
+{
+    // Grab the lock to ensure that the logger doesn't get interrupted by a thread
+    // in the middle of a write, causing the output to be corrupted.
+    boost::mutex::scoped_lock lock(m_mutex);
+    
+    cout << "Logger::writePhoton() stub\n";
 }
 
 

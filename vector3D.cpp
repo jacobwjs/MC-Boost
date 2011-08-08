@@ -54,6 +54,18 @@ Vector3d::~Vector3d()
 boost::shared_ptr<Vector3d> Vector3d::operator-(Vector3d &rhs)
 {
     boost::shared_ptr<Vector3d> result(new Vector3d);
+    
+    // Test if the 'rhs' vector has direction.  If so update accordingly.
+    if (rhs.hasDirection())
+    {
+        // Initialize the direction portion of the vector.
+        result->withDirection();
+        
+        // Assign directions.
+        result->setDirX(rhs.getDirX());
+        result->setDirY(rhs.getDirY());
+        result->setDirZ(rhs.getDirZ());
+    }
 
     result->location.x = (this->location.x) - (rhs.location.x);
     result->location.y = (this->location.y) - (rhs.location.y);
@@ -68,6 +80,18 @@ boost::shared_ptr<Vector3d> Vector3d::operator-(Vector3d &rhs)
 boost::shared_ptr<Vector3d> Vector3d::operator+(Vector3d &rhs)
 {
     boost::shared_ptr<Vector3d> result(new Vector3d);
+    
+    // Test if the 'rhs' vector has direction.  If so update accordingly.
+    if (this->hasDirection())
+    {
+        // Initialize the direction portion of the vector.
+        result->withDirection();
+        
+        // Assign directions.
+        result->setDirX(this->getDirX());
+        result->setDirY(this->getDirY());
+        result->setDirZ(this->getDirZ());
+    }
     
     result->location.x = (this->location.x) + (rhs.location.x);
     result->location.y = (this->location.y) + (rhs.location.y);
@@ -105,46 +129,53 @@ bool Vector3d::operator&(Vector3d &rhs)
             (this->location.y && rhs.location.y) ||
             (this->location.z && rhs.location.z));
 }
+        
+        
+boost::shared_ptr<directionCos> Vector3d::getDirection(void)
+{
+    assert(direction != NULL);
+    return this->direction;
+}
 
 
 double Vector3d::getDirX(void)
 {
-    assert(direction.get() != NULL);
+    assert(direction != NULL);
     return direction->x;
 }
 
 
 double Vector3d::getDirY(void)
 {
-    assert(direction.get() != NULL);
+    assert(direction != NULL);
     return direction->y;
 }
 
 
 double Vector3d::getDirZ(void)
 {
-    assert(direction.get() != NULL);
+    assert(direction != NULL);
     return direction->z;
 }
 
 
 void Vector3d::setDirX(double x)
 {
-    assert(direction.get() != NULL);
+    assert(direction != NULL);
     direction->x = x;
 }
 
 
 void Vector3d::setDirY(double y)
 {
-    assert(direction.get() != NULL);
+    assert(direction != NULL);
     direction->y = y;
 }
 
 
 void Vector3d::setDirZ(double z)
 {
-    assert(direction.get() != NULL);
+    assert(direction != NULL);
     direction->z = z;
 }
 
