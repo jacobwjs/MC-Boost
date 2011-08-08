@@ -19,7 +19,7 @@ Medium::Medium()
 	this->initCommon();
 }
 
-Medium::Medium(const int x, const int y, const int z)
+Medium::Medium(const double x, const double y, const double z)
 {
 	this->z_bound = z;
 	this->y_bound = y;

@@ -54,8 +54,13 @@ public:
 
 	friend class Photon;
 
+	// A structure that holds K-Wave simulation data and attributes
+	// This is public since the members of the struct are objects with
+	// their own private methods.  This is simply a convenient container.
+	kWaveSim kwave;
+
 	Medium(void);
-    Medium(const int x, const int y, const int z);
+    Medium(const double x, const double y, const double z);
 	~Medium();
     
     // Common initializations for the Medium object.  Called from constructors.
@@ -103,6 +108,7 @@ public:
     // Return the pressure from the pressure grid based on the location of the photon.
     double  getPressureFromPhotonLocation(const boost::shared_ptr<Vector3d> photonCoords);
     
+
     // Return the displacement vector coordinates from the location of the photon in the medium.
     boost::shared_ptr<Vector3d> getDisplacementFromPhotonLocation(const boost::shared_ptr<Vector3d> photonCoords);
 
@@ -207,8 +213,6 @@ private:
     // The refrective index outside of the medium.  We assume air.
     double refractive_index;
     
-    // A structure that holds K-Wave simulation data and attributes
-    kWaveSim kwave;
 };
 
 #endif	// MEDIUM_H

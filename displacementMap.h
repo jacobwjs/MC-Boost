@@ -9,7 +9,7 @@
 #define DISPLACEMENTMAP_H_
 
 
-
+#include <boost/thread/mutex.hpp>
 #include <boost/multi_array.hpp>
 #include <iostream>
 using std::cout;
@@ -55,6 +55,13 @@ public:
     double  getDisplacementFromGridZaxis(const int a, const int b, const int c);
 
 
+    int 	getVoxelsXaxis(void) {return Nx;}
+    int		getVoxelsYaxis(void) {return Ny;}
+    int		getVoxelsZaxis(void) {return Nz;}
+
+    double  getDx(void) {return dx;}
+    double 	getDy(void) {return dy;}
+    double  getDz(void) {return dz;}
 
 private:
 	// Ensure the default constructor can never be called.
@@ -74,6 +81,9 @@ private:
 
 	// The voxel size [cm].
 	double dx, dz, dy;
+
+	// Mutex to serialize access to the displacement arrays.
+	boost::mutex m_displacement_mutex;
 
 	// Holds the displacement values obtained from k-Wave in a 3-dimensional grid
 	// allowing indexing into the grid based on the coordinates of the photon

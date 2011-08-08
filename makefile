@@ -1,5 +1,5 @@
 # CFLAGS for running
-CFLAGS = -Wall -v -O3
+CFLAGS = -Wall -v -march=native -O1
 
 # CFLAGS for debugging
 #CFLAGS = -Wall -v -O0 -g

@@ -5,6 +5,7 @@
  *      Author: StaleyJW
  */
 
+#include "debug.h"
 #include "vector3d.h"
 #include "displacementMap.h"
 #include <boost/lexical_cast.hpp>
@@ -180,27 +181,38 @@ void DisplacementMap::initCommon()
 // Returns a Vector3d object holding values for displacements in all axes.
 boost::shared_ptr<Vector3d> DisplacementMap::getDisplacements(const Vector3d &photonLocation)
 {
+
+	const double THRESHOLD = 1.0e-12;
     boost::shared_ptr<Vector3d> result(new Vector3d);
     
+
     // Indices into the displacement grids.
     // NOTE:
     // - There is an effective transformation of the y (photon)
     //   and z (grid) transformation due to the grid orientation in kWave.
-    int _x = floor(photonLocation.location.x/dx);
-	int _z = floor(photonLocation.location.y/dz);
-	int _y = floor(photonLocation.location.z/dy);
-
+    int _x = floor(photonLocation.location.x/dx + THRESHOLD);
+    int _z = floor(photonLocation.location.y/dz + THRESHOLD);
+    int _y = floor(photonLocation.location.z/dy + THRESHOLD);
     
+
     // Sanity check.
 	assert((_x < Nx && _x >= 0) &&
            (_y < Ny && _y >= 0) &&
-           (_z < Nz && _z >= 0));
+           (_z < Nz && _z >= 0) ||
+           assert_msg("_x=" << _x << " _y=" << _y << " _z=" << _z << "\n"
+        		      << photonLocation.location.x << " "
+        		      << photonLocation.location.y << " "
+        		      << photonLocation.location.z));
     
+
+
+
     result->location.x = getDisplacementFromGridXaxis(_x, _z, _y);
     result->location.y = getDisplacementFromGridYaxis(_x, _z, _y);
     result->location.z = getDisplacementFromGridZaxis(_x, _z, _y);
     
 	return result;
+
 }
 
 

@@ -25,7 +25,7 @@ Photon::Photon(void)
     
     // The location before the photon hopped.
     prevLocation = boost::shared_ptr<Vector3d> (new Vector3d);  // Does not require direction.
-    
+    prevLocation->withDirection();
     
 	this->initCommon();
 }
@@ -428,6 +428,8 @@ void Photon::hop()
 	cout << "Hopping...\n";
 #endif	
     
+	const double THRESH = 1.0e-19;
+
 	num_steps++;
     
     
@@ -439,6 +441,28 @@ void Photon::hop()
 	currLocation->location.y += step * currLocation->getDirY();
 	currLocation->location.z += step * currLocation->getDirZ();
     
+
+	double _x = currLocation->location.x;
+	double _y = currLocation->location.y;
+	double _z = currLocation->location.z;
+
+/*
+	if (abs(_x - 0.0f) < THRESH || THRESH > abs(2.0f - _x))
+	{
+		cout << "Hop error (x): " << _x <<  ", " << _y << ", " << _z << endl;
+		cout.flush();
+	}
+	if (abs(_y - 0.0f) < THRESH || THRESH > abs(2.0f - _y))
+	{
+		cout << "Hop error (y): " << _x <<  ", " << _y << ", " << _z << endl;
+		cout.flush();
+	}
+	if ((_z < 10e-19) || (2.0+10e-19 < _z))
+	{
+		cout << "Hop error (z): " << _x <<  ", " << _y << ", " << _z << endl;
+		cout.flush();
+	}
+*/
 }
 
 
@@ -622,13 +646,21 @@ void Photon::displacePhotonFromPressure(void)
 {    
 	// Get the displacement values (x, y, z) from the grid based on the location of the photon.
     //
+
+//	double dx = m_medium->kwave.dmap.getDx();
+//	double dy = m_medium->kwave.dmap.getDy();
+//	double dz = m_medium->kwave.dmap.getDz();
+//
+//	int _x = floor(photonLocation.location.x/dx + THRESHOLD);
+
+
 	boost::shared_ptr<Vector3d> displacement = m_medium->getDisplacementFromPhotonLocation(currLocation);
     
 	//cout << "before displacement: " << currLocation;
     
 	// Add the displacement values to the current location in order to move the photon (in all dimensions)
 	// to its displaced location that occurred from the pressure wave.
-	currLocation = (*currLocation) + (*displacement);
+	//currLocation = (*currLocation) + (*displacement);
     
     // Update the path length of the photon through the medium.
     displaced_path_length += VectorMath::Distance(prevLocation, currLocation);
@@ -897,7 +929,7 @@ double Photon::getLayerReflectance(void)
 	// Calculate the critical angle.
     if (refract_index_n2 > refract_index_n1)
     {
-        // For specular refection we always remove some portion of the weight and transmit the photon
+        // For specular reflection we always remove some portion of the weight and transmit the photon
         // to the next layer.
         transmission_angle = asin(refract_index_n1/refract_index_n2 * sin(incident_angle));
         specularReflectance(refract_index_n1, refract_index_n2);
@@ -969,7 +1001,7 @@ bool Photon::hitMediumBoundary(void)
     if (x_step >= x_bound || x_step <= 0.0f)
 	{
 		hit_x_bound = true;
-		if (currLocation->getDirX() > 0) // Moving towards positive x_bound
+		if (currLocation->getDirX() > 0.0f) // Moving towards positive x_bound
 			distance_to_boundary_X = (x_bound - currLocation->location.x) / currLocation->getDirX();
 		else
 			distance_to_boundary_X = abs(currLocation->location.x / currLocation->getDirX());
@@ -978,7 +1010,7 @@ bool Photon::hitMediumBoundary(void)
 	if (y_step >= y_bound || y_step <= 0.0f)
 	{
 		hit_y_bound = true;
-		if (currLocation->getDirY() > 0) // Moving towards positive y_bound
+		if (currLocation->getDirY() > 0.0f) // Moving towards positive y_bound
 			distance_to_boundary_Y = (y_bound - currLocation->location.y) / currLocation->getDirY();
 		else
 			distance_to_boundary_Y = abs(currLocation->location.y / currLocation->getDirY());
@@ -987,7 +1019,7 @@ bool Photon::hitMediumBoundary(void)
 	if (z_step >= z_bound || z_step <= 0.0f)
 	{
 		hit_z_bound = true;
-		if (currLocation->getDirZ() > 0) // Moving towards positive z_bound
+		if (currLocation->getDirZ() > 0.0f) // Moving towards positive z_bound
 			distance_to_boundary_Z = (z_bound - currLocation->location.z) / currLocation->getDirZ();
 		else
 			distance_to_boundary_Z = abs(currLocation->location.z / currLocation->getDirZ());
@@ -1054,6 +1086,17 @@ bool Photon::hitMediumBoundary(void)
             hit_z_bound = true;
         }
         
+    }
+    else if (hit_x_bound && hit_y_bound && hit_z_bound)
+    {
+    	cout << "ERROR: hit 3 boundaries\n";
+    	cout.flush();
+    	distance_to_boundary = distance_to_boundary_X < distance_to_boundary_Y ?
+    							distance_to_boundary_X : distance_to_boundary_Y;
+    	distance_to_boundary = distance_to_boundary < distance_to_boundary_Z ?
+    	    							distance_to_boundary : distance_to_boundary_Z;
+    	hit_x_bound = true;
+    	hit_y_bound = hit_z_bound = false;
     }
     else
     {
