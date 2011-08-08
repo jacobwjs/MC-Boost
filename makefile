@@ -1,5 +1,5 @@
 # CFLAGS for running
-CFLAGS = -Wall -v -march=native -O1
+CFLAGS = -Wall -v -mtune=native -msse4.2 -O2
 
 # CFLAGS for debugging
 #CFLAGS = -Wall -v -O0 -g

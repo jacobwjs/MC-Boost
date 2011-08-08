@@ -35,7 +35,7 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 1000000;
+const int MAX_PHOTONS = 100000;
 
 // Used to append to saved data files.
 time_t epoch;
@@ -114,7 +114,7 @@ void runAcoustoOptics(void)
     // Define a layer in the tissue.
     //
     double mu_a = 1.0f;
-    double mu_s = 70.0f;
+    double mu_s = 10.0f;
     double refractive_index = 1.33f;
     double anisotropy = 0.9;
     double start_depth = 0.0f; // [cm]
@@ -184,8 +184,8 @@ void runAcoustoOptics(void)
     
 	
 	// Let boost decide how many threads to run on this architecture.
-	//const int NUM_THREADS = boost::thread::hardware_concurrency();
-	const int NUM_THREADS = 1;
+	const int NUM_THREADS = boost::thread::hardware_concurrency();
+	//const int NUM_THREADS = 1;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.

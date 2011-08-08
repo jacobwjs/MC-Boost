@@ -50,14 +50,14 @@ public:
     boost::shared_ptr<Vector3d> getDisplacements(const double x, const double y, const double z);
     
     // Returns the individual axis displacements.
-    double  getDisplacementFromGridXaxis(const int a, const int b, const int c);
-    double  getDisplacementFromGridYaxis(const int a, const int b, const int c);
-    double  getDisplacementFromGridZaxis(const int a, const int b, const int c);
+    double  getDisplacementFromGridX(const int a, const int b, const int c);
+    double  getDisplacementFromGridY(const int a, const int b, const int c);
+    double  getDisplacementFromGridZ(const int a, const int b, const int c);
 
 
-    int 	getVoxelsXaxis(void) {return Nx;}
-    int		getVoxelsYaxis(void) {return Ny;}
-    int		getVoxelsZaxis(void) {return Nz;}
+    int 	getNumVoxelsXaxis(void) {return Nx;}
+    int		getNumVoxelsYaxis(void) {return Ny;}
+    int		getNumVoxelsZaxis(void) {return Nz;}
 
     double  getDx(void) {return dx;}
     double 	getDy(void) {return dy;}

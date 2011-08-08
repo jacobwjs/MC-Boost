@@ -207,9 +207,9 @@ boost::shared_ptr<Vector3d> DisplacementMap::getDisplacements(const Vector3d &ph
 
 
 
-    result->location.x = getDisplacementFromGridXaxis(_x, _z, _y);
-    result->location.y = getDisplacementFromGridYaxis(_x, _z, _y);
-    result->location.z = getDisplacementFromGridZaxis(_x, _z, _y);
+    result->location.x = getDisplacementFromGridX(_x, _z, _y);
+    result->location.y = getDisplacementFromGridY(_x, _z, _y);
+    result->location.z = getDisplacementFromGridZ(_x, _z, _y);
     
 	return result;
 
@@ -219,41 +219,47 @@ boost::shared_ptr<Vector3d> DisplacementMap::getDisplacements(const Vector3d &ph
 
 boost::shared_ptr<Vector3d> DisplacementMap::getDisplacements(const double x, const double y, const double z)
 {
-    boost::shared_ptr<Vector3d> result;
+    
     
     // Indices into the displacement grids.
     // NOTE:
     // - There is an effective transformation of the y (photon)
     //   and z (grid) transformation due to the grid orientation in kWave.
+    /*
     int _x = floor(x/dx);
-	int _z = floor(y/dz);
 	int _y = floor(z/dy);
+    int _z = floor(y/dz);
+
     
     // Sanity check.
 	assert((_x < Nx && _x >= 0) &&
            (_y < Ny && _y >= 0) &&
            (_z < Nz && _z >= 0));
     
+    */
     
-    result->location.x = getDisplacementFromGridXaxis(_x, _z, _y);
-    result->location.y = getDisplacementFromGridYaxis(_x, _z, _y);
-    result->location.z = getDisplacementFromGridZaxis(_x, _z, _y);
+    boost::mutex::scoped_lock lock(m_displacement_mutex);
+
+    boost::shared_ptr<Vector3d> result (new Vector3d);
+    result->location.x = getDisplacementFromGridX(x, z, y);
+    result->location.y = getDisplacementFromGridY(x, z, y);
+    result->location.z = getDisplacementFromGridZ(x, z, y);
     
     return result;
 }
 
 // Returns the individual axis displacement value from their location in the grid.
-double DisplacementMap::getDisplacementFromGridXaxis(const int a, const int b, const int c)
+double DisplacementMap::getDisplacementFromGridX(const int a, const int b, const int c)
 {
 	return (*displacement_gridX)[(array_index)a][(array_index)b][(array_index)c];
 }
 
-double DisplacementMap::getDisplacementFromGridYaxis(const int a, const int b, const int c)
+double DisplacementMap::getDisplacementFromGridY(const int a, const int b, const int c)
 {
    	return (*displacement_gridY)[(array_index)a][(array_index)b][(array_index)c];
 }
 
-double DisplacementMap::getDisplacementFromGridZaxis(const int a, const int b, const int c)
+double DisplacementMap::getDisplacementFromGridZ(const int a, const int b, const int c)
 {
 	return (*displacement_gridZ)[(array_index)a][(array_index)b][(array_index)c];    
 }

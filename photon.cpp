@@ -6,6 +6,7 @@
 #include "layer.h"
 #include "medium.h"
 #include "photon.h"
+#include "displacementMap.h"
 
 
 
@@ -428,8 +429,6 @@ void Photon::hop()
 	cout << "Hopping...\n";
 #endif	
     
-	const double THRESH = 1.0e-19;
-
 	num_steps++;
     
     
@@ -440,29 +439,6 @@ void Photon::hop()
 	currLocation->location.x += step * currLocation->getDirX();
 	currLocation->location.y += step * currLocation->getDirY();
 	currLocation->location.z += step * currLocation->getDirZ();
-    
-
-	double _x = currLocation->location.x;
-	double _y = currLocation->location.y;
-	double _z = currLocation->location.z;
-
-/*
-	if (abs(_x - 0.0f) < THRESH || THRESH > abs(2.0f - _x))
-	{
-		cout << "Hop error (x): " << _x <<  ", " << _y << ", " << _z << endl;
-		cout.flush();
-	}
-	if (abs(_y - 0.0f) < THRESH || THRESH > abs(2.0f - _y))
-	{
-		cout << "Hop error (y): " << _x <<  ", " << _y << ", " << _z << endl;
-		cout.flush();
-	}
-	if ((_z < 10e-19) || (2.0+10e-19 < _z))
-	{
-		cout << "Hop error (z): " << _x <<  ", " << _y << ", " << _z << endl;
-		cout.flush();
-	}
-*/
 }
 
 
@@ -472,6 +448,11 @@ void Photon::drop()
 #ifdef DEBUG
 	cout << "Dropping...\n";
 #endif	
+    
+    if (this->status == DEAD) return;
+    
+    
+    
     
     double mu_a = 0.0f;
     double mu_s = 0.0f;
@@ -553,6 +534,8 @@ void Photon::spin()
 	cout << "Spinning...\n";
 #endif	
     
+    if (this->status == DEAD) return;
+    
 	// Get the anisotropy factor from the layer that resides at depth 'z' in
 	// the medium.
 	// FIXME: Need to index into layer and check if absorber causes this to change.
@@ -611,6 +594,9 @@ void Photon::spin()
 
 void Photon::performRoulette(void)
 {
+    if (this->status == DEAD) return;
+    
+    
 	if (weight < THRESHOLD) {
 		if (getRandNum() <= CHANCE) {
 			weight /= CHANCE;
@@ -646,27 +632,47 @@ void Photon::displacePhotonFromPressure(void)
 {    
 	// Get the displacement values (x, y, z) from the grid based on the location of the photon.
     //
-
-//	double dx = m_medium->kwave.dmap.getDx();
-//	double dy = m_medium->kwave.dmap.getDy();
-//	double dz = m_medium->kwave.dmap.getDz();
-//
-//	int _x = floor(photonLocation.location.x/dx + THRESHOLD);
-
-
-	boost::shared_ptr<Vector3d> displacement = m_medium->getDisplacementFromPhotonLocation(currLocation);
+    int _x = floor(currLocation->location.x/m_medium->kwave.dmap->getDx());
+	int _y = floor(currLocation->location.y/m_medium->kwave.dmap->getDz());
+	int _z = floor(currLocation->location.z/m_medium->kwave.dmap->getDy());
     
-	//cout << "before displacement: " << currLocation;
+    int Nx, Ny, Nz;
+    Nx = Ny = Nz = 64;
     
+    // Subtle case where index into grid is negative because of rounding errors above.
+    if (_z < 0 || _x < 0 || _y < 0)
+    {
+        // FIXME:
+        // - This should be removed when detection of line-plane intersection
+        //   is implemented.  For now, it is a necessary evil.
+        this->status = DEAD;
+        return;
+    }
+    
+#ifdef DEBUG
+	assert((_x < Nx && _x >= 0) &&
+           (_y < Ny && _y >= 0) &&
+           (_z < Nz && _z >= 0) ||
+           assert_msg("_x=" << _x << " _y=" << _y << " _z=" << _z << "\n"
+        		      << currLocation->location.x << " "
+        		      << currLocation->location.y << " "
+        		      << currLocation->location.z));
+#endif
+	//boost::shared_ptr<Vector3d> displacement = m_medium->kwave.dmap->getDisplacements(_x,
+    //                                                                                  _y,
+    //                                                                                  _z);                                                                                 
+
 	// Add the displacement values to the current location in order to move the photon (in all dimensions)
 	// to its displaced location that occurred from the pressure wave.
 	//currLocation = (*currLocation) + (*displacement);
     
+    currLocation->location.x += m_medium->kwave.dmap->getDisplacementFromGridX(_x, _y, _z);
+    currLocation->location.y += m_medium->kwave.dmap->getDisplacementFromGridY(_x, _y, _z);
+    currLocation->location.z += m_medium->kwave.dmap->getDisplacementFromGridZ(_x, _y, _z);
+    
     // Update the path length of the photon through the medium.
     displaced_path_length += VectorMath::Distance(prevLocation, currLocation);
     
-    
-	//cout << "after displacement: " << currLocation;
 }
 
 
@@ -891,7 +897,6 @@ double Photon::getLayerReflectance(void)
 {
 	double refract_index_n1 = 0.0;	// Current layer's refractive index.
 	double refract_index_n2 = 0.0;	// Next layer's refractive index.
-	//Layer *currLayer = m_medium->getLayerFromDepth(currLocation->location.z);
 	Layer *nextLayer;
     
 	double incident_angle = acos(abs(currLocation->getDirZ()));
@@ -962,12 +967,13 @@ double Photon::getLayerReflectance(void)
 
 
 // FIXME:
-// - It is possible that one or MORE of the steps in a corresponding axis (x, y, z)
-//   can simultaneously cross the bounds of the grid, but depending on which order
-//   the if() statements below occurr, the step size to the boundary might be for
-//   the one that just touches the medium boundary, but moving the other the similar
-//   distance would put it beyond the boundary, effectively moving the photon not
-//   to the edge (i.e. plane of exit), but beyond.
+// - Switch to planar bounds detection.  Below is so convoluted it's scary.
+//   There is also an edge case of injection the photon, at its first step,
+//   has directon cosignZ == 1.  If diffuse reflection occurs and it leaves
+//   the medium boundary on its first run, this case is not accounted for.
+//   THIS IS BAD WHEN INDEXING INTO A DISPLACEMENT ARRAY AND HAVING A NEGATIVE
+//   VALUE CAUSES THINGS TO BLOW UP AND SPEND AN ENTIRE DAY FINDING A SUBTLE BUG.
+//   THIS IS A REMINDER TO SWITCH TO PLANE INTERSECTION DETECTION....
 // Note: We take the absolute value in the case where the direction 
 //       cosine is negative, since the distance to boundary would be
 //       negative otherwise, which is untrue.  This arises due to assuming
