@@ -173,9 +173,6 @@ public:
 	// with plotting in matlab.
 	//void 	writephoton_dataToFile(void);
 
-	// Calculate path length of photon from point 'p1' to point 'p2'.
-	double	getPathLength(double x, double y, double z);
-
 	// Add the coordinates of the photon at it's current position
 	// to the 'photon_data' vector.  Used for tracking the positiion of
 	// scattering events in the medium.
@@ -193,10 +190,7 @@ public:
 
 	// Write the coordinates of this photon to file.
 	void	writeCoordsToFile(void);
-
-	// Write the x-y coordinates of the exit location when the photon left the medium, as well
-	// as its accumulated path length.
-	void	writeExitLocationsAndLength(void);
+    
     // Tests if the photon will come into contact with a medium boundary
     // after setting the new step size.  If so the process of transmitting or
     // reflecting the photon begins.
@@ -214,7 +208,6 @@ public:
     // Check if photon has hit the detector during it's step.
     bool    hitDetector(void);
     
-    
     // Store the energy lost into a local array that will be written to a global array
     // for all photons once they are DEAD.
     // This relieves contention between threads trying to update a single global data
@@ -231,12 +224,8 @@ private:
 	// is the full cycle of photon propagation.
 	int iterations;
 	
-	// Holds value of number of iterations thus far.
-	int cnt;	
-	
 	// Location of the photon with displacement from ultrasound source taken into account.
 	double x_disp, y_disp, z_disp;
-
 
 	// Radial position.
 	double r;

@@ -86,9 +86,6 @@ void Photon::initCommon(void)
 	// Reset the number of interactions back to zero.
 	num_steps = 0;
     
-	// 'cnt' represents the number of times a photon has propogated
-	// through the medium.
-	cnt = 0;
     
     // Reset the flags for hitting a layer boundary.
 	hit_x_bound = hit_y_bound = hit_z_bound = false;
@@ -338,11 +335,6 @@ void Photon::setStepSize()
 }
 
 
-double Photon::getPathLength(double x_dist, double y_dist, double z_dist)
-{
-	return sqrt(pow(x_dist, 2) + pow(y_dist, 2) + pow(z_dist, 2));
-}
-
 
 void Photon::captureLocationCoords(void)
 {
@@ -436,7 +428,7 @@ void Photon::hop()
 	cout << "Hopping...\n";
 #endif	
     
-	cnt++;
+	num_steps++;
     
     
 	// Save the location before making the hop.
@@ -624,28 +616,17 @@ void Photon::writeCoordsToFile(void)
 }
 
 
-// Write exit locations and path lenghts of photons to file.
-void Photon::writeExitLocationsAndLength(void)
-{
-	//m_medium->writeExitCoordsAndLength(photon_exit_data);
-    cout << "Photon::writeExitLocationsAndLength(void) stub\n";
-}
-
-void Photon::writeExitLocationsLengthWeight(void)
-{
-	//m_medium->writeExitCoordsLengthWeight(photon_exit_data);
-    cout << "Photon::writeExitLocationsLengthWeight(void) stub\n";
-}
 
 // FIXME: CURRENTLY ONLY DISPLACING IN ONE DIRECTION.  SHOULD USE A TENSOR.
 void Photon::displacePhotonFromPressure(void)
 {    
-	// Get the local pressure from the grid based on the coordinate of the photon.
+	// Get the displacement values (x, y, z) from the grid based on the location of the photon.
+    //
 	boost::shared_ptr<Vector3d> displacement = m_medium->getDisplacementFromPhotonLocation(currLocation);
     
 	//cout << "before displacement: " << currLocation;
     
-	// Add the displacement values to the current location in order to move the photon (in all dimension)
+	// Add the displacement values to the current location in order to move the photon (in all dimensions)
 	// to its displaced location that occurred from the pressure wave.
 	currLocation = (*currLocation) + (*displacement);
     
