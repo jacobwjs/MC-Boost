@@ -6,6 +6,7 @@
 //  Copyright 2011 __MyCompanyName__. All rights reserved.
 //
 
+#include "absorber.h"
 #include "sphereAbsorber.h"
 #include <cmath>
 #include <iostream>

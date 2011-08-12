@@ -156,7 +156,7 @@ public:
     double 	getDepth() {return depth;}
     
     // Return the refractive index of the medium.
-    double  getRefractiveIndex(void) {return refractive_index;}
+    //double  getRefractiveIndex(void) {return refractive_index;}
     
     // Write photon coordinates to file.
     void 	writePhotonCoords(std::vector<double> &coords);

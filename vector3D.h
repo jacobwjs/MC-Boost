@@ -75,6 +75,7 @@ private:
 
 
 
+
 ostream& operator<<(ostream &out, const boost::shared_ptr<Vector3d> rhs)
 {
     out << rhs->location.x

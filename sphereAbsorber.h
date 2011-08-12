@@ -8,8 +8,7 @@
 #ifndef SPHEREABSORBER_H
 #define SPHEREABSORBER_H
 
-#include "absorber.h"
-
+class Absorber;
 
 class SphereAbsorber : public Absorber
 {

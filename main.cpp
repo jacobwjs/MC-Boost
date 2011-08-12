@@ -89,7 +89,7 @@ void runAcoustoOptics(void)
     
     // Number of time steps that were executed in the K-Wave simulation
     // that produced displacement and pressure data.
-    const int KWAVESIM_TIME_STEPS = 200;
+    const int KWAVESIM_TIME_STEPS = 2;
     
     // The logger is a singleton.  To bypass any problems with using singletons in a multi-threaded applicaton
     // initialization occurs in main before any threads are spawned.
@@ -132,7 +132,7 @@ void runAcoustoOptics(void)
     
     // Create a spherical detector.
     Detector *detector;
-    CircularDetector circularExitDetector(1.0f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
+    CircularDetector circularExitDetector(0.5f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
     circularExitDetector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
     detector = &circularExitDetector;
     
@@ -160,7 +160,6 @@ void runAcoustoOptics(void)
 	const int pgrid_z = 64;
 	string pressure_file = "./kWave-pressure/pressure";
     PressureMap *pmap = new PressureMap(pgrid_x, pgrid_z, pgrid_y, (int)X_dim);
-	pmap->setTransducerFreq(2.0e6); // The frequency of the transducer used to generate the pressure map.
 	tissue->addPressureMap(pmap);
 	//cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
     
@@ -175,7 +174,8 @@ void runAcoustoOptics(void)
     tissue->addDisplacementMap(dmap);
     
     
-    
+    // Set the value of the transducer frequency used in the K-Wave simulation.
+    tissue->kwave.transducerFreq = 2.0e6;
     
     
 	// Allocate the planar fluence grid and set it in the tissue.
@@ -184,8 +184,8 @@ void runAcoustoOptics(void)
     
 	
 	// Let boost decide how many threads to run on this architecture.
-	const int NUM_THREADS = boost::thread::hardware_concurrency();
-	//const int NUM_THREADS = 1;
+	//const int NUM_THREADS = boost::thread::hardware_concurrency();
+	const int NUM_THREADS = 1;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.

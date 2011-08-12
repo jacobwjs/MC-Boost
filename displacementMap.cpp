@@ -46,6 +46,20 @@ DisplacementMap::DisplacementMap(const int Nx, const int Nz, const int Ny, const
 }
 
 
+void DisplacementMap::initCommon()
+{
+    assert(Nx != 0 &&
+           Ny != 0 &&
+           Nz != 0);
+    
+	dx = (double)x_bound / (double)Nx; // [cm] (note: 20e-3/64 in centimeters is 0.16;
+	dy = (double)y_bound / (double)Ny;
+	dz = (double)z_bound / (double)Nz;
+	displacement_gridX = new three_dim_array (boost::extents[Nx][Nz][Ny]);
+	displacement_gridY = new three_dim_array (boost::extents[Nx][Nz][Ny]);
+	displacement_gridZ = new three_dim_array (boost::extents[Nx][Nz][Ny]);
+}
+
 
 DisplacementMap::~DisplacementMap()
 {
@@ -162,20 +176,6 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 	}
 }
 
-
-void DisplacementMap::initCommon()
-{
-    assert(Nx != 0 &&
-           Ny != 0 &&
-           Nz != 0);
-    
-	dx = (double)x_bound / (double)Nx; // [cm] (note: 20e-3/Nx in centimeters is 0.16;
-	dy = (double)y_bound / (double)Ny;
-	dz = (double)z_bound / (double)Nz;
-	displacement_gridX = new three_dim_array (boost::extents[Nx][Nz][Ny]);
-	displacement_gridY = new three_dim_array (boost::extents[Nx][Nz][Ny]);
-	displacement_gridZ = new three_dim_array (boost::extents[Nx][Nz][Ny]);
-}
 
 
 // Returns a Vector3d object holding values for displacements in all axes.

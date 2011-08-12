@@ -129,6 +129,7 @@ bool Vector3d::operator&(Vector3d &rhs)
             (this->location.y && rhs.location.y) ||
             (this->location.z && rhs.location.z));
 }
+
         
         
 boost::shared_ptr<directionCos> Vector3d::getDirection(void)

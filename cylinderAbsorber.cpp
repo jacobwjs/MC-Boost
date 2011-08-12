@@ -4,7 +4,7 @@
 //
 //  Created by jacob on 6/20/11.
 //
-
+#include "absorber.h"
 #include "CylinderAbsorber.h"
 
 

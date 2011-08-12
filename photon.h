@@ -168,6 +168,10 @@ public:
 	// Displace (i.e. update the location) the photon some distance
 	// based on the pressure at that location.
 	void 	displacePhotonFromPressure(void);
+    
+    // Alter the optical path length due to the changes in refractive
+    // index of the medium from the changes in pressure.
+    void    alterPathLengthFromRefractiveChanges(void);
 
 	// Write the coordinates of each scattering event to file for use
 	// with plotting in matlab.
@@ -298,8 +302,9 @@ private:
 	unsigned int z1, z2, z3, z4;
 
 	// Tracks the path length of the photon through the medium.
-	double original_path_length;
-	double displaced_path_length;
+	double original_optical_path_length;
+	double displaced_optical_path_length;
+    double refractiveIndex_optical_path_length;
 
 	// Tracks whether or not a photon has hit a medium boundary.
 	bool hit_x_bound, hit_y_bound, hit_z_bound;

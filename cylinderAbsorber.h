@@ -8,8 +8,9 @@
 #ifndef CYLINDERABSORBER_H
 #define CYLINDERABSORBER_H
 
-#include "absorber.h"
 #include <cmath>
+
+class Absorber;
 
 class CylinderAbsorber : public Absorber 
 {

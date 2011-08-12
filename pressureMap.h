@@ -26,6 +26,8 @@ typedef three_dim_array::index array_index;
 // Forward decleration of Vector3d class.
 class Vector3d;
 
+
+
 class PressureMap
 {
 public:
@@ -37,16 +39,23 @@ public:
 	void 	loadPressureMap(void);
 	void	loadPressureMap(const std::string &filename, const int time_step);
 
+    // Returns the pressure from translating photon coordinates into pressure grid
+    // indices.
 	double 	getPressureFromGrid(int x, int z, int y);
+    
+    // Returns the pressure from cartesian coordinates of the photon.
 	double 	getPressure(double x, double z, double y);
+    // Returns the pressure from cartesian coordinates in a position vector.
     double  getPressure(const Vector3d &location);
-	int		getXBound(void) {return x_bound;}
-	int		getYBound(void)	{return y_bound;}
-	int		getZBound(void) {return z_bound;}
-	double	getTransducerFreq(void) {return freq;}
+    
+    int 	getNumVoxelsXaxis(void) {return Nx;}
+    int		getNumVoxelsYaxis(void) {return Ny;}
+    int		getNumVoxelsZaxis(void) {return Nz;}
+    
+    double  getDx(void) {return dx;}
+    double 	getDy(void) {return dy;}
+    double  getDz(void) {return dz;}
 
-	// Set the frequency of the transducer used to create the pressure map in k-Wave.
-	void	setTransducerFreq(double freq) {this->freq = freq;}
 
 
 
@@ -66,8 +75,6 @@ private:
 	// The voxel size [cm].
 	double dx, dz, dy;
 
-	// Frequency of the transducer that produced the pressure map.
-	double freq;
 
 	// Input stream
 	std::ifstream pressure_file_stream;

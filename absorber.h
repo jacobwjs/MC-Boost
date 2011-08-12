@@ -51,6 +51,7 @@ protected:
     // The optical properties of the absorber.
     double mu_a;
     double mu_s;
+    double refractive_index;
     double anisotropy;
     double absorbedWeight;
     

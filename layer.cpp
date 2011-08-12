@@ -1,6 +1,8 @@
 
 
 #include "layer.h"
+#include <iostream>
+using std::cout;
 
 
 
@@ -61,6 +63,16 @@ void Layer::addAbsorber(Absorber * absorber)
 }
 
 	
+
+// Returns the refractive index based on coordinates of photon.  That is,
+// there could be an occlusion in the medium and we ensure the correct value
+// is returned.
+double Layer::getRefractiveIndex(const boost::shared_ptr<Vector3d> photonVector)
+{
+    cout << "Layer::getRefractiveIndex(Vector3d) stub\n";
+}
+
+
 
 // Returns the absorption coefficient after checking to see if the
 // photon might be within an absorber.

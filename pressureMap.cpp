@@ -61,7 +61,11 @@ PressureMap::PressureMap(const int Nx, const int Nz, const int Ny, const int gri
 
 void PressureMap::initCommon(void)
 {
-
+    // Make sure the grid size (voxels in each axis) has been defined.
+    assert(Nx != 0 &&
+           Ny != 0 &&
+           Nz != 0);
+    
 	dx = (double)x_bound / (double)Nx; // [cm] (note: 20e-3/Nx in centimeters is 0.16;
 	dy = (double)y_bound / (double)Ny;
 	dz = (double)z_bound / (double)Nz;
