@@ -223,12 +223,9 @@ void Photon::propagatePhoton(const int iterations)
 				hop();
                 
                 
-                // Calculate changes in the optical path length due to the refractive index gradient
-                // produced due to pressure.
-                alterPathLengthFromRefractiveChanges();
-                
                 // Now displace the photon at its new location some distance depending on
-                // how the pressure has moved scattering particles.
+                // how the pressure has moved scattering particles and/or due to the change
+                // in the path of the photon due to refractive index gradient.
                 displacePhotonFromPressure();
                 
 				// Drop weight of the photon due to an interaction with the medium.
@@ -668,27 +665,46 @@ void Photon::displacePhotonFromPressure(void)
 #endif    
     
     
-    
+
 	// Transform the location of the photon in the medium to discrete locations in the grid.
-    //
-    int _x = floor(currLocation->location.x/m_medium->kwave.dmap->getDx());
-	int _y = floor(currLocation->location.y/m_medium->kwave.dmap->getDz());
-	int _z = floor(currLocation->location.z/m_medium->kwave.dmap->getDy());
+	//
+	// Note the transormation of z and y axis due to simulation of K-Wave grid.
+	double dx = m_medium->kwave.pmap->getDx();
+	double Nx = m_medium->kwave.pmap->getNumVoxelsXaxis();
+
+	double dy = m_medium->kwave.pmap->getDy();
+	double Ny = m_medium->kwave.pmap->getNumVoxelsYaxis();
+
+	double dz = m_medium->kwave.pmap->getDz();
+	double Nz = m_medium->kwave.pmap->getNumVoxelsZaxis();
+
+	int _x = currLocation->location.x/dx - (currLocation->location.x/dx)/Nx;
+	int _y = currLocation->location.y/dy - (currLocation->location.y/dy)/Ny;
+	int _z = currLocation->location.z/dz - (currLocation->location.z/dz)/Nz;
+
     
+
+
     // Subtle case where index into grid is negative because of rounding errors above.
     if (_z < 0 || _x < 0 || _y < 0)
     {
         // FIXME:
         // - This should be removed when detection of line-plane intersection
         //   is implemented.  For now, it is a necessary evil.
+    	cout << "Error in array index calculation: Photon::displacePhotonFromPressure()\n";
         this->status = DEAD;
         return;
     }
     
     
-    // Calcualte the change in optical length due to refractive index changes that result from
-    // pressure changes in the medium.
-    
+    // Calculate changes in the optical path length due to the refractive index gradient
+    // produced due to pressure variations.
+    // XXX: Does this need to happen before displacement of the photon due to pressure,
+    //      or should this happen after?
+    //      NOTE: I think before, because the arc of the path (due to the refractive gradient)
+    //            would place the photon at a new location.  However, currently only the variation
+    //            in the optical path length is calculated, not the change in the position of the photon.
+    alterPathLengthFromRefractiveChanges();
     
     
     
@@ -913,6 +929,10 @@ void Photon::displacePhotonFromRefractiveGradient(const double n1, const double 
     double t_x = asin(n1/n2*sin(incidentX));
     double t_y = asin(n1/n2*sin(incidentY));
     double t_z = asin(n1/n2*sin(incidentZ));
+
+    t_x = cos(t_x);
+    t_y = cos(t_y);
+    t_z = cos(t_z);
     */
     
 }
@@ -947,7 +967,7 @@ void Photon::transmit(const char *type)
             tempLayer = m_medium->getLayerAboveCurrent(currLayer);
         
         // Set the direction cosine.
-        currLocation->setDirZ(cos(transmission_angle));
+        currLocation->setDirZ(cos(this->transmission_angle));
         
         
         // If 'tempLayer' is NULL we are at the edge of the medium since
