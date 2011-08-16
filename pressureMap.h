@@ -32,8 +32,8 @@ class PressureMap
 {
 public:
 
-	PressureMap(const std::string &filename, const int Nx, const int Nz, const int Ny, const int grid_size);
-	PressureMap(const int Nx, const int Nz, const int Ny, const int grid_size);
+	PressureMap(const std::string &filename, const int Nx, const int Nz, const int Ny, const double grid_size);
+	PressureMap(const int Nx, const int Nz, const int Ny, const double grid_size);
 	~PressureMap();
 
 	void 	loadPressureMap(void);
@@ -67,7 +67,7 @@ private:
 	void initCommon(void);
 
 	// The bounds of the pressure grid [cm].
-	int x_bound, y_bound, z_bound;
+	double x_bound, y_bound, z_bound;
 
 	// The number of voxels in the x, y, and z directions [cm].
 	int Nx, Nz, Ny;

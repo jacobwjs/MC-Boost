@@ -19,7 +19,7 @@ PressureMap::PressureMap()
 }
 
 
-PressureMap::PressureMap(const std::string &filename, const int Nx, const int Nz, const int Ny, const int grid_size)
+PressureMap::PressureMap(const std::string &filename, const int Nx, const int Nz, const int Ny, const double grid_size)
 {
 	// Assign the number of grid points (pixels in k-wave) used in the simulation.
 	this->Nx = Nx;
@@ -44,7 +44,7 @@ PressureMap::PressureMap(const std::string &filename, const int Nx, const int Nz
 }
 
 
-PressureMap::PressureMap(const int Nx, const int Nz, const int Ny, const int grid_size)
+PressureMap::PressureMap(const int Nx, const int Nz, const int Ny, const double grid_size)
 {
 	// Assign the number of grid points (pixels in k-wave) used in the simulation.
 		this->Nx = Nx;
@@ -66,9 +66,9 @@ void PressureMap::initCommon(void)
            Ny != 0 &&
            Nz != 0);
     
-	dx = (double)x_bound / (double)Nx; // [cm] (note: 20e-3/Nx in centimeters is 0.16;
-	dy = (double)y_bound / (double)Ny;
-	dz = (double)z_bound / (double)Nz;
+	dx = (double)x_bound / (double)Nx; // [cm]
+	dy = (double)y_bound / (double)Ny; // [cm]
+	dz = (double)z_bound / (double)Nz; // [cm]
 	pressure_grid = new three_dim_array (boost::extents[Nx][Nz][Ny]);
 }
 

@@ -67,6 +67,8 @@ boost::shared_ptr<Vector3d> Vector3d::operator-(Vector3d &rhs)
         result->setDirZ(rhs.getDirZ());
     }
 
+    // Bounds are zero based.  That is, the interval is between 0 -> upper bound.
+    //result->location.x = this->location.x - abs((this->location.x) - (rhs.location.x));
     result->location.x = (this->location.x) - (rhs.location.x);
     result->location.y = (this->location.y) - (rhs.location.y);
     result->location.z = (this->location.z) - (rhs.location.z);

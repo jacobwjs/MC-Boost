@@ -35,7 +35,7 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 100000;
+const int MAX_PHOTONS = 10000;
 
 // Used to append to saved data files.
 time_t epoch;
@@ -100,10 +100,9 @@ void runAcoustoOptics(void)
     
     // The dimensions of the medium.
     //
-    double scale = 2.0f;
-    double X_dim = 2.0f/scale; // [cm]
-    double Y_dim = 2.0f/scale; // [cm]
-    double Z_dim = 2.0f/scale; // [cm]
+    double X_dim = 2.0f;      // [cm]
+    double Y_dim = 2.0f;      // [cm]
+    double Z_dim = 2.0f;      // [cm]
     
     
 	// Create the medium in which the photons will be propagate.
@@ -159,7 +158,7 @@ void runAcoustoOptics(void)
 	const int pgrid_y = 64;
 	const int pgrid_z = 64;
 	string pressure_file = "./kWave-pressure/pressure";
-    PressureMap *pmap = new PressureMap(pgrid_x, pgrid_z, pgrid_y, (int)X_dim);
+    PressureMap *pmap = new PressureMap(pgrid_x, pgrid_z, pgrid_y, X_dim);
 	tissue->addPressureMap(pmap);
 	//cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
     
@@ -167,10 +166,10 @@ void runAcoustoOptics(void)
 	// Create and add the displacement map object to the medium and load the displacement data.
     //
 	const int dgrid_x = pgrid_x; // Displacements are calculated from same simulation grid, therefore same size.
-	const int dgrid_y = pgrid_y;
+	const int dgrid_y = pgrid_z;
 	const int dgrid_z = pgrid_y;
 	string displacement_file = "./kWave-displacements/disp";
-	DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, (int)X_dim);
+	DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, X_dim);
     tissue->addDisplacementMap(dmap);
     
     
@@ -208,7 +207,8 @@ void runAcoustoOptics(void)
     
     // For each time step that K-Wave gave ultrasound data, propagate
     // photons through and track modulation due to the acoustic source.
-    for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
+    for (int dt = 101; dt < 102; dt++)
+//    for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
     {
         // Capture the time at the beginning of this simulation step.
         start_per_simulation = clock();

@@ -169,6 +169,11 @@ public:
 	// based on the pressure at that location.
 	void 	displacePhotonFromPressure(void);
     
+    // Displace (i.e. update the location) the photon on an arc shaped path
+    // due to the changes in the refractive index changes due to changes in 
+    // in pressure.
+    void    displacePhotonFromRefractiveGradient(const double n1, const double n2);
+    
     // Alter the optical path length due to the changes in refractive
     // index of the medium from the changes in pressure.
     void    alterPathLengthFromRefractiveChanges(void);
