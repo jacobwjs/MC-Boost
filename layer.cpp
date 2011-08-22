@@ -104,7 +104,7 @@ double Layer::getScatterCoeff(const boost::shared_ptr<Vector3d> photonVector)
 {
     // Iterate over all the absorbers in this layer and see if the coordinates
     // of the photon reside within the bounds of the absorber.  If so, we return
-    // the absorption coefficient of the absorber, otherwise we return the
+    // the scattering coefficient of the absorber, otherwise we return the
     // absorption coefficient of the ambient layer.
 
     for (std::vector<Absorber *>::iterator it = p_absorbers.begin(); it != p_absorbers.end(); it++)

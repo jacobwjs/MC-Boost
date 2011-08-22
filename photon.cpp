@@ -941,7 +941,6 @@ bool Photon::hitMediumBoundary(void)
     double distance_to_boundary_Y = 0.0;
     double distance_to_boundary_Z = 0.0;
     
-	//Layer *layer = m_medium->getLayerFromDepth(currLocation->location.z);
 	double mu_t = currLayer->getTotalAttenuationCoeff(currLocation);
 	double x_bound = m_medium->getXbound();
 	double y_bound = m_medium->getYbound();
@@ -1097,7 +1096,6 @@ bool Photon::hitLayerBoundary(void)
 	double distance_to_boundary = 0.0;
 	//Layer *layer = m_medium->getLayerFromDepth(currLocation->location.z);
 	double mu_t = currLayer->getTotalAttenuationCoeff(currLocation);
-    
     
     
 	// If the direction the photon is traveling is towards the deeper boundary

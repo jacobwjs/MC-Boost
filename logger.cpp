@@ -28,6 +28,7 @@ Logger::~Logger()
 {
     exit_data_stream.close();
     absorber_data_stream.close();
+    meta_data_stream.close();
 }
 
 Logger * Logger::getInstance(void)
@@ -58,6 +59,11 @@ void Logger::openAbsorberFile(std::string filename)
     absorber_data_stream.open(filename.c_str());
 }
 
+void Logger::openMetaData(std::string filename)
+{
+    meta_data_stream.open(filename.c_str());
+}
+
 
 void Logger::write(double val)
 {
@@ -66,6 +72,19 @@ void Logger::write(double val)
     boost::mutex::scoped_lock lock(m_mutex);
 
     exit_data_stream << "val = " << val << endl;
+}
+
+
+void Logger::writeMetaData(const double absorberRadius, const double detectorRadius, 
+                   const int Nphotons, const double detectorPlane, const Vector3d &absorberLocation)
+{
+    meta_data_stream << "Absorber radius: " << absorberRadius 
+                     << "Detector radius: " << detectorRadius
+                     << "Number of photons: " << Nphotons
+                     << "Detector position: " << detectorPlane
+                     << "Absorber location: " << absorberLocation;
+    
+    meta_data_stream.flush();
 }
 
 void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector)
