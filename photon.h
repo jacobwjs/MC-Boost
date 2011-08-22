@@ -165,23 +165,6 @@ public:
 	// Check if photon has come into contact with a layer boundary.
 	bool 	hitLayerBoundary(void);
 
-	// Displace (i.e. update the location) the photon some distance
-	// based on the pressure at that location.
-	void 	displacePhotonFromPressure(void);
-    
-    // Displace (i.e. update the location) the photon on an arc shaped path
-    // due to the changes in the refractive index changes due to changes in 
-    // in pressure.
-    void    displacePhotonFromRefractiveGradient(const double n1, const double n2);
-    
-    // Alter the optical path length due to the changes in refractive
-    // index of the medium from the changes in pressure.
-    void    alterPathLengthFromRefractiveChanges(void);
-
-	// Write the coordinates of each scattering event to file for use
-	// with plotting in matlab.
-	//void 	writephoton_dataToFile(void);
-
 	// Add the coordinates of the photon at it's current position
 	// to the 'photon_data' vector.  Used for tracking the positiion of
 	// scattering events in the medium.
@@ -232,9 +215,6 @@ private:
 	// Number of times this Photon (i.e., thread) will execute; where one execution
 	// is the full cycle of photon propagation.
 	int iterations;
-	
-	// Location of the photon with displacement from ultrasound source taken into account.
-	double x_disp, y_disp, z_disp;
 
 	// Radial position.
 	double r;
@@ -306,14 +286,8 @@ private:
 	// Used with the thread safe RNG to track state.
 	unsigned int z1, z2, z3, z4;
 
-	// Tracks the path length of the photon through the medium.
-	double original_optical_path_length;
-	double displaced_optical_path_length;
-    double refractiveIndex_optical_path_length;
-
 	// Tracks whether or not a photon has hit a medium boundary.
 	bool hit_x_bound, hit_y_bound, hit_z_bound;
-    
     
     // Pointer to the current layer the photon is in.
     Layer *currLayer;
@@ -323,7 +297,7 @@ private:
     coords illuminationCoords;
 
 
-    // Count through the layer.
+    // Count through the detection aperture.
     double cnt_through_aperture;
 
 }; 		

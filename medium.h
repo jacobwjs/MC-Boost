@@ -17,30 +17,12 @@ const int MAX_BINS = 101;
 
 
 // Forward declaration of PressureMap and DisplacementMap objects.
-class PressureMap;
-class DisplacementMap;
 class Detector;
 class Layer;
 class Vector3d;
 
 
 
-typedef struct {
-    // Create a pointer to a PressureMap object.  For use with
-	// modeling acousto-optics.
-	PressureMap * pmap;
-    
-    // Create a pointer to a Displacement object.  For use with
-    // modeling acousto-optics.
-    DisplacementMap * dmap;
-    
-    // Frequency of the transducer used.
-    double transducerFreq;
-    
-    // Number of time steps in the simulation.
-    int totalTimeSteps;
-    
-} kWaveSim;
 
 
 
@@ -54,12 +36,8 @@ public:
 
 	friend class Photon;
 
-	// A structure that holds K-Wave simulation data and attributes
-	// This is public since the members of the struct are objects with
-	// their own private methods.  This is simply a convenient container.
-	kWaveSim kwave;
 
-	Medium(void);
+	// Constructor.
     Medium(const double x, const double y, const double z);
 	~Medium();
     
@@ -76,9 +54,6 @@ public:
 
 	// Print the grid for this medium.
 	void	printGrid(const int num_photons);
-    
-    // Set the number of time steps that occurred in the K-Wave simulation.
-    void    setKWaveTimeSteps(const int timeSteps) {kwave.totalTimeSteps = timeSteps;}
 	
 	// Add a layer to the medium.
 	void	addLayer(Layer *layer);
@@ -88,33 +63,6 @@ public:
     
     // See if photon has crossed the detector plane.
     int    photonHitDetectorPlane(const boost::shared_ptr<Vector3d> p0);
-	
-	// Add a pressure map object that holds pressure generated from K-Wave
-    void 	addPressureMap(PressureMap *p_map);
-    
-    // Add a displacement map object that holds pressure generated from k-Wave
-    void    addDisplacementMap(DisplacementMap *d_map);
-    
-	// Load the pressure data generated from K-Wave (at simulation time step 'dt') into the pressure map object.
-	void 	loadPressure(std::string &filename, const int dt);
-    
-	// Load the displacement data generated from K-Wave (at simulation time step 'dt') into the displacement map object.
-    void    loadDisplacements(std::string &filename, const int dt);
-    
-	// Return the pressure from the pressure grid based on cartesian coordinates
-	// of the current location of the photon in the medium.
-	double	getPressureFromCartCoords(double x, double z, double y);
-    
-    // Return the pressure from the pressure grid based on the location of the photon.
-    double  getPressureFromPhotonLocation(const boost::shared_ptr<Vector3d> photonCoords);
-    
-
-    // Return the displacement vector coordinates from the location of the photon in the medium.
-    boost::shared_ptr<Vector3d> getDisplacementFromPhotonLocation(const boost::shared_ptr<Vector3d> photonCoords);
-
-	// Return the pressure from the pressure grid based on array index into
-	// the matrix.
-	double	getPressureFromGridCoords(int x, int z, int y);
 
 	// Return the grid where absorption was accumulated.
 	double * getPlanarGrid() {return Cplanar;}
@@ -158,14 +106,6 @@ public:
     // Return the refractive index of the medium.
     //double  getRefractiveIndex(void) {return refractive_index;}
     
-    // Write photon coordinates to file.
-    void 	writePhotonCoords(std::vector<double> &coords);
-
-    // Write photon exit locations and phases to file.
-    void	writeExitCoordsAndLength(std::vector<double> &coords_phase);
-
-    // Write the photon exit locations, phase and weight to file.
-    void	writeExitCoordsLengthWeight(std::vector<double> &coords_phase_weight);
 
     // Return the bounds of the medium.
     double getXbound(void) {return x_bound;}
@@ -173,6 +113,10 @@ public:
     double getZbound(void) {return z_bound;}
 	
 private:
+    // Ensure the medium is defined with specific attributes, so we make the
+    // default constructor private.
+    Medium(void);
+
 	double	radial_size;			// Maximum radial size.
 	int		num_radial_pos;			// Number of radial positions (i.e. NR).
 	double	radial_bin_size;		// Radial bin size of the medium (i.e dr).
@@ -202,14 +146,6 @@ private:
 	// by photons.
 	boost::mutex m_data_file_mutex;
 
-
-	// File for dumping photon paths to.  Used in the Photon class.
-    std::ofstream coords_file;
-
-	// File for dumping data regarding exit location, path length, weight, etc.
-	// to file for post processing in matlab.
-    std::ofstream photon_data_file;
-    
     // The refrective index outside of the medium.  We assume air.
     double refractive_index;
     

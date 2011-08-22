@@ -118,8 +118,7 @@ void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector,
 
 void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector,
                            const double weight,
-                           const double transmissionAngle
-                           )
+                           const double transmissionAngle)
 {
     // Grab the lock to ensure that the logger doesn't get interrupted by a thread
     // in the middle of a write, causing the output to be corrupted.

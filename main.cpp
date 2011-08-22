@@ -12,8 +12,6 @@
 #include "photon.h"
 #include "medium.h"
 #include "layer.h"
-#include "pressureMap.h"
-#include "displacementMap.h"
 #include "sphereAbsorber.h"
 #include "cylinderAbsorber.h"
 #include "coordinates.h"
@@ -35,7 +33,7 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 10000;
+const int MAX_PHOTONS = 1000000;
 
 // Used to append to saved data files.
 time_t epoch;
@@ -45,12 +43,11 @@ std::string getCurrTime(void);
 
 // Testing routines.
 void testVectorMath(void);
-void testDisplacements(void);
 
 
 
 // Simulation routines.
-void runAcoustoOptics(void);
+void runMonteCarlo(void);
 
 
 
@@ -58,9 +55,8 @@ int main()
 {
 	
     //testVectorMath();
-    //testDisplacements();
     
-	runAcoustoOptics();
+	runMonteCarlo();
     
     
 	return 0;
@@ -84,13 +80,11 @@ std::string getCurrTime(void)
 
 
 
-void runAcoustoOptics(void)
+void runMonteCarlo(void)
 {
     
-    // Number of time steps that were executed in the K-Wave simulation
-    // that produced displacement and pressure data.
-    const int KWAVESIM_TIME_STEPS = 2;
     
+
     // The logger is a singleton.  To bypass any problems with using singletons in a multi-threaded applicaton
     // initialization occurs in main before any threads are spawned.
     std::string exit_data_file;
@@ -146,36 +140,8 @@ void runAcoustoOptics(void)
     coords injectionCoords;
     injectionCoords.x = X_dim/2; // Centered
     injectionCoords.y = Y_dim/2; // Centered
-    injectionCoords.z = 1e-15f;   // Just below the surface of the 'air' layer.
+    injectionCoords.z = 1e-15f;   // Just below the surface of the top-most layer.
 	
-    
-	
-    
-	// Create and add the pressure map object to the medium and load the pressure data.
-	// tissue->addPressureMap(new PressureMap("testing.txt"));
-	//
-    const int pgrid_x = 64;  // Number of pixels in the kWave pressure grid.
-	const int pgrid_y = 64;
-	const int pgrid_z = 64;
-	string pressure_file = "./kWave-pressure/pressure";
-    PressureMap *pmap = new PressureMap(pgrid_x, pgrid_z, pgrid_y, X_dim);
-	tissue->addPressureMap(pmap);
-	//cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
-    
-    
-	// Create and add the displacement map object to the medium and load the displacement data.
-    //
-	const int dgrid_x = pgrid_x; // Displacements are calculated from same simulation grid, therefore same size.
-	const int dgrid_y = pgrid_z;
-	const int dgrid_z = pgrid_y;
-	string displacement_file = "./kWave-displacements/disp";
-	DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, X_dim);
-    tissue->addDisplacementMap(dmap);
-    
-    
-    // Set the value of the transducer frequency used in the K-Wave simulation.
-    tissue->kwave.transducerFreq = 2.0e6;
-    
     
 	// Allocate the planar fluence grid and set it in the tissue.
     //	double *Cplanar = (double*)malloc(sizeof(double) * 101);
@@ -183,8 +149,8 @@ void runAcoustoOptics(void)
     
 	
 	// Let boost decide how many threads to run on this architecture.
-	//const int NUM_THREADS = boost::thread::hardware_concurrency();
-	const int NUM_THREADS = 1;
+	const int NUM_THREADS = boost::thread::hardware_concurrency();
+	//const int NUM_THREADS = 1;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
@@ -201,17 +167,11 @@ void runAcoustoOptics(void)
     
 	// Capture the time before launching photons into the medium.
     //
-	clock_t start, start_per_simulation, end;
-	start = clock();
+	clock_t start, end;
+
     
     
-    // For each time step that K-Wave gave ultrasound data, propagate
-    // photons through and track modulation due to the acoustic source.
-    for (int dt = 101; dt < 102; dt++)
-//    for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
-    {
-        // Capture the time at the beginning of this simulation step.
-        start_per_simulation = clock();
+
         
         // Init the random number generator.
         //
@@ -220,12 +180,11 @@ void runAcoustoOptics(void)
         // Open a file for each time step which holds exit data of photons
         // when they leave the medium through the detector aperture.
         //
-        exit_data_file = "./Log/Exit-data/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
+        exit_data_file = "./Log/Exit-data/exit-aperture-" + boost::lexical_cast<std::string>(time(0)) + ".txt";
         Logger::getInstance()->openExitFile(exit_data_file);
         
-        // Load a pressure map and displacement maps at time step number 'dt'.
-        tissue->loadPressure(pressure_file, dt);
-        tissue->loadDisplacements(displacement_file, dt);
+        // Grab the start time before the simulation runs.
+        start = clock();
         
         
         // Create the threads and give them photon objects to run.
@@ -252,11 +211,8 @@ void runAcoustoOptics(void)
             threads[i].join();
         }
         
-        // Print out the elapsed time it took for this simulation step.
-        end = ((double)clock() - start_per_simulation) / CLOCKS_PER_SEC;
-        cout << "Time elapsed for simulation (" << dt << "): " << end << endl;
-        
-    }
+
+
 	
 	// Print out the elapsed time it took from beginning to end.
 	end = ((double)clock() - start) / CLOCKS_PER_SEC;
@@ -273,23 +229,7 @@ void runAcoustoOptics(void)
 }
 
 
-void testDisplacements(void)
-{
-    // Add the pressure map object to the medium and load the pressure data.
-	//tissue->addPressureMap(new PressureMap("testing.txt"));
-	const int dgrid_x = 64;  // Number of pixels in the kWave pressure grid.
-	const int dgrid_y = 64;
-	const int dgrid_z = 64;
-    const int grid_size = 2;
-	//string pressure_file = "C:/Users/StaleyJW/Desktop/Software/MC-Boost/kWave-pressure/pressure-at-25us.txt";
-	string displacement_file = "d:/Displacement_Data/disp";
-    DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, grid_size);
-    dmap->loadDisplacementMaps(displacement_file, 100);
-    //tissue->addPressureMap(pmap);
-	//tissue->loadPressure();
-    
-    
-}
+
 
 
 // Simple routine to test the vectorMath library.
