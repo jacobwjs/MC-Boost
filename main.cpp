@@ -175,7 +175,7 @@ void runMonteCarlo(void)
 	// Open a file for each time step which holds exit data of photons
 	// when they leave the medium through the detector aperture.
 	//
-	exit_data_file = "./Log/Exit-data/exit-aperture-" + boost::lexical_cast<std::string>(time(0)) + ".txt";
+	exit_data_file = "exit-aperture-" + boost::lexical_cast<std::string>(getCurrTime()) + ".txt";
 	Logger::getInstance()->openExitFile(exit_data_file);
 
 	// Grab the start time before the simulation runs.
