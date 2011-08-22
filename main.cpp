@@ -146,7 +146,7 @@ void runAcoustoOptics(void)
     coords injectionCoords;
     injectionCoords.x = X_dim/2; // Centered
     injectionCoords.y = Y_dim/2; // Centered
-    injectionCoords.z = 0.0000001;   // Just below the surface of the 'air' layer.
+    injectionCoords.z = 1e-15f;   // Just below the surface of the 'air' layer.
 	
     
 	

@@ -353,7 +353,6 @@ void Photon::captureLocationCoords(void)
     //	coords.push_back(x_disp);
     //	coords.push_back(y_disp);
     //	coords.push_back(z_disp);
-    cout << "captureLocationCoords() stub\n";
 }
 
 
@@ -364,7 +363,7 @@ void Photon::captureExitCoordsAndLength(void)
     //	photon_exit_data.push_back(x_disp);
     //	photon_exit_data.push_back(y_disp);
     //	photon_exit_data.push_back(displaced_path_length);
-    cout << "captureExitCoordsAndLength() stub\n";
+    cout << "Photon::captureExitCoordsAndLength() stub\n";
 }
 
 
@@ -376,7 +375,7 @@ void Photon::captureExitCoordsLengthWeight(void)
     //	photon_exit_data.push_back(y_disp);
     //	photon_exit_data.push_back(displaced_path_length);
     //	photon_exit_data.push_back(weight);
-    cout << "captureExitCoordsLengthWeight() stub\n";
+    cout << "Photon::captureExitCoordsLengthWeight() stub\n";
 }
 
 
@@ -719,9 +718,6 @@ void Photon::displacePhotonFromPressure(void)
     // Update the optical path length of the photon through the medium by
     // calculating the distance between the two points and multiplying by the refractive index.
     displaced_optical_path_length += VectorMath::Distance(prevLocation, currLocation) * currLayer->getRefractiveIndex();
-    
-    
-    
 }
 
 
