@@ -209,7 +209,7 @@ void runAcoustoOptics(void)
     
     // For each time step that K-Wave gave ultrasound data, propagate
     // photons through and track modulation due to the acoustic source.
-    for (int dt = 101; dt < 102; dt++)
+    for (int dt = 99; dt < 111; dt++)
 //    for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
     {
         // Capture the time at the beginning of this simulation step.

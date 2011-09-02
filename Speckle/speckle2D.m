@@ -7,7 +7,7 @@ clear;
 
 
 % --------------- Load photon exit location and phase data ----------------
-dataFile = 'exit-aperture-101.txt';
+dataFile = 'exit-aperture-2.txt';
 data = dlmread(dataFile);
 
 lambda = 780e-7;
@@ -18,20 +18,24 @@ D = 5; % [cm]
 
 
 %define camera
-CCDGrid=zeros(100,100);
-CCDdx=2.5e-3/size(CCDGrid,1);
-CCDdy=2.5e-3/size(CCDGrid,2);
+CCDGrid=zeros(200,200);
+CCDdx=5.5e-3/size(CCDGrid,1);
+CCDdy=5.5e-3/size(CCDGrid,2);
 
 % The aperture of the medium (window in which photons leave)
-% is defined as a 3x3cm square centered at x=5,y=5.  Therefore,
-% it extends to 3->7cm.  In order to calculate the distance from
+% is defined in the Monte Carlo (MC) simulation.  Therefore,
+% reference the simulation settings, specifically the detector size.  
+% In order to calculate the distance from
 % each photon exit location to pixel on the CCD camera, we must
 % know the location of the pixel in 2-D space.  It is assumed
 % that the CCD camera, regardless of it's size is centered at the
 % same location as the aperture.  That is, it's midpoint is at
-% x=5,y=5.
-start_x = 5 - (size(CCDGrid,1)/2*CCDdx);
-start_y = 5 - (size(CCDGrid,2)/2*CCDdy);
+% the same center coordinates as the exit aperture in the MC simulation.
+%
+center.x = 1.0; % Center of the CCD (which should be the center of exit aperture).
+center.y = 1.0; % Note: in cm
+start_x = center.x - (size(CCDGrid,1)/2*CCDdx);
+start_y = center.y - (size(CCDGrid,2)/2*CCDdy);
 
 % only grab a chunk of photons for testing.
 data = data(1:100,:);

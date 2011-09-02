@@ -117,7 +117,7 @@ void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector,
 
 
 void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector,
-                           const double weight,
+                           const double exitWeight,
                            const double transmissionAngle
                            )
 {
@@ -126,7 +126,7 @@ void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector,
     boost::mutex::scoped_lock lock(m_mutex);
     
     // Write out the location (x,y,z), transmission angle (theta), weight of photon
-    exit_data_stream << weight << "," 
+    exit_data_stream << exitWeight << "," 
                      << transmissionAngle << "," 
                      << photonVector << "\n";
     
