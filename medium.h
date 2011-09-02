@@ -97,6 +97,9 @@ public:
     
 	// Load the pressure data generated from K-Wave (at simulation time step 'dt') into the pressure map object.
 	void 	loadPressure(std::string &filename, const int dt);
+
+	// Load the pressure data generated from K-Wave if only the file name is given.
+	void	loadPressure(std::string &filename);
     
 	// Load the displacement data generated from K-Wave (at simulation time step 'dt') into the displacement map object.
     void    loadDisplacements(std::string &filename, const int dt);

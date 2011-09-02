@@ -35,7 +35,7 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 10000;
+const int MAX_PHOTONS = 1000000;
 
 // Used to append to saved data files.
 time_t epoch;
@@ -46,6 +46,7 @@ std::string getCurrTime(void);
 // Testing routines.
 void testVectorMath(void);
 void testDisplacements(void);
+void testPressures(void);
 
 
 
@@ -59,6 +60,7 @@ int main()
 	
     //testVectorMath();
     //testDisplacements();
+    //testPressures();
     
 	runAcoustoOptics();
     
@@ -113,7 +115,7 @@ void runAcoustoOptics(void)
     // Define a layer in the tissue.
     //
     double mu_a = 1.0f;
-    double mu_s = 10.0f;
+    double mu_s = 70.0f;
     double refractive_index = 1.33f;
     double anisotropy = 0.9;
     double start_depth = 0.0f; // [cm]
@@ -183,8 +185,8 @@ void runAcoustoOptics(void)
     
 	
 	// Let boost decide how many threads to run on this architecture.
-	//const int NUM_THREADS = boost::thread::hardware_concurrency();
-	const int NUM_THREADS = 1;
+	const int NUM_THREADS = boost::thread::hardware_concurrency();
+	//const int NUM_THREADS = 1;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
@@ -363,3 +365,67 @@ void testVectorMath(void)
 
 
 
+void testPressures(void)
+{
+		// The dimensions of the medium.
+	    //
+	    double X_dim = 2.0f;      // [cm]
+	    double Y_dim = 2.0f;      // [cm]
+	    double Z_dim = 2.0f;      // [cm]
+
+
+		// Create the medium in which the photons will be propagate.
+	    //
+		Medium *tissue = new Medium(X_dim, Y_dim, Z_dim);
+
+
+	    // Define a layer in the tissue.
+	    //
+	    double mu_a = 1.0f;
+	    double mu_s = 70.0f;
+	    double refractive_index = 1.33f;
+	    double anisotropy = 0.9;
+	    double start_depth = 0.0f; // [cm]
+	    double end_depth = Z_dim; // [cm]
+	    Layer *tissueLayer0 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
+
+
+
+	    // Add the objects to the medium.
+	    //
+	    tissue->addLayer(tissueLayer0);
+
+
+	    // Define the initial location of injection of the photons.
+	    //
+	    coords injectionCoords;
+	    injectionCoords.x = X_dim/2; // Centered
+	    injectionCoords.y = Y_dim/2; // Centered
+	    injectionCoords.z = 1e-15f;   // Just below the surface of the 'air' layer.
+
+
+
+
+		// Create and add the pressure map object to the medium and load the pressure data.
+		// tissue->addPressureMap(new PressureMap("testing.txt"));
+		//
+	    const int pgrid_x = 64;  // Number of pixels in the kWave pressure grid.
+		const int pgrid_y = 64;
+		const int pgrid_z = 64;
+		string pressure_file = "D:/kWave-pressure/pressure21.txt";
+	    PressureMap *pmap = new PressureMap(pgrid_x, pgrid_z, pgrid_y, X_dim);
+	    pmap->loadPressureMap(pressure_file);
+		//tissue->addPressureMap(pmap);
+		//tissue->loadPressure(pressure_file);
+
+
+	    //cout << "Pressure(19,31,31) = " << pmap->getPressureFromGrid(19, 31, 31) << endl;
+		//cout << "Pressure(54,31,31) = " << pmap->getPressureFromGrid(54, 31, 31) << endl;
+		cout << "Pressure(64,11,31) = " << pmap->getPressureFromGrid(63, 10, 30) << endl;
+		cout << "Pressure(64,32,64) = " << pmap->getPressureFromGrid(63, 31, 63) << endl;
+
+
+
+		if (tissue)
+			delete tissue;
+}

@@ -667,7 +667,6 @@ void Photon::displacePhotonFromPressure(void)
 
 	// Transform the location of the photon in the medium to discrete locations in the grid.
 	//
-	// Note the transormation of z and y axis due to simulation of K-Wave grid.
 	double dx = m_medium->kwave.pmap->getDx();
 	double Nx = m_medium->kwave.pmap->getNumVoxelsXaxis();
 
@@ -814,7 +813,6 @@ void Photon::alterPathLengthFromRefractiveChanges(void)
         
         // Transform the location of the photon in the medium to discrete locations in the grid.
         //
-        // Note the transormation of z and y axis due to simulation of K-Wave grid.
         _x = pointOnSegment->location.x/dx - (pointOnSegment->location.x/dx)/Nx;
         _y = pointOnSegment->location.y/dy - (pointOnSegment->location.y/dy)/Ny;
         _z = pointOnSegment->location.z/dz - (pointOnSegment->location.z/dz)/Nz;  

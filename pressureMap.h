@@ -11,6 +11,7 @@
 #include <boost/multi_array.hpp>
 #include <iostream>
 using std::cout;
+using std::endl;
 #include <fstream>
 using std::fstream;
 #include <string>
@@ -38,6 +39,7 @@ public:
 
 	void 	loadPressureMap(void);
 	void	loadPressureMap(const std::string &filename, const int time_step);
+	void 	loadPressureMap(const std::string &filename);
 
     // Returns the pressure from translating photon coordinates into pressure grid
     // indices.

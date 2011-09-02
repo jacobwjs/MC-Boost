@@ -21,37 +21,37 @@ DisplacementMap::DisplacementMap()
 
 DisplacementMap::DisplacementMap(const std::string &filename, const int Nx, const int Nz, const int Ny, const int grid_size)
 {
-    // Assign the number of grid points (pixels in k-wave) used in the simulation.
+	// Assign the number of grid points (pixels in k-wave) used in the simulation.
 	this->Nx = Nx;
 	this->Ny = Ny;
 	this->Nz = Nz;
-    
+
 	x_bound = y_bound = z_bound = grid_size;  // [cm]
-	
-    
-    initCommon();
+
+
+	initCommon();
 }
 
 
 DisplacementMap::DisplacementMap(const int Nx, const int Nz, const int Ny, const int grid_size)
 {
-    // Assign the number of grid points (pixels in k-wave) used in the simulation.
+	// Assign the number of grid points (pixels in k-wave) used in the simulation.
 	this->Nx = Nx;
 	this->Ny = Ny;
 	this->Nz = Nz;
-    
+
 	x_bound = y_bound = z_bound = grid_size;  // [cm]
-	
-    initCommon();
+
+	initCommon();
 }
 
 
 void DisplacementMap::initCommon()
 {
-    assert(Nx != 0 &&
-           Ny != 0 &&
-           Nz != 0);
-    
+	assert(Nx != 0 &&
+			Ny != 0 &&
+			Nz != 0);
+
 	dx = (double)x_bound / (double)Nx; // [cm] (note: 20e-3/64 in centimeters is 0.16;
 	dy = (double)y_bound / (double)Ny;
 	dz = (double)z_bound / (double)Nz;
@@ -143,7 +143,7 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 		}
 
 
-        // Check for successful opening of the file.
+		// Check for successful opening of the file.
 		if (!disp_file_stream)
 		{
 			cout << "!!! Error opening displacement map file " << file_to_open.c_str() << "!!!\n";
@@ -157,19 +157,19 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 
 
 		double data = 0.0;
-        // Read in data to the proper displacement array.
+		// Read in data to the proper displacement array.
 		for (array_index a = 0; a < Nx && disp_file_stream.good(); a++)
-        {
+		{
 			for (array_index b = 0; b < Nz; b++)
-            {
+			{
 				for (array_index c = 0; c < Ny; c++)
 				{
 					disp_file_stream >> data;
 					(*p_displacement_grid)[a][b][c] = data;
-                    //cout << (*p_displacement_grid)[a][b][c] << endl;
+					//cout << (*p_displacement_grid)[a][b][c] << endl;
 				}
-            }
-        }
+			}
+		}
 
 
 		disp_file_stream.close();
@@ -182,35 +182,31 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 boost::shared_ptr<Vector3d> DisplacementMap::getDisplacements(const Vector3d &photonLocation)
 {
 
-	const double THRESHOLD = 1.0e-12;
-    boost::shared_ptr<Vector3d> result(new Vector3d);
-    
+	boost::shared_ptr<Vector3d> result(new Vector3d);
 
-    // Indices into the displacement grids.
-    // NOTE:
-    // - There is an effective transformation of the y (photon)
-    //   and z (grid) transformation due to the grid orientation in kWave.
-    int _x = floor(photonLocation.location.x/dx + THRESHOLD);
-    int _z = floor(photonLocation.location.y/dz + THRESHOLD);
-    int _y = floor(photonLocation.location.z/dy + THRESHOLD);
-    
 
-    // Sanity check.
-	assert((_x < Nx && _x >= 0) &&
-           (_y < Ny && _y >= 0) &&
-           (_z < Nz && _z >= 0) ||
-           assert_msg("_x=" << _x << " _y=" << _y << " _z=" << _z << "\n"
-        		      << photonLocation.location.x << " "
-        		      << photonLocation.location.y << " "
-        		      << photonLocation.location.z));
-    
+	// Indices into the displacement grids.
+	int _x = photonLocation.location.x/dx - (photonLocation.location.x/dx)/Nx;
+	int _y = photonLocation.location.y/dy - (photonLocation.location.y/dy)/Ny;
+	int _z = photonLocation.location.z/dz - (photonLocation.location.z/dz)/Nz;
+
+
+	// Sanity check.
+	assert(((_x < Nx && _x >= 0) &&
+			(_y < Ny && _y >= 0) &&
+			(_z < Nz && _z >= 0)) ||
+			assert_msg("_x=" << _x << " _y=" << _y << " _z=" << _z << "\n"
+					<< photonLocation.location.x << " "
+					<< photonLocation.location.y << " "
+					<< photonLocation.location.z));
 
 
 
-    result->location.x = getDisplacementFromGridX(_x, _z, _y);
-    result->location.y = getDisplacementFromGridY(_x, _z, _y);
-    result->location.z = getDisplacementFromGridZ(_x, _z, _y);
-    
+
+	result->location.x = getDisplacementFromGridX(_x, _y, _z);
+	result->location.y = getDisplacementFromGridY(_x, _y, _z);
+	result->location.z = getDisplacementFromGridZ(_x, _y, _z);
+
 	return result;
 
 }
@@ -219,33 +215,18 @@ boost::shared_ptr<Vector3d> DisplacementMap::getDisplacements(const Vector3d &ph
 
 boost::shared_ptr<Vector3d> DisplacementMap::getDisplacements(const double x, const double y, const double z)
 {
-    
-    
-    // Indices into the displacement grids.
-    // NOTE:
-    // - There is an effective transformation of the y (photon)
-    //   and z (grid) transformation due to the grid orientation in kWave.
-    /*
-    int _x = floor(x/dx);
-	int _y = floor(z/dy);
-    int _z = floor(y/dz);
 
-    
-    // Sanity check.
-	assert((_x < Nx && _x >= 0) &&
-           (_y < Ny && _y >= 0) &&
-           (_z < Nz && _z >= 0));
-    
-    */
-    
-    boost::mutex::scoped_lock lock(m_displacement_mutex);
 
-    boost::shared_ptr<Vector3d> result (new Vector3d);
-    result->location.x = getDisplacementFromGridX(x, z, y);
-    result->location.y = getDisplacementFromGridY(x, z, y);
-    result->location.z = getDisplacementFromGridZ(x, z, y);
-    
-    return result;
+	// Indices into the displacement grids.
+
+	boost::mutex::scoped_lock lock(m_displacement_mutex);
+
+	boost::shared_ptr<Vector3d> result (new Vector3d);
+	result->location.x = getDisplacementFromGridX(x, y, z);
+	result->location.y = getDisplacementFromGridY(x, y, z);
+	result->location.z = getDisplacementFromGridZ(x, y, z);
+
+	return result;
 }
 
 // Returns the individual axis displacement value from their location in the grid.
@@ -256,7 +237,7 @@ double DisplacementMap::getDisplacementFromGridX(const int a, const int b, const
 
 double DisplacementMap::getDisplacementFromGridY(const int a, const int b, const int c)
 {
-   	return (*displacement_gridY)[(array_index)a][(array_index)b][(array_index)c];
+	return (*displacement_gridY)[(array_index)a][(array_index)b][(array_index)c];
 }
 
 double DisplacementMap::getDisplacementFromGridZ(const int a, const int b, const int c)
