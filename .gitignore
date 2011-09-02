@@ -14,5 +14,6 @@ mc-boost
 Default
 *.o
 kWave*
+Log*
 *~
 *.asv
