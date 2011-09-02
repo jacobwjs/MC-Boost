@@ -960,10 +960,9 @@ void Photon::transmit(const char *type)
         else
             tempLayer = m_medium->getLayerAboveCurrent(currLayer);
         
-        // Set the direction cosine.
-        currLocation->setDirZ(cos(this->transmission_angle));
         
         
+
         // If 'tempLayer' is NULL we are at the edge of the medium since
         // the layer above or below does not exist.  Therefore we decide if the
         // photon should reflect or transmit from the medium boundary.
@@ -976,13 +975,30 @@ void Photon::transmit(const char *type)
             {
                 hop(); // Move the photon to the medium boundary.
                 transmitOrReflect("medium");
+                return;
             }
         }
-        else
+        else // Transmitted to new layer.
         {
+        	// Store index of refraction from layer the photon is coming from.
+        	double ni = currLayer->getRefractiveIndex();
+
+        	// Get the new index of refraction from the layer the photon is moving to.
+        	double nt = tempLayer->getRefractiveIndex();
+
+        	// Since the photon is being transmitted, update to the pointer to the new layer that
+        	// was found above.
             currLayer = tempLayer;
+
+            // NOTE: Assumes layers are normal to initial direction, which is dirZ.
+            // Set the direction cosines.
+            currLocation->setDirZ(cos(this->transmission_angle));
+            currLocation->setDirY(currLocation->getDirY()*ni/nt);
+            currLocation->setDirX(currLocation->getDirX()*ni/nt);
         }
         
+
+
     }
     else if (strcmp("medium", type) == 0)
     {
@@ -990,18 +1006,30 @@ void Photon::transmit(const char *type)
         cout << "Transmitting through medium boundary\n";
         cout << currLocation;
 #endif
-        // If we transmit through the medium, meaning the photon exits the medium
+        // If we transmit through the medium, meaning the photon exits the medium,
         // we see if the exit location passed through the detector.  If so, the exit
-        // location and exit angle are written out to file, but only when this photon
-        // has been tagged (i.e. interacted with an absorber).
+        // data is written out to file.
         if (checkDetector())
         {
             // If we hit the detector when transmitting the photon, then we write the exit
             // data to file.
-            Logger::getInstance()->writeWeightAngleLengthCoords(this->weight,
-                                                                this->transmission_angle,
-                                                                this->displaced_optical_path_length,
-                                                                this->currLocation);
+//            Logger::getInstance()->writeWeightAngleLengthCoords(this->weight,
+//                                                                this->transmission_angle,
+//                                                                this->displaced_optical_path_length,
+//                                                                this->currLocation);
+        	// Update the direction cosines upon leaving the medium so calculations can be mode
+        	// to see if this photon makes it's way to the detector (i.e. CCD camera).
+        	// NOTE:
+        	// - We assume outside of the medium is nothing but air with an index of refraction 1.0
+        	//   so now division for x & y direction cosines because nt = 1.0
+        	// - It is also assumed that the photon is transmitted through the x-y plane.
+        	double ni = currLayer->getRefractiveIndex();
+        	currLocation->setDirZ(cos(this->transmission_angle));
+        	currLocation->setDirY(currLocation->getDirY()*ni);
+        	currLocation->setDirX(currLocation->getDirX()*ni);
+
+        	// Write exit data from logger.
+        	Logger::getInstance()->writeWeightAngleLengthCoords(*this);
              
         }
         
@@ -1153,7 +1181,7 @@ double Photon::getLayerReflectance(void)
 {
 	double refract_index_n1 = 0.0;	// Current layer's refractive index.
 	double refract_index_n2 = 0.0;	// Next layer's refractive index.
-	Layer *nextLayer;
+	Layer *nextLayer = NULL;
     
 	double incident_angle = acos(abs(currLocation->getDirZ()));
 	refract_index_n1 = currLayer->getRefractiveIndex();

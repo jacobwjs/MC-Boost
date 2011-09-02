@@ -42,6 +42,9 @@ class Layer;
 class Photon
 {
 public:
+
+	friend class Logger;
+
 	// Constructors
 	Photon(void);
 	Photon(double x, double y, double z,

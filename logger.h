@@ -62,6 +62,15 @@ public:
                                       const double transmissionAngle,
                                       const double modulatedPathLength,
                                       const boost::shared_ptr<Vector3d> photonVector);
+    void writeWeightAngleLengthCoords(const double exitWeight,
+    								  const double dirx,
+    								  const double diry,
+    								  const double dirz,
+    								  const double modulatedPathLength,
+    								  const boost::shared_ptr<Vector3d> photonVector);
+    void writeWeightAngleLengthCoords(Photon &p);
+
+
     // XXX:
     // - Does this introduce race conditions by pointing to a threaded object that could
     //   potentially have data changing in obscure ways?  Unsure, but each object is given

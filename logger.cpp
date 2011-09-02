@@ -9,6 +9,8 @@
 #include "vector3D.h"
 #include "photon.h"
 #include "logger.h"
+#include <cmath>
+using std::cos;
 
 
 
@@ -138,7 +140,7 @@ void Logger::writeExitData(const boost::shared_ptr<Vector3d> photonVector,
 void Logger::writeWeightAngleLengthCoords(const double exitWeight,
                                           const double transmissionAngle,
                                           const double modulatedPathLength,
-                                          const boost::shared_ptr<Vector3d> photonVector)
+                                          const boost::shared_ptr<Vector3d> photonLocation)
 {
     // Grab the lock to ensure that the logger doesn't get interrupted by a thread
     // in the middle of a write, causing the output to be corrupted.
@@ -148,12 +150,24 @@ void Logger::writeWeightAngleLengthCoords(const double exitWeight,
     exit_data_stream << exitWeight << "," 
                      << transmissionAngle << ","
                      << modulatedPathLength << ","
-                     << photonVector << "\n";
+                     << photonLocation << "\n";
     
     exit_data_stream.flush();
     
 }
 
+void Logger::writeWeightAngleLengthCoords(Photon &p)
+{
+	boost::mutex::scoped_lock lock(m_mutex);
+
+	exit_data_stream << p.weight << ","
+					 << p.currLocation->getDirX() << ","
+					 << p.currLocation->getDirY() << ","
+					 << cos(p.transmission_angle) << ","
+					 << p.displaced_optical_path_length << ","
+					 << p.currLocation << "\n";
+	exit_data_stream.flush();
+}
                                           
                                   
 void Logger::writePhoton(Photon *p)
