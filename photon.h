@@ -310,7 +310,7 @@ private:
 	unsigned int z1, z2, z3, z4;
 
 	// Tracks the path length of the photon through the medium.
-	double original_optical_path_length;
+	double unmodulated_optical_path_length;
 	double displaced_optical_path_length;
     double refractiveIndex_optical_path_length;
 

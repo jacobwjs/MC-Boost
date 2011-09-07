@@ -89,10 +89,8 @@ std::string getCurrTime(void)
 void runAcoustoOptics(void)
 {
     
-    // Number of time steps that were executed in the K-Wave simulation
-    // that produced displacement and pressure data.
-    const int KWAVESIM_TIME_STEPS = 201;
     
+
     // The logger is a singleton.  To bypass any problems with using singletons in a multi-threaded applicaton
     // initialization occurs in main before any threads are spawned.
     std::string exit_data_file;
@@ -116,7 +114,7 @@ void runAcoustoOptics(void)
     //
     double mu_a = 1.0f;
     double mu_s = 70.0f;
-    double refractive_index = 1.33f;
+    double refractive_index = 1.0f;
     double anisotropy = 0.9;
     double start_depth = 0.0f; // [cm]
     double end_depth = Z_dim; // [cm]
@@ -133,7 +131,7 @@ void runAcoustoOptics(void)
     
     // Create a spherical detector.
     Detector *detector;
-    CircularDetector circularExitDetector(0.5f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
+    CircularDetector circularExitDetector(0.2f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
     circularExitDetector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
     detector = &circularExitDetector;
     
@@ -186,7 +184,7 @@ void runAcoustoOptics(void)
 	
 	// Let boost decide how many threads to run on this architecture.
 	const int NUM_THREADS = boost::thread::hardware_concurrency();
-	//const int NUM_THREADS = 1;
+	//const int NUM_THREADS = 2;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
@@ -209,7 +207,10 @@ void runAcoustoOptics(void)
     
     // For each time step that K-Wave gave ultrasound data, propagate
     // photons through and track modulation due to the acoustic source.
-    //for (int dt = 31; dt < 32; dt++)
+	// Number of time steps that were executed in the K-Wave simulation
+	    // that produced displacement and pressure data.
+	    const int KWAVESIM_TIME_STEPS = 200;
+
 	for (int dt = 21; dt <= KWAVESIM_TIME_STEPS; dt++)
     {
         // Capture the time at the beginning of this simulation step.
@@ -217,7 +218,7 @@ void runAcoustoOptics(void)
         
         // Init the random number generator.
         //
-        srand(time(0));
+        srand(13);
         
         // Open a file for each time step which holds exit data of photons
         // when they leave the medium through the detector aperture.
@@ -241,6 +242,12 @@ void runAcoustoOptics(void)
             s2 = rand() + 128;
             s3 = rand() + 128;
             s4 = rand() + 128;
+
+//        	s1 = 292 + i*10;
+//        	s2 = 338 + i*10;
+//        	s3 = 2893 + i*10;
+//        	s4 = 559232 + i*10;
+
             
             cout << "Launching photon object" << i << " iterations: " << MAX_PHOTONS/NUM_THREADS << endl;
             threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS,

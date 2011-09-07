@@ -58,6 +58,8 @@ Photon::Photon(double x, double y, double z,
     // The location before the photon hopped.
     prevLocation = boost::shared_ptr<Vector3d> (new Vector3d);  // Does not require direction.
     
+    this->initCommon();
+
 }
 
 
@@ -93,11 +95,12 @@ void Photon::initCommon(void)
 	hit_x_bound = hit_y_bound = hit_z_bound = false;
     
     // Set the transmission angle for a photon.
-    transmission_angle = 0;
+    transmission_angle = 0.0f;
     
     // Set the path lengths during initialization.
-    original_optical_path_length = 0;
-    displaced_optical_path_length = 0;
+    unmodulated_optical_path_length = 0.0f;
+    displaced_optical_path_length = 0.0f;
+    refractiveIndex_optical_path_length = 0.0f;
     
 }
 
@@ -301,9 +304,11 @@ void Photon::reset()
 	num_steps = 0;
     
 	// Reset the path lengths of the photon.
-	original_optical_path_length = 0;
+	unmodulated_optical_path_length = 0;
 	displaced_optical_path_length = 0;
-    
+	refractiveIndex_optical_path_length = 0;
+
+
     // Reset the flags for hitting a layer boundary.
 	hit_x_bound = false;
     hit_y_bound = false;
@@ -454,6 +459,13 @@ void Photon::hop()
 	currLocation->location.x += step * currLocation->getDirX();
 	currLocation->location.y += step * currLocation->getDirY();
 	currLocation->location.z += step * currLocation->getDirZ();
+
+
+	// Calculate the unmodulated path length, which ignores the
+	// pressure and displacement maps.  This is simply the background
+	// refractive index.
+	//unmodulated_optical_path_length += VectorMath::Distance(currLocation, prevLocation)*currLayer->getRefractiveIndex();;
+
 }
 
 
@@ -633,10 +645,10 @@ void Photon::writeCoordsToFile(void)
 {
 	cout << "Photon::writeCoordsToFile() stub\n";
     
-	//	cout << "Non-displaced path length: " << scientific << setprecision(12) <<  original_path_length << endl;
+	//	cout << "Non-displaced path length: " << scientific << setprecision(12) <<  unmodulated_path_length << endl;
 	//	cout << "Displaced path length: " << scientific << setprecision(12) << displaced_path_length << endl;
 	//	cout << "Displaced - Original = " << scientific << setprecision(12)
-	//		 << displaced_path_length - original_path_length << endl;
+	//		 << displaced_path_length - unmodulated_path_length << endl;
     
     
 }
@@ -684,6 +696,7 @@ void Photon::displacePhotonFromPressure(void)
 
 
     // Subtle case where index into grid is negative because of rounding errors above.
+#ifdef DEBUG
     if (_z < 0 || _x < 0 || _y < 0)
     {
         // FIXME:
@@ -693,6 +706,7 @@ void Photon::displacePhotonFromPressure(void)
         this->status = DEAD;
         return;
     }
+#endif
     
     
     // Calculate changes in the optical path length due to the refractive index gradient
@@ -702,7 +716,7 @@ void Photon::displacePhotonFromPressure(void)
     //      NOTE: I think before, because the arc of the path (due to the refractive gradient)
     //            would place the photon at a new location.  However, currently only the variation
     //            in the optical path length is calculated, not the change in the position of the photon.
-    alterPathLengthFromRefractiveChanges();
+    //alterPathLengthFromRefractiveChanges();
     
     
     
@@ -773,7 +787,6 @@ void Photon::alterPathLengthFromRefractiveChanges(void)
     // The grid indices that are calculated form the photon's position.
     // Transform the location of the photon in the medium to discrete locations in the grid.
     //
-    // Note the transormation of z and y axis due to simulation of K-Wave grid.
     double dx = m_medium->kwave.pmap->getDx();
     double Nx = m_medium->kwave.pmap->getNumVoxelsXaxis();
     
@@ -1021,7 +1034,7 @@ void Photon::transmit(const char *type)
         	// to see if this photon makes it's way to the detector (i.e. CCD camera).
         	// NOTE:
         	// - We assume outside of the medium is nothing but air with an index of refraction 1.0
-        	//   so now division for x & y direction cosines because nt = 1.0
+        	//   so no division for x & y direction cosines because nt = 1.0
         	// - It is also assumed that the photon is transmitted through the x-y plane.
         	double ni = currLayer->getRefractiveIndex();
         	currLocation->setDirZ(cos(this->transmission_angle));

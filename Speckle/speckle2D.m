@@ -3,18 +3,18 @@
 % interfering photons that exit from the Monte Carlo simulation.
 
 %lambda=info.lambda;%wavelength [m]
-clear;
+clear all;
 
 % ------------------- Settings -------------------------------------
 % Boolean values to decide if various graphs are formed.
-createMovie = 1;
+createMovie = 0;
 displayExitPhotons = 0;
 
 % Wavelength of the photons.
 lambda = 532e-7;
 
 % Distance between medium and detector.
-D = 40; % [cm]
+D = 15; % [cm]
 
 % Start time of the simulation to make the speckle pattern from.
 % That is, if the Monte Carlo + K-Wave simulation (i.e. the
@@ -22,11 +22,11 @@ D = 40; % [cm]
 % steps that occurred in the propagation of ultrasound.  Therefore we can
 % take a portion of the whole AO simulation to make a speckle pattern, or
 % use the entire photon exit data.
-start_time = 200; % 'dt' starting at this time.
-end_time = 200;  % end time that we want to look at.
+start_time = 199; % 'dt' starting at this time.
+end_time = 199;  % end time that we want to look at.
 
 % The acceptance angle of photons leaving the medium.
-acceptance_angle = 0.90;
+acceptance_angle = 0.75;
 
 
 
@@ -74,7 +74,8 @@ if (displayExitPhotons)
     rayFigure = figure;
     patch(x,y,z,color);
     view(3);
-    % Define the exit aperture.
+    
+    % Define the exit aperture, which is circular.
     t = 0:pi/360:2*pi;
     radius = 0.5;
     xy_plane = zeros(size(t)); xy_plane(:) = 2; % The xy-plane that the exit aperture resides on.
@@ -91,14 +92,19 @@ end
 % modulation) we loop over all exit data files, which contain information
 % about the photons for a snapshot in time of the ultrasound.
 if (createMovie)
-    aviobj = avifile ( 'speckle-modulation2', 'compression', 'None', 'fps', 1);
+    aviobj = avifile ( 'speckle-modulation', 'compression', 'None', 'fps', 5);
 end
 
+% Time the speckle generation.
+tic
+
+% Loop over all AO simulation time steps from start to end to form speckle.
 for dt=start_time:end_time
     
     % Load the exit data from the AO simulation.
-    dataFile = ['exit-aperture-', num2str(dt), '.txt'];
+    dataFile = ['exit-aperture-B-', num2str(dt), '.txt'];
     data = dlmread(dataFile);
+    %data = data(300,:);
     
     display(sprintf('Time step (dt) = %i', dt));
     
@@ -221,6 +227,8 @@ for dt=start_time:end_time
     
     figure(speckleFigure);
     imagesc((abs(CCDGrid)))
+    cmax = caxis;
+    caxis([cmax(2)/3 cmax(2)]);  % Scale the colormap of the image.
     colormap hot;
     drawnow;
     if (createMovie)
@@ -229,6 +237,8 @@ for dt=start_time:end_time
         aviobj = addframe(aviobj, frame);
     end
 end
+
+toc
 
 if (createMovie)
     aviobj = close(aviobj);

@@ -165,6 +165,7 @@ void Logger::writeWeightAngleLengthCoords(Photon &p)
 					 << p.currLocation->getDirY() << ","
 					 << cos(p.transmission_angle) << ","
 					 << p.displaced_optical_path_length << ","
+					 //<< p.unmodulated_optical_path_length << ","
 					 << p.currLocation << "\n";
 	exit_data_stream.flush();
 }

@@ -228,10 +228,12 @@ double PressureMap::getPressure(double a, double b, double c)
 	int _y = b/dy - (b/dy)/Ny;
 	int _z = c/dz - (c/dz)/Nz;
 
+#ifdef DEBUG
 	// Sanity check.
 	assert((_x <= Nx && _x >= 0) &&
 			(_y <= Ny && _y >= 0) &&
 			(_z <= Nz && _z >= 0));
+#endif
 
 	//	cout << "PressureMap::getPressureCartCords\n";
 	//cout << "a=" << _x << ", b=" << _z << ", c=" << _y << endl;
