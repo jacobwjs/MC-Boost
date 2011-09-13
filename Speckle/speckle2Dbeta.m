@@ -12,12 +12,13 @@ clear all;
 createMovie =           true;
 displayExitPhotons =    false;
 writeSpeckleData =      true;
+makeSpeckle =           true;
 
 % Wavelength of the photons.
 lambda = 532e-7;
 
 % Distance between medium and detector.
-D = 7; % [cm]
+D = 4; % [cm]
 
 % Start time of the simulation to make the speckle pattern from.
 % That is, if the Monte Carlo + K-Wave simulation (i.e. the
@@ -25,26 +26,29 @@ D = 7; % [cm]
 % steps that occurred in the propagation of ultrasound.  Therefore we can
 % take a portion of the whole AO simulation to make a speckle pattern, or
 % use the entire photon exit data.
-start_time = 21; % 'dt' starting at this time.
-end_time = 200;  % end time that we want to look at.
+start_time = 100; % 'dt' starting at this time.
+end_time = 100;  % end time that we want to look at.
 
 % The acceptance angle of photons leaving the medium.
-acceptance_angle = 0.75;
+acceptance_angle = 0.25;
 
 
 
 % The figure for the speckle pattern.
-speckleFigure = figure;
-
+if (makeSpeckle)
+    speckleFigure = figure;
+end
 
 
 
 
 
 %define the camera.
-CCDGrid=zeros(200,200);
-CCDdx=5.5e-2/size(CCDGrid,1);
-CCDdy=5.5e-2/size(CCDGrid,2);
+CCDGrid=zeros(150,150);
+%CCDdx=5.5e-2/size(CCDGrid,1);
+%CCDdy=5.5e-2/size(CCDGrid,2);
+CCDdx = 6e-5;
+CCDdy = 6e-5;
 
 % The aperture of the medium (window in which photons leave)
 % is defined in the Monte Carlo (MC) simulation.  Therefore,
@@ -56,8 +60,8 @@ CCDdy=5.5e-2/size(CCDGrid,2);
 % same location as the aperture.  That is, it's midpoint is at
 % the same center coordinates as the exit aperture in the MC simulation.
 %
-center.x = 0.25; % Center of the CCD (which should be the center of exit aperture).
-center.y = 0.25; % Note: in cm
+center.x = 0.50; % Center of the CCD (which should be the center of exit aperture).
+center.y = 0.50; % Note: in cm
 start_x = center.x - (size(CCDGrid,1)/2*CCDdx);
 start_y = center.y - (size(CCDGrid,2)/2*CCDdy);
 
@@ -68,24 +72,27 @@ start_y = center.y - (size(CCDGrid,2)/2*CCDdy);
 % For drawing the plane made by the CCD and visualizing all
 % photons that hit it.
 %
-% Define all the vertices on the plane (i.e. CCD corners)
 if (displayExitPhotons)
-    x = [start_x, (center.x+(center.x-start_x)), (center.x+(center.x-start_x)), start_x];
-    y = [(center.y+(center.y-start_y)), (center.y+(center.y-start_y)), start_y, start_y];
-    z = [D, D, D, D];
-    color = [10, 10, 10, 10];
+    
     rayFigure = figure;
-    patch(x,y,z,color);
-    view(3);
+    
     
     % Define the exit aperture, which is circular.
     t = 0:pi/360:2*pi;
-    radius = 0.1;
-    xy_plane = zeros(size(t)); xy_plane(:) = 0.5; % The xy-plane that the exit aperture resides on.
+    radius = 0.2;
+    xy_plane = zeros(size(t)); xy_plane(:) = 1.0; % The xy-plane that the exit aperture resides on.
     color = zeros(size(t)); color(:) = 15; % Define the color for the exit aperture plane.
     hold on;
     patch(center.x + (cos(t)*radius), center.y + (sin(t)*radius), xy_plane, color);
     hold off;
+    
+    % Define all the vertices on the plane (i.e. CCD corners)
+    x = [start_x, (center.x+(center.x-start_x)), (center.x+(center.x-start_x)), start_x];
+    y = [(center.y+(center.y-start_y)), (center.y+(center.y-start_y)), start_y, start_y];
+    z = [D+xy_plane(1), D+xy_plane(1), D+xy_plane(1), D+xy_plane(1)];
+    color = [10, 10, 10, 10];
+    patch(x,y,z,color);
+    view(3);
 end
 
 
@@ -102,22 +109,34 @@ end
 tic
 
 % Loop over all AO simulation time steps from start to end to form speckle.
-for dt=start_time:end_time
+for dt=start_time:1:end_time
     
     % Load the exit data from the AO simulation.
     dataFile = ['exit-aperture-', num2str(dt), '.txt'];
     data = dlmread(dataFile);
-    data = data(1:1000,:);
+    %data = data(100:end-100,:);
+    %data = data(1:1,:);
     
     display(sprintf('Time step (dt) = %i', dt));
     
     % -------------- Exit photon figure ----------------
     if (displayExitPhotons)
+        
+        % The normal line segment from the aperture to the CCD.
+        aperture_to_CCD = [[center.x, center.y, xy_plane(1)]; ...
+            [center.x, center.y, D+xy_plane(1)]];
+        
+        % Draw the normal connecting the aperture and CCD.
+        figure(rayFigure);
+        hold on;
+        plot3(aperture_to_CCD(:,1), aperture_to_CCD(:,2), aperture_to_CCD(:,3), '-g');
+        hold off;
+        
         % for each photon
         for photon = 1:size(data, 1)
             
             % retrieve the weight of the photon.
-            weight = data(photon,1);
+            weight = data(photon, 1);
             
             % transmission angles of the photon when it exiting
             % the medium.
@@ -138,11 +157,11 @@ for dt=start_time:end_time
             y = data(photon,7);
             z = data(photon,8);
             
-            display(sprintf('angle = %d', dirz));
+            %display(sprintf('angle = %d', dirz));
             
             
-            % Check for intersection of this photon with the CCD camera.
-            %-----------------------------------------------------------
+            % Check for intersection of this photon with the CCD camera plane.
+            %-----------------------------------------------------------------
             % Exit location of photon.
             s0 = [x, y, z];
             % The normal to the CCD.
@@ -151,7 +170,7 @@ for dt=start_time:end_time
             
             % Point on the CCD.
             %
-            p0 = [center.x, center.y, D];
+            p0 = [center.x, center.y, D+z];
             
             % Create the ray to cast from the exit of the photon out into
             % space.  If this ray intersects the CCD, then 'smear' it on
@@ -160,7 +179,8 @@ for dt=start_time:end_time
             % - To extend the ray some portion beyond the plane made by the
             %   CCD, we give the 't' value (parametric form of line) z+D.
             %
-            s1 = [x + dirx*(z+D), y + diry*(z+D), z + dirz*(z+D)];
+            s1 = [x + dirx*(z*D), y + diry*(z*D), z + dirz*(z*D)];
+            line_segment = s1 - s0;
             ray = [s0(1), s0(2), s0(3); ...
                 s1(1), s1(2), s1(3)];
             
@@ -172,19 +192,35 @@ for dt=start_time:end_time
             % From the line segment (i.e. the ray 'r') we find the 't'
             % value that gives the intersection point on the CCD.
             %
-            temp = p0 - s0;
-            ti = dot(n, temp)/dot(n, s1);
-            if (ti >= 0 & ti <= 1)
-                xi = x + dirx*ti;
-                yi = y + diry*ti;
-                zi = D;
-            end % if()
+            %ti = dot(n, (p0-s0))/dot(n, s1);
+            
+            % we always know where the CCD plane lies. Therefore, we can
+            % calculate ti.
+            ti = (D)/line_segment(3);
+            %if (ti >= 0 & ti <= 1)
+            xi = x + line_segment(1)*(ti);
+            yi = y + line_segment(2)*(ti);
+            zi = z + line_segment(3)*(ti);
+            
+            
+            intercept_to_CCD = [[xi, yi, zi]; [p0(1), p0(2), p0(3)]];
+            figure(rayFigure);
+            hold on;
+            plot3(intercept_to_CCD(:,1),...
+                intercept_to_CCD(:,2),...
+                intercept_to_CCD(:,3), '-r');
+            hold off;
+            
+            %end % if()
             
         end
     end
     
     % only grab a chunk of photons for testing.
-    %data = data(1:500,:);
+    data = data(1:2,:);
+    
+     % Zero out the data for the next run.
+    CCDGrid = zeros(size(CCDGrid));
     
     for k = 1:size(data,1)
         % retrieve the weight of the photon.
@@ -196,18 +232,17 @@ for dt=start_time:end_time
         diry = data(k, 3);
         dirz = data(k, 4);
         
-        % Only plot photons that exit at a certain angle.
-        if (dirz < acceptance_angle)
-            continue;
-        end
-        
-        % retrieve the stored path length in the medium.
-        path_length = data(k,5);
-        
         % retrieve the exit location of the photon.
         x = data(k,6);
         y = data(k,7);
         z = data(k,8);
+        
+        
+        % retrieve the stored path length in the medium.
+        path_length = data(k,5);
+        
+       
+    
         % for each pixel in the x-axis
         for i = 1:size(CCDGrid, 1)
             x_pixel = start_x + (CCDdx * i);
@@ -227,6 +262,7 @@ for dt=start_time:end_time
             y_pixel = start_y + CCDdy;
         end
     end
+    
     figure(speckleFigure);
     CCDGrid = abs(CCDGrid).^2;
     imagesc(CCDGrid);
@@ -243,13 +279,14 @@ for dt=start_time:end_time
     
     % Write the CCDGrid data out to file in case it is used later.
     if (writeSpeckleData)
-        speckleFile = ['CCD/speckle-', num2str(dt), '.txt'];
+        speckleFile = ['speckle-data/speckle-', num2str(dt), '.txt'];
         dlmwrite(speckleFile, CCDGrid, '\t');
     end
     
-    % Zero out the data for the next run.
-    CCDGrid = zeros(size(CCDGrid));
+    
 end
+
+
 toc
 
 if (createMovie)
