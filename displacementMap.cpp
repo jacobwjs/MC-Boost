@@ -6,7 +6,7 @@
  */
 
 #include "debug.h"
-#include "vector3d.h"
+#include "vector3D.h"
 #include "displacementMap.h"
 #include <boost/lexical_cast.hpp>
 

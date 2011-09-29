@@ -100,9 +100,9 @@ void runAcoustoOptics(void)
     
     // The dimensions of the medium.
     //
-    double X_dim = 2.0f;      // [cm]
-    double Y_dim = 2.0f;      // [cm]
-    double Z_dim = 2.0f;      // [cm]
+    double X_dim = 1.0f;      // [cm]
+    double Y_dim = 1.0f;      // [cm]
+    double Z_dim = 1.0f;      // [cm]
     
     
 	// Create the medium in which the photons will be propagate.
@@ -154,21 +154,23 @@ void runAcoustoOptics(void)
 	// Create and add the pressure map object to the medium and load the pressure data.
 	// tissue->addPressureMap(new PressureMap("testing.txt"));
 	//
+    
     const int pgrid_x = 64;  // Number of pixels in the kWave pressure grid.
 	const int pgrid_y = 64;
 	const int pgrid_z = 64;
+/*
 	string pressure_file = "./kWave-pressure/pressure";
     PressureMap *pmap = new PressureMap(pgrid_x, pgrid_z, pgrid_y, X_dim);
 	tissue->addPressureMap(pmap);
 	//cout << "pressure = " << tissue->getPressureFromGridCoords(31, 11, 31) << endl;
-    
+*/
     
 	// Create and add the displacement map object to the medium and load the displacement data.
     //
 	const int dgrid_x = pgrid_x; // Displacements are calculated from same simulation grid, therefore same size.
 	const int dgrid_y = pgrid_z;
 	const int dgrid_z = pgrid_y;
-	string displacement_file = "./kWave-displacements/disp";
+	string displacement_file = "./kWave-displacements/1cm/hetero-medium/disp";
 	DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, X_dim);
     tissue->addDisplacementMap(dmap);
     
@@ -209,9 +211,9 @@ void runAcoustoOptics(void)
     // photons through and track modulation due to the acoustic source.
 	// Number of time steps that were executed in the K-Wave simulation
 	    // that produced displacement and pressure data.
-	    const int KWAVESIM_TIME_STEPS = 200;
+	    const int KWAVESIM_TIME_STEPS = 137;
 
-	for (int dt = 21; dt <= KWAVESIM_TIME_STEPS; dt++)
+	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
     {
         // Capture the time at the beginning of this simulation step.
         start_per_simulation = clock();
@@ -223,11 +225,11 @@ void runAcoustoOptics(void)
         // Open a file for each time step which holds exit data of photons
         // when they leave the medium through the detector aperture.
         //
-        exit_data_file = "./Log/Exit-data/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
+        exit_data_file = "./Log/Exit-data/hetero-medium/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
         Logger::getInstance()->openExitFile(exit_data_file);
         
         // Load a pressure map and displacement maps at time step number 'dt'.
-        tissue->loadPressure(pressure_file, dt);
+        //tissue->loadPressure(pressure_file, dt);
         tissue->loadDisplacements(displacement_file, dt);
         
         

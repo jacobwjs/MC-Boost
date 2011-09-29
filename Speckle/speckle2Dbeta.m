@@ -9,10 +9,10 @@ clear all;
 
 % ------------------- Settings -------------------------------------
 % Boolean values to decide if various graphs/data are formed.
-createMovie =           true;
+createMovie =           false;
 displayExitPhotons =    false;
 writeSpeckleData =      true;
-makeSpeckle =           true;
+makeSpeckle =           false;
 
 % Wavelength of the photons.
 lambda = 532e-7;
@@ -26,8 +26,8 @@ D = 4; % [cm]
 % steps that occurred in the propagation of ultrasound.  Therefore we can
 % take a portion of the whole AO simulation to make a speckle pattern, or
 % use the entire photon exit data.
-start_time = 100; % 'dt' starting at this time.
-end_time = 100;  % end time that we want to look at.
+start_time = 160; % 'dt' starting at this time.
+end_time = 197;  % end time that we want to look at.
 
 % The acceptance angle of photons leaving the medium.
 acceptance_angle = 0.25;
@@ -217,7 +217,7 @@ for dt=start_time:1:end_time
     end
     
     % only grab a chunk of photons for testing.
-    data = data(1:2,:);
+    % data = data(1:2,:);
     
      % Zero out the data for the next run.
     CCDGrid = zeros(size(CCDGrid));
@@ -263,14 +263,17 @@ for dt=start_time:1:end_time
         end
     end
     
-    figure(speckleFigure);
     CCDGrid = abs(CCDGrid).^2;
-    imagesc(CCDGrid);
-    %cmax = caxis;
-    %caxis([cmax(2)/3 cmax(2)]);  % Scale the colormap of the image.
-    %caxis auto;
-    colormap hot;
-    drawnow;
+    
+    if (makeSpeckle)
+        figure(speckleFigure);
+        imagesc(CCDGrid);
+        %cmax = caxis;
+        %caxis([cmax(2)/3 cmax(2)]);  % Scale the colormap of the image.
+        %caxis auto;
+        colormap hot;
+        drawnow;
+    end
     if (createMovie)
         set(gcf,'Renderer', 'zbuffer');
         frame = getframe(gcf);

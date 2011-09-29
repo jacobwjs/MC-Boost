@@ -679,14 +679,14 @@ void Photon::displacePhotonFromPressure(void)
 
 	// Transform the location of the photon in the medium to discrete locations in the grid.
 	//
-	double dx = m_medium->kwave.pmap->getDx();
-	double Nx = m_medium->kwave.pmap->getNumVoxelsXaxis();
+	double dx = m_medium->kwave.dmap->getDx();
+	double Nx = m_medium->kwave.dmap->getNumVoxelsXaxis();
 
-	double dy = m_medium->kwave.pmap->getDy();
-	double Ny = m_medium->kwave.pmap->getNumVoxelsYaxis();
+	double dy = m_medium->kwave.dmap->getDy();
+	double Ny = m_medium->kwave.dmap->getNumVoxelsYaxis();
 
-	double dz = m_medium->kwave.pmap->getDz();
-	double Nz = m_medium->kwave.pmap->getNumVoxelsZaxis();
+	double dz = m_medium->kwave.dmap->getDz();
+	double Nz = m_medium->kwave.dmap->getNumVoxelsZaxis();
 
 	int _x = currLocation->location.x/dx - (currLocation->location.x/dx)/Nx;
 	int _y = currLocation->location.y/dy - (currLocation->location.y/dy)/Ny;
@@ -724,9 +724,9 @@ void Photon::displacePhotonFromPressure(void)
     //
     // Index into the displacement grids to retrieve pre-calculated value of how much to
     // displace the photon from it's current location based upon the pressure in the voxel.
-    currLocation->location.x += m_medium->kwave.dmap->getDisplacementFromGridX(_x, _y, _z);
+    currLocation->location.x += m_medium->kwave.dmap->getDisplacementFromGridZ(_x, _y, _z);
     currLocation->location.y += m_medium->kwave.dmap->getDisplacementFromGridY(_x, _y, _z);
-    currLocation->location.z += m_medium->kwave.dmap->getDisplacementFromGridZ(_x, _y, _z);
+    currLocation->location.z += m_medium->kwave.dmap->getDisplacementFromGridX(_x, _y, _z);
     
     // Update the optical path length of the photon through the medium by
     // calculating the distance between the two points and multiplying by the refractive index.
