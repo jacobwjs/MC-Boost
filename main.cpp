@@ -35,7 +35,7 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 1000000;
+const int MAX_PHOTONS = 10e6;
 
 // Used to append to saved data files.
 time_t epoch;
@@ -100,9 +100,9 @@ void runAcoustoOptics(void)
     
     // The dimensions of the medium.
     //
-    double X_dim = 1.0f;      // [cm]
-    double Y_dim = 1.0f;      // [cm]
-    double Z_dim = 1.0f;      // [cm]
+    double X_dim = 2.0f;      // [cm]
+    double Y_dim = 2.0f;      // [cm]
+    double Z_dim = 2.0f;      // [cm]
     
     
 	// Create the medium in which the photons will be propagate.
@@ -170,13 +170,13 @@ void runAcoustoOptics(void)
 	const int dgrid_x = pgrid_x; // Displacements are calculated from same simulation grid, therefore same size.
 	const int dgrid_y = pgrid_z;
 	const int dgrid_z = pgrid_y;
-	string displacement_file = "./kWave-displacements/1cm/hetero-medium/disp";
+	string displacement_file = "./kWave-displacements/2cm/homo-medium/disp";
 	DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, X_dim);
     tissue->addDisplacementMap(dmap);
     
     
     // Set the value of the transducer frequency used in the K-Wave simulation.
-    tissue->kwave.transducerFreq = 2.0e6;
+    tissue->kwave.transducerFreq = 1.0e6;
     
     
 	// Allocate the planar fluence grid and set it in the tissue.
@@ -211,7 +211,7 @@ void runAcoustoOptics(void)
     // photons through and track modulation due to the acoustic source.
 	// Number of time steps that were executed in the K-Wave simulation
 	    // that produced displacement and pressure data.
-	    const int KWAVESIM_TIME_STEPS = 137;
+	    const int KWAVESIM_TIME_STEPS = 246;
 
 	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
     {
@@ -225,7 +225,7 @@ void runAcoustoOptics(void)
         // Open a file for each time step which holds exit data of photons
         // when they leave the medium through the detector aperture.
         //
-        exit_data_file = "./Log/Exit-data/hetero-medium/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
+        exit_data_file = "./Log/Exit-data/homo-medium/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
         Logger::getInstance()->openExitFile(exit_data_file);
         
         // Load a pressure map and displacement maps at time step number 'dt'.
@@ -277,7 +277,7 @@ void runAcoustoOptics(void)
 	// Print the matrix of the photon absorptions to file.
 	//tissue->printGrid(MAX_PHOTONS);
 	
-	// Clean up memory allocated memory on the heap.
+	// Clean up memory allocated on the heap.
 	if (tissue)
 		delete tissue;
 	

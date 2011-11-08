@@ -49,6 +49,11 @@ void Logger::openExitFile(std::string filename)
         exit_data_stream.close();
     
     exit_data_stream.open(filename.c_str());
+    if (!exit_data_stream)
+    {
+    	cout << "!!! ERROR: Could not open '" << filename << "' for writing.  Check directory structure.\n";
+    	exit(1);
+    }
 }
 
 void Logger::openAbsorberFile(std::string filename)
@@ -58,6 +63,11 @@ void Logger::openAbsorberFile(std::string filename)
         absorber_data_stream.close();
     
     absorber_data_stream.open(filename.c_str());
+    if (!absorber_data_stream)
+    {
+    	cout << "!!! ERROR: Could not open '" << filename << "' for writing.  Check directory structure.\n";
+    	exit(1);
+    }
 }
 
 
