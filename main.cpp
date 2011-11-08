@@ -225,7 +225,7 @@ void runAcoustoOptics(void)
         // Open a file for each time step which holds exit data of photons
         // when they leave the medium through the detector aperture.
         //
-        exit_data_file = "./Log/Exit-data/homo-medium/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
+        exit_data_file = "./Log/Exit-data/2cm/homo-medium/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
         Logger::getInstance()->openExitFile(exit_data_file);
         
         // Load a pressure map and displacement maps at time step number 'dt'.
