@@ -9,6 +9,7 @@
 #include "vector3D.h"
 #include "photon.h"
 #include "logger.h"
+#include <iomanip>
 #include <cmath>
 using std::cos;
 
@@ -22,7 +23,13 @@ Logger * Logger::pInstance = 0;
 
 Logger::Logger()
 {
-        //cout << "logger dying";
+        //cout << "logger alive";
+
+	// Set the precision and formatting of the logger's output.
+	// Set the precision and width of the data written to file.
+	exit_data_stream.width(13);
+	exit_data_stream.setf(std::ios::showpoint | std::ios::fixed);
+	exit_data_stream.precision(6);
 }
 
 

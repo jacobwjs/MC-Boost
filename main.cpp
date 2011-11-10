@@ -4,6 +4,8 @@
  *               Biomedical Photonics Imaging Group (BMPI), 
  *				 University of Twente
  *
+ *
+ *  A multi-threaded AO-simulation.
  */
 
 
@@ -88,11 +90,10 @@ std::string getCurrTime(void)
 
 void runAcoustoOptics(void)
 {
-    
-    
 
-    // The logger is a singleton.  To bypass any problems with using singletons in a multi-threaded applicaton
+    // The logger is a singleton.  To bypass any problems with using singletons in a multi-threaded application
     // initialization occurs in main before any threads are spawned.
+	//
     std::string exit_data_file;
     //file = "Absorber-data.txt";
     //Logger::getInstance()->openAbsorberFile(file);
@@ -130,6 +131,7 @@ void runAcoustoOptics(void)
     //    tissueLayer0->addAbsorber(absorber0);
     
     // Create a spherical detector.
+    //
     Detector *detector;
     CircularDetector circularExitDetector(0.2f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
     circularExitDetector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
@@ -153,9 +155,11 @@ void runAcoustoOptics(void)
     
 	// Create and add the pressure map object to the medium and load the pressure data.
 	// tissue->addPressureMap(new PressureMap("testing.txt"));
-	//
+
     
-    const int pgrid_x = 64;  // Number of pixels in the kWave pressure grid.
+    // Number of pixels in the kWave pressure grid.
+    //
+    const int pgrid_x = 64;
 	const int pgrid_y = 64;
 	const int pgrid_z = 64;
 /*
@@ -170,12 +174,13 @@ void runAcoustoOptics(void)
 	const int dgrid_x = pgrid_x; // Displacements are calculated from same simulation grid, therefore same size.
 	const int dgrid_y = pgrid_z;
 	const int dgrid_z = pgrid_y;
-	string displacement_file = "./kWave-displacements/2cm/homo-medium/disp";
+	string displacement_file = "D:/MC-Data/KWave-Displacements/2cm/homo-medium/disp";
 	DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, X_dim);
     tissue->addDisplacementMap(dmap);
     
     
     // Set the value of the transducer frequency used in the K-Wave simulation.
+    //
     tissue->kwave.transducerFreq = 1.0e6;
     
     
@@ -185,14 +190,17 @@ void runAcoustoOptics(void)
     
 	
 	// Let boost decide how many threads to run on this architecture.
+    //
 	const int NUM_THREADS = boost::thread::hardware_concurrency();
 	//const int NUM_THREADS = 2;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
+	//
 	const int NUM_PHOTON_OBJECTS = NUM_THREADS;
     
     // Photon array.  Each object in the array will be assigned their own seperate CPU core to run on.
+	//
 	Photon photons[NUM_PHOTON_OBJECTS];
 	boost::thread threads[NUM_THREADS];
     
@@ -210,12 +218,14 @@ void runAcoustoOptics(void)
     // For each time step that K-Wave gave ultrasound data, propagate
     // photons through and track modulation due to the acoustic source.
 	// Number of time steps that were executed in the K-Wave simulation
-	    // that produced displacement and pressure data.
-	    const int KWAVESIM_TIME_STEPS = 246;
+	// that produced displacement and pressure data.
+	//
+	const int KWAVESIM_TIME_STEPS = 246;
 
 	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
     {
         // Capture the time at the beginning of this simulation step.
+		//
         start_per_simulation = clock();
         
         // Init the random number generator.
@@ -225,10 +235,11 @@ void runAcoustoOptics(void)
         // Open a file for each time step which holds exit data of photons
         // when they leave the medium through the detector aperture.
         //
-        exit_data_file = "./Log/Exit-data/2cm/homo-medium/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
+        exit_data_file = "D:/MC-Data/Log/Exit-data/2cm/homo-medium/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
         Logger::getInstance()->openExitFile(exit_data_file);
         
         // Load a pressure map and displacement maps at time step number 'dt'.
+        //
         //tissue->loadPressure(pressure_file, dt);
         tissue->loadDisplacements(displacement_file, dt);
         
@@ -239,16 +250,11 @@ void runAcoustoOptics(void)
         //
         for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
         {
-            // The state variables need to be >= 128.
+            // The state variables need to be >= 128 for the thread-safe RNG.
             s1 = rand() + 128;
             s2 = rand() + 128;
             s3 = rand() + 128;
             s4 = rand() + 128;
-
-//        	s1 = 292 + i*10;
-//        	s2 = 338 + i*10;
-//        	s3 = 2893 + i*10;
-//        	s4 = 559232 + i*10;
 
             
             cout << "Launching photon object" << i << " iterations: " << MAX_PHOTONS/NUM_THREADS << endl;
@@ -258,12 +264,14 @@ void runAcoustoOptics(void)
         }
         
         // Join all created threads once they have done their work.
+        //
         for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
         {
             threads[i].join();
         }
         
         // Print out the elapsed time it took for this simulation step.
+        //
         end = ((double)clock() - start_per_simulation) / CLOCKS_PER_SEC;
         cout << "Time elapsed for simulation (" << dt << "): " << end << endl;
         
