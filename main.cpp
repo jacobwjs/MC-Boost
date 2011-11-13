@@ -35,7 +35,7 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 10e6;
+const int MAX_PHOTONS = 5e5;
 
 // Used to append to saved data files.
 time_t epoch;
@@ -94,6 +94,8 @@ void runAcoustoOptics(void)
     // The logger is a singleton.  To bypass any problems with using singletons in a multi-threaded applicaton
     // initialization occurs in main before any threads are spawned.
     std::string exit_data_file;
+    std::string rng_seed_file = "rng_exit_aperture_seeds.txt";
+    Logger::getInstance()->createRNGSeedFile(rng_seed_file);
     //file = "Absorber-data.txt";
     //Logger::getInstance()->openAbsorberFile(file);
     
@@ -171,8 +173,8 @@ void runAcoustoOptics(void)
 	const int dgrid_y = pgrid_z;
 	const int dgrid_z = pgrid_y;
 	string displacement_file = "./kWave-displacements/2cm/homo-medium/disp";
-	DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, X_dim);
-    tissue->addDisplacementMap(dmap);
+	//DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, X_dim);
+    //tissue->addDisplacementMap(dmap);
     
     
     // Set the value of the transducer frequency used in the K-Wave simulation.
@@ -186,7 +188,7 @@ void runAcoustoOptics(void)
 	
 	// Let boost decide how many threads to run on this architecture.
 	const int NUM_THREADS = boost::thread::hardware_concurrency();
-	//const int NUM_THREADS = 2;
+	//const int NUM_THREADS = 1;
     
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
@@ -210,8 +212,8 @@ void runAcoustoOptics(void)
     // For each time step that K-Wave gave ultrasound data, propagate
     // photons through and track modulation due to the acoustic source.
 	// Number of time steps that were executed in the K-Wave simulation
-	    // that produced displacement and pressure data.
-	    const int KWAVESIM_TIME_STEPS = 246;
+    // that produced displacement and pressure data.
+	const int KWAVESIM_TIME_STEPS = 1;
 
 	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
     {
@@ -230,7 +232,7 @@ void runAcoustoOptics(void)
         
         // Load a pressure map and displacement maps at time step number 'dt'.
         //tissue->loadPressure(pressure_file, dt);
-        tissue->loadDisplacements(displacement_file, dt);
+        //tissue->loadDisplacements(displacement_file, dt);
         
         
         // Create the threads and give them photon objects to run.

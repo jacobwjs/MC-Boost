@@ -1,7 +1,7 @@
 
 
 t_start = 1;
-t_end   = 197;
+t_end   = 3;
 
 
 aviobj = avifile ( 'speckle-modulation', 'compression', 'None', 'fps', 15);

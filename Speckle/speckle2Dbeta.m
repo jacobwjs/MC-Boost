@@ -18,7 +18,7 @@ makeSpeckle =           false;
 lambda = 532e-7;
 
 % Distance between medium and detector.
-D = 4; % [cm]
+D = 3; % [cm]
 
 % Start time of the simulation to make the speckle pattern from.
 % That is, if the Monte Carlo + K-Wave simulation (i.e. the
@@ -26,8 +26,8 @@ D = 4; % [cm]
 % steps that occurred in the propagation of ultrasound.  Therefore we can
 % take a portion of the whole AO simulation to make a speckle pattern, or
 % use the entire photon exit data.
-start_time = 160; % 'dt' starting at this time.
-end_time = 197;  % end time that we want to look at.
+start_time = 1; % 'dt' starting at this time.
+end_time = 3;  % end time that we want to look at.
 
 % The acceptance angle of photons leaving the medium.
 acceptance_angle = 0.25;
@@ -60,8 +60,8 @@ CCDdy = 6e-5;
 % same location as the aperture.  That is, it's midpoint is at
 % the same center coordinates as the exit aperture in the MC simulation.
 %
-center.x = 0.50; % Center of the CCD (which should be the center of exit aperture).
-center.y = 0.50; % Note: in cm
+center.x = 1.0; % Center of the CCD (which should be the center of exit aperture).
+center.y = 1.0; % Note: in cm
 start_x = center.x - (size(CCDGrid,1)/2*CCDdx);
 start_y = center.y - (size(CCDGrid,2)/2*CCDdy);
 
@@ -256,11 +256,13 @@ for dt=start_time:1:end_time
                 
                 L = path_length + dist_to_pixel;
                 
+                %dist_to_pixel*weight*exp(-(1i)*L*2*pi/lambda)
                 CCDGrid(i,j) = (CCDGrid(i,j) + 1/(dist_to_pixel*weight*exp(-(1i)*L*2*pi/lambda)));
                 
             end
             y_pixel = start_y + CCDdy;
         end
+        y_pixel = start_y + CCDdy;
     end
     
     CCDGrid = abs(CCDGrid).^2;

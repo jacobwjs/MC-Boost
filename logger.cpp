@@ -14,9 +14,7 @@ using std::cos;
 
 
 
-
 Logger * Logger::pInstance = 0;
-
 
 
 
@@ -30,6 +28,7 @@ Logger::~Logger()
 {
     exit_data_stream.close();
     absorber_data_stream.close();
+    rng_seed_stream.close();
 }
 
 Logger * Logger::getInstance(void)
@@ -38,11 +37,12 @@ Logger * Logger::getInstance(void)
     {
         pInstance = new Logger();
     }
+    
     return pInstance;
 }
 
 
-void Logger::openExitFile(std::string filename)
+void Logger::openExitFile(const std::string &filename)
 {
     // Ensure file stream is not already open.
     if (exit_data_stream.is_open())
@@ -56,7 +56,18 @@ void Logger::openExitFile(std::string filename)
     }
 }
 
-void Logger::openAbsorberFile(std::string filename)
+
+void Logger::createRNGSeedFile(const std::string &filename)
+{
+    rng_seed_stream.open(filename.c_str());
+    if (!rng_seed_stream)
+    {
+        cout << "!!! ERROR: Could not open '" << filename << "' for writing !!!\n";
+        exit(1);
+    }
+}
+
+void Logger::openAbsorberFile(const std::string &filename)
 {
     // Ensure file stream is not already open.
     if (absorber_data_stream.is_open())
@@ -193,8 +204,23 @@ void Logger::writePhoton(Photon *p)
 
 void Logger::writeAbsorberData(const double absorbedWeight)
 {
-    absorber_data_stream << absorbedWeight << "\n";
+    boost::mutex::scoped_lock lock(m_mutex);
+    {
+        absorber_data_stream << absorbedWeight << "\n";
+    }
+      
     absorber_data_stream.flush();
+}
+
+
+void Logger::writeRNGSeeds(const int s1, const int s2, const int s3, const int s4)
+{
+    boost::mutex::scoped_lock lock(m_mutex);
+    rng_seed_stream << s1 << " " <<
+                       s2 << " " <<
+                       s3 << " " <<
+                       s4 << " " << "\n";
+    rng_seed_stream.flush();
 }
 
 

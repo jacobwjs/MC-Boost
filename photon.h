@@ -35,6 +35,10 @@ class Vector3d;
 class Layer;
 
 
+typedef struct {
+    unsigned int s1, s2, s3, s4;
+} ExitSeeds;
+
 
 
 //typedef struct coords InjectionCoords;
@@ -308,6 +312,10 @@ private:
 
 	// Used with the thread safe RNG to track state.
 	unsigned int z1, z2, z3, z4;
+    
+    // Seeds that this photon used to seed the RNG that allowed it to produce
+    // steps that eventually led it to exiting the medium through the exit-aperture.
+    ExitSeeds seeds;
 
 	// Tracks the path length of the photon through the medium.
 	double unmodulated_optical_path_length;
