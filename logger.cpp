@@ -176,7 +176,6 @@ void Logger::writeWeightAngleLengthCoords(const double exitWeight,
 void Logger::writeWeightAngleLengthCoords(Photon &p)
 {
 	boost::mutex::scoped_lock lock(m_mutex);
-	cout << "yeah" << endl;
 	exit_data_stream << p.weight << "\t"
 					 << p.currLocation->getDirX() << "\t"
 					 << p.currLocation->getDirY() << "\t"
