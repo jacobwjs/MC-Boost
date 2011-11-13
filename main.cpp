@@ -37,7 +37,8 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 10e6;
+const int MAX_PHOTONS = 20e6;
+
 
 // Used to append to saved data files.
 time_t epoch;
@@ -113,7 +114,7 @@ void runAcoustoOptics(void)
     
     // Define a layer in the tissue.
     //
-    double mu_a = 1.0f;
+    double mu_a = 0.5f;
     double mu_s = 70.0f;
     double refractive_index = 1.0f;
     double anisotropy = 0.9;
@@ -133,7 +134,7 @@ void runAcoustoOptics(void)
     // Create a spherical detector.
     //
     Detector *detector;
-    CircularDetector circularExitDetector(0.2f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
+    CircularDetector circularExitDetector(0.25f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
     circularExitDetector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
     detector = &circularExitDetector;
     
@@ -181,7 +182,7 @@ void runAcoustoOptics(void)
     
     // Set the value of the transducer frequency used in the K-Wave simulation.
     //
-    tissue->kwave.transducerFreq = 1.0e6;
+    tissue->kwave.transducerFreq = 1.5e6;
     
     
 	// Allocate the planar fluence grid and set it in the tissue.
@@ -220,15 +221,16 @@ void runAcoustoOptics(void)
 	// Number of time steps that were executed in the K-Wave simulation
 	// that produced displacement and pressure data.
 	//
-	const int KWAVESIM_TIME_STEPS = 246;
+	const int KWAVESIM_TIME_STEPS = 312;
 
-	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
+	for (int dt = 247; dt <= KWAVESIM_TIME_STEPS; dt++)
     {
         // Capture the time at the beginning of this simulation step.
 		//
         start_per_simulation = clock();
         
-        // Init the random number generator.
+        // Init the random number generator with a static seed for reproducibility of
+        // photon events for this simulation (time step of kWave data).
         //
         srand(13);
         
@@ -299,7 +301,7 @@ void testDisplacements(void)
 	const int dgrid_x = 64;  // Number of pixels in the kWave pressure grid.
 	const int dgrid_y = 64;
 	const int dgrid_z = 64;
-    const int grid_size = 2;
+    const int grid_size = 2; // size of grid [cm].
 	//string pressure_file = "C:/Users/StaleyJW/Desktop/Software/MC-Boost/kWave-pressure/pressure-at-25us.txt";
 	string displacement_file = "d:/Displacement_Data/disp";
     DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, grid_size);

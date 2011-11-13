@@ -78,9 +78,9 @@ private:
 
 ostream& operator<<(ostream &out, const boost::shared_ptr<Vector3d> rhs)
 {
-    out << rhs->location.x
-        << "," << rhs->location.y
-        << "," << rhs->location.z;
+    out << rhs->location.x << ","
+        << rhs->location.y << ","
+        << rhs->location.z;
     
     return out;
 }

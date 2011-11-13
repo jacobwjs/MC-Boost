@@ -27,8 +27,8 @@ Logger::Logger()
 
 	// Set the precision and formatting of the logger's output.
 	// Set the precision and width of the data written to file.
-	exit_data_stream.width(13);
-	exit_data_stream.setf(std::ios::showpoint | std::ios::fixed);
+	//exit_data_stream.width(13);
+	//exit_data_stream.setf(std::ios::showpoint | std::ios::fixed);
 	exit_data_stream.precision(6);
 }
 
@@ -162,7 +162,7 @@ void Logger::writeWeightAngleLengthCoords(const double exitWeight,
     // Grab the lock to ensure that the logger doesn't get interrupted by a thread
     // in the middle of a write, causing the output to be corrupted.
     boost::mutex::scoped_lock lock(m_mutex);
-    
+    cout << "no\n";
     // Write out the location (x,y,z), transmission angle (theta), weight of photon
     exit_data_stream << exitWeight << "," 
                      << transmissionAngle << ","
@@ -176,14 +176,18 @@ void Logger::writeWeightAngleLengthCoords(const double exitWeight,
 void Logger::writeWeightAngleLengthCoords(Photon &p)
 {
 	boost::mutex::scoped_lock lock(m_mutex);
+	cout << "yeah" << endl;
+	exit_data_stream << p.weight << "\t"
+					 << p.currLocation->getDirX() << "\t"
+					 << p.currLocation->getDirY() << "\t"
+					 << p.transmission_angle << "\t"
+					 << p.displaced_optical_path_length << "\t"
+					 //<< p.unmodulated_optical_path_length << "\t"
+					 << p.currLocation->location.x << "\t"
+					 << p.currLocation->location.y << "\t"
+					 << p.currLocation->location.z << "\n";
 
-	exit_data_stream << p.weight << ","
-					 << p.currLocation->getDirX() << ","
-					 << p.currLocation->getDirY() << ","
-					 << cos(p.transmission_angle) << ","
-					 << p.displaced_optical_path_length << ","
-					 //<< p.unmodulated_optical_path_length << ","
-					 << p.currLocation << "\n";
+
 	exit_data_stream.flush();
 }
                                           

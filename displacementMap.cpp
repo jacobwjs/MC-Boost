@@ -111,7 +111,7 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 			file_to_open.clear();
 
 			// Concatonate the values passed in to form a filename to read in.
-			file_to_open = filename + "X-" + boost::lexical_cast<std::string>(timeStep);
+			file_to_open = filename + "X-" + boost::lexical_cast<std::string>(timeStep) + ".txt";
 			disp_file_stream.open(file_to_open.c_str());
 
 			// The appropriate displacement grid is assigned to be filled below.
@@ -124,7 +124,7 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 			file_to_open.clear();
 
 			// Concatonate the values passed in to form a filename to read in.
-			file_to_open = filename + "Y-" + boost::lexical_cast<std::string>(timeStep);
+			file_to_open = filename + "Y-" + boost::lexical_cast<std::string>(timeStep) + ".txt";
 			disp_file_stream.open(file_to_open.c_str());
 
 			// The appropriate displacement grid is assigned to be filled below.
@@ -135,7 +135,7 @@ void DisplacementMap::loadDisplacementMaps(const std::string &filename, const in
 			file_to_open.clear();
 
 			// Concatonate the values passed in to form a filename to read in.
-			file_to_open = filename + "Z-" + boost::lexical_cast<std::string>(timeStep);
+			file_to_open = filename + "Z-" + boost::lexical_cast<std::string>(timeStep) + ".txt";
 			disp_file_stream.open(file_to_open.c_str());
 
 			// The appropriate displacement grid is assigned to be filled below.

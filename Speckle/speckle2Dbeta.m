@@ -28,7 +28,7 @@ D = 3; % [cm]
 % use the entire photon exit data.
 %
 start_time = 1; % 'dt' starting at this time.
-end_time = 3;  % end time that we want to look at.
+end_time = 1;  % end time that we want to look at.
 
 % The acceptance angle of photons leaving the medium.
 acceptance_angle = 0.25;
@@ -45,7 +45,7 @@ end
 
 
 %define the camera.
-CCDGrid=zeros(125,125);
+CCDGrid=zeros(150,150);
 %CCDdx=5.5e-2/size(CCDGrid,1);
 %CCDdy=5.5e-2/size(CCDGrid,2);
 CCDdx = 6e-5;
