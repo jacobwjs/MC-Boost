@@ -1,14 +1,14 @@
 
 
 t_start = 1;
-t_end   = 160;
+t_end   = 8;
 
 
 %aviobj = avifile ( 'speckle-modulation', 'compression', 'None', 'fps', 2);
 %figure;
 
 
-F=moviein(t_end)
+F=moviein(t_end);
 for i=t_start:t_end
     
     
