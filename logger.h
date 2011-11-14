@@ -28,14 +28,14 @@ class Vector3d;
 
 
 
-
 class Logger 
 {
 public:
     static Logger * getInstance(void);
     
-    void openExitFile(std::string filename);
-    void openAbsorberFile(std::string filename);
+    void openExitFile(const std::string &filename);
+    void createRNGSeedFile(const std::string &filename);
+    void openAbsorberFile(const std::string &filename);
     
     void write(double val);
     void writeExitData(const boost::shared_ptr<Vector3d> vectorCoords);
@@ -58,6 +58,7 @@ public:
 
     // Writes the photon's weight, transmission angle, modulated path length through the medium,
     // and its exit location on the exit detector window.
+    //
     void writeWeightAngleLengthCoords(const double exitWeight,
                                       const double transmissionAngle,
                                       const double modulatedPathLength,
@@ -76,8 +77,15 @@ public:
     //   potentially have data changing in obscure ways?  Unsure, but each object is given
     //   it's own CPU "core" to run on, which means any object's state between switches (which
     //   there should be none (i.e. context switching) in a perfect world since threads == cores)
-    //   should be coherent.  
+    //   should be coherent.
+    //
     void writePhoton(Photon *p);
+    
+    
+    // Writes the seed that generated the random events that lead this photon to escape through
+    // the aperture.
+    //
+    void writeRNGSeeds(const int s1, const int s2, const int s3, const int s4);
     
 private:
     Logger();                            // default constructor is private
@@ -92,6 +100,7 @@ private:
     // the absorbers.
     ofstream exit_data_stream;
     ofstream absorber_data_stream;
+    ofstream rng_seed_stream;
     
     boost::mutex m_mutex;
 };
