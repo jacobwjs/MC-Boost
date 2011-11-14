@@ -13,7 +13,7 @@
 
 #undef DEBUG
 
-
+static int cnt = 0;
 
 Photon::Photon(void)
 {
@@ -68,6 +68,7 @@ Photon::~Photon(void)
 #ifdef DEBUG	
 	cout << "Destructing Photon...\n";
 #endif
+    cout << "cnt = " << cnt << "\n";
 }
 
 
@@ -140,10 +141,14 @@ void Photon::initAbsorptionArray()
 void Photon::initRNG(unsigned int state1, unsigned int state2,
                      unsigned int state3, unsigned int state4)
 {
-	z1 = state1;
-	z2 = state2;
-	z3 = state3;
-	z4 = state4;
+    
+    // Initialize the seeds and also save them in case this photon
+    // exits through the aperture and we want to write them out to
+    // disk.
+	seeds.s1 =  z1 = state1;
+	seeds.s2 =  z2 = state2;
+	seeds.s3 = 	z3 = state3;
+	seeds.s4 = 	z4 = state4;
 }
 
 
@@ -229,7 +234,7 @@ void Photon::propagatePhoton(const int iterations)
                 // Now displace the photon at its new location some distance depending on
                 // how the pressure has moved scattering particles and/or due to the change
                 // in the path of the photon due to refractive index gradient.
-                displacePhotonFromPressure();
+                //displacePhotonFromPressure();
                 
 				// Drop weight of the photon due to an interaction with the medium.
 				drop();
@@ -322,6 +327,14 @@ void Photon::reset()
     
     // Reset the current layer from the injection coordinates of the photon.
     currLayer = m_medium->getLayerFromDepth(currLocation->location.z);
+    
+    // Since the photon is being restarted we save the current state of the RNG
+    // as these are our 'seeds' for this run.
+    //
+    seeds.s1 = z1;
+    seeds.s2 = z2;
+    seeds.s3 = z3;
+    seeds.s4 = z4;
 }
 
 
@@ -954,6 +967,8 @@ void Photon::displacePhotonFromRefractiveGradient(const double n1, const double 
 //   the medium, and determine if it should transmit or reflect.  This bug only arises occasionally.
 void Photon::transmit(const char *type)
 {
+    
+
     // 'tempLayer' is used 
     Layer *tempLayer = NULL;
     
@@ -1043,7 +1058,12 @@ void Photon::transmit(const char *type)
 
         	// Write exit data from logger.
         	Logger::getInstance()->writeWeightAngleLengthCoords(*this);
-             
+            
+            // Write out the seeds that caused this photon to hop, drop and spin its way out the
+            // exit-aperture.
+            //
+            Logger::getInstance()->writeRNGSeeds(seeds.s1, seeds.s2, seeds.s3, seeds.s4);
+            cnt++;
         }
         
         // The photon has left the medium, so kill it.
@@ -1522,6 +1542,7 @@ unsigned int Photon::LCGStep(unsigned int &z, unsigned int A, unsigned long C)
 {
 	return z=(A*z+C);
 }
+
 
 double Photon::HybridTaus(void)
 {
