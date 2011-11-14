@@ -35,9 +35,6 @@ class Vector3d;
 class Layer;
 
 
-typedef struct {
-    unsigned int s1, s2, s3, s4;
-} ExitSeeds;
 
 
 
@@ -141,8 +138,10 @@ public:
 	// Inject the photon into the medium the given number of iterations.
 	// 'state[1,2,3,4]' represent the random initial values for the state
 	// of the random number generator.
-	void	injectPhoton(Medium *m, const int num_iterations, unsigned int state1, unsigned int state2,
-							unsigned int state3, unsigned int state4, coords &c);
+	void	injectPhoton(Medium *m, const int num_iterations, RNGSeeds daseeds, coords &c,
+							bool DISPLACE, bool REFRACTIVE_GRADIENT, bool SAVE_RNG_SEEDS);
+
+	//void	injectPhoton(Medium *medium, const int iterations, coords &laser, RNGSeeds daseeds, bool blah, bool foobar);
     
     
     // Hop, Drop, Spin, Roulette and everything in between.
@@ -315,7 +314,7 @@ private:
     
     // Seeds that this photon used to seed the RNG that allowed it to produce
     // steps that eventually led it to exiting the medium through the exit-aperture.
-    ExitSeeds seeds;
+    RNGSeeds seeds;
 
 	// Tracks the path length of the photon through the medium.
 	double unmodulated_optical_path_length;

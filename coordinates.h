@@ -26,4 +26,11 @@ typedef struct {
 } directionCos;
 
 
+typedef struct {
+	unsigned int s1;
+	unsigned int s2;
+	unsigned int s3;
+	unsigned int s4;
+} RNGSeeds;
+
 #endif  // COORDINATES_H

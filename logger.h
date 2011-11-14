@@ -85,7 +85,8 @@ public:
     // Writes the seed that generated the random events that lead this photon to escape through
     // the aperture.
     //
-    void writeRNGSeeds(const int s1, const int s2, const int s3, const int s4);
+    void writeRNGSeeds(const unsigned int s1, const unsigned int s2,
+    					const unsigned int s3, const unsigned int s4);
     
 private:
     Logger();                            // default constructor is private

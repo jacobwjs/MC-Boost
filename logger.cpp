@@ -213,7 +213,8 @@ void Logger::writeAbsorberData(const double absorbedWeight)
 }
 
 
-void Logger::writeRNGSeeds(const int s1, const int s2, const int s3, const int s4)
+void Logger::writeRNGSeeds(const unsigned int s1, const unsigned int s2,
+							const unsigned int s3, const unsigned int s4)
 {
     boost::mutex::scoped_lock lock(m_mutex);
     rng_seed_stream << s1 << " " <<
