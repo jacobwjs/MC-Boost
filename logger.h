@@ -88,6 +88,11 @@ public:
     void writeRNGSeeds(const unsigned int s1, const unsigned int s2,
     					const unsigned int s3, const unsigned int s4);
     
+    
+    // Returns the number of photons that were detected through the exit-aperture.
+    //
+    int getNumDetectedPhotons(void) {return num_photons_exited;}
+    
 private:
     Logger();                            // default constructor is private
     Logger(Logger const&){};             // copy constructor is private
@@ -102,6 +107,9 @@ private:
     ofstream exit_data_stream;
     ofstream absorber_data_stream;
     ofstream rng_seed_stream;
+    
+    // Tracks how many photons were detected through the aperture.
+    int num_photons_exited;
     
     boost::mutex m_mutex;
 };

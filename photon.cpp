@@ -182,9 +182,10 @@ void Photon::injectPhoton(Medium *medium, const int iterations, RNGSeeds daseeds
 	SAVE_RNG_SEEDS				= SAVE_SEEDS;
 
 	// Initialize the photon's properties before propagation begins.
-	initTrajectory();
-	initAbsorptionArray();
 	initRNG(daseeds.s1, daseeds.s2, daseeds.s3, daseeds.s4);
+    initTrajectory();
+	initAbsorptionArray();
+	
 
 	// Before propagation we set the medium which will be used by the photon.
 	this->m_medium = medium;
@@ -217,6 +218,9 @@ void Photon::propagatePhoton(const int iterations)
 	int i;
 	for (i = 0; i < iterations; i++) 
 	{
+        
+        
+        
 		// While the photon has not been terminated by absorption or leaving
 		// the medium we propagate it through he medium.
 		while (isAlive()) 
@@ -284,6 +288,18 @@ void Photon::propagatePhoton(const int iterations)
 		// the medium.
 		//writeCoordsToFile();
 
+        //Logger::getInstance()->writeRNGSeeds(seeds.s1, seeds.s2, seeds.s3, seeds.s4);
+
+        // Save seeds.
+        if (SAVE_RNG_SEEDS) 
+        {
+            
+            seeds.s1 =  z1;
+            seeds.s2 =  z2;
+            seeds.s3 = 	z3;
+            seeds.s4 = 	z4;
+            
+        }
 
 		// Reset the photon and start propogation over from the beginning.
 		reset();
@@ -358,10 +374,10 @@ void Photon::reset()
 	// Since the photon is being restarted we save the current state of the RNG
 	// as these are our 'seeds' for this run.
 	//
-	seeds.s1 = z1;
-	seeds.s2 = z2;
-	seeds.s3 = z3;
-	seeds.s4 = z4;
+	//seeds.s1 = z1;
+	//seeds.s2 = z2;
+	//seeds.s3 = z3;
+	//seeds.s4 = z4;
 }
 
 
@@ -379,7 +395,7 @@ void Photon::setStepSize()
 	// is set to remainder size and update step_remainder to zero.
 	if (step_remainder == 0.0) {
 		double rnd = getRandNum();
-		// Calculate the new step length of the photon.
+        // Calculate the new step length of the photon.
 		step = -log(rnd)/(mu_a	+ mu_s);
 	}
 	else

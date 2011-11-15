@@ -20,7 +20,7 @@ Logger * Logger::pInstance = 0;
 
 Logger::Logger()
 {
-        //cout << "logger dying";
+    num_photons_exited = 0;
 }
 
 
@@ -219,6 +219,7 @@ void Logger::writeRNGSeeds(const unsigned int s1, const unsigned int s2,
 							const unsigned int s3, const unsigned int s4)
 {
     boost::mutex::scoped_lock lock(m_mutex);
+    num_photons_exited++;
     rng_seed_stream << s1 << " " <<
                        s2 << " " <<
                        s3 << " " <<
