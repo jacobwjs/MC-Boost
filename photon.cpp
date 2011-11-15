@@ -177,9 +177,9 @@ void Photon::injectPhoton(Medium *medium, const int iterations, RNGSeeds daseeds
 
 	// Set the GLOBAL values that dictate what mechanisms of AO are simulated and/or if the seeds
 	// for the RNG should be saved.
-//	SIM_DISPLACEMENT 			= DISPLACE;
-//	SIM_REFRACTIVE_GRADIENT 	= REFRACTIVE_GRADIENT;
-//	SAVE_RNG_SEEDS				= SAVE_SEEDS;
+	SIM_DISPLACEMENT 			= DISPLACE;
+	SIM_REFRACTIVE_GRADIENT 	= REFRACTIVE_GRADIENT;
+	SAVE_RNG_SEEDS				= SAVE_SEEDS;
 
 	// Initialize the photon's properties before propagation begins.
 	initTrajectory();

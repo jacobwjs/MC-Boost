@@ -29,6 +29,8 @@
 #include <boost/thread/thread.hpp> 
 #include <boost/lexical_cast.hpp>
 #include <string>
+#include <fstream>
+using std::ifstream;
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -44,6 +46,10 @@ const int MAX_PHOTONS = 8000;
 time_t epoch;
 struct tm *ptr_ts;
 std::string getCurrTime(void);
+
+// The file that the RNG seeds are written to.
+//
+std::string rng_seed_file = "rng_exit_aperture_seeds.txt";
 
 
 // Testing routines.
@@ -173,7 +179,6 @@ void generateSeeds(Medium *tissue, coords injectionCoords)
 	// initialization occurs in main before any threads are spawned.
 	//
 	std::string exit_data_file;
-	std::string rng_seed_file = "rng_exit_aperture_seeds.txt";
 	Logger::getInstance()->createRNGSeedFile(rng_seed_file);
 
 	// Let boost decide how many threads to run on this architecture.
@@ -194,7 +199,7 @@ void generateSeeds(Medium *tissue, coords injectionCoords)
 
 	// Used to seed the RNG.
 	//
-	unsigned int s1, s2, s3, s4;
+	//unsigned int s1, s2, s3, s4;
 
 
 	// Init the random number generator with a static seed for reproducibility of
@@ -258,13 +263,22 @@ void generateSeeds(Medium *tissue, coords injectionCoords)
 	// Print out the elapsed time it took from beginning to end.
 	//
 	end = ((double)clock() - start) / CLOCKS_PER_SEC;
-	cout << "\n\nTotal time elapsed to generate RNG seeds: " << end << endl;
+	cout << "\n\nTotal time elapsed to generate RNG seeds: " << end << "\n\n";
 
 }
 
 
 void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 {
+
+	// Open the file that has the seeds produced from running 'generateSeeds()'.
+	std::ifstream rng_seed_stream;
+	rng_seed_stream.open(rng_seed_file.c_str());
+	if (!rng_seed_stream)
+	{
+		cout << "!!! ERROR: Could not open (" << rng_seed_stream << ") !!!\n";
+		exit(1);
+	}
 
 	// The logger is a singleton.  To bypass any problems with using singletons in a multi-threaded application
 	// initialization occurs in main before any threads are spawned.
@@ -332,14 +346,14 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 
 	// Used to seed the RNG.
 	//
-	unsigned int s1, s2, s3, s4;
+	//unsigned int s1, s2, s3, s4;
 
 
 	// Booleans that dictate what (and what does not) get simulated.
 	//
 	bool DISPLACE 				= false;
 	bool REFRACTIVE_GRADIENT 	= false;
-	bool SAVE_SEEDS 			= true;
+	bool SAVE_SEEDS 			= false;
 
 
 	// Capture the time before launching photons into the medium.
@@ -355,9 +369,9 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 	// Number of time steps that were executed in the K-Wave simulation
 	// that produced displacement and pressure data.
 	//
-	const int KWAVESIM_TIME_STEPS = 312;
+	const int KWAVESIM_TIME_STEPS = 1;
 
-	for (int dt = 247; dt <= KWAVESIM_TIME_STEPS; dt++)
+	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
 	{
 		// Capture the time at the beginning of this simulation step.
 		//
@@ -387,16 +401,26 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 		for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
 		{
 			// The state variables need to be >= 128 for the thread-safe RNG.
-					daseeds.s1 = rand() + 128;
-					daseeds.s2 = rand() + 128;
-					daseeds.s3 = rand() + 128;
-					daseeds.s4 = rand() + 128;
+//			daseeds.s1 = rand() + 128;
+//			daseeds.s2 = rand() + 128;
+//			daseeds.s3 = rand() + 128;
+//			daseeds.s4 = rand() + 128;
+
+			rng_seed_stream >> daseeds.s1;
+			rng_seed_stream >> daseeds.s2;
+			rng_seed_stream >> daseeds.s3;
+			rng_seed_stream >> daseeds.s4;
+
+
+			// Only a single iteration because we are only launching a single photon object responsible for a
+			// single photon.
+			int iterations = 1;
 
 
 			cout << "Launching photon object" << i << " iterations: " << MAX_PHOTONS/NUM_THREADS << endl;
-			threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, MAX_PHOTONS/NUM_THREADS,
-					daseeds, injectionCoords,
-					DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
+			threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, iterations,
+										daseeds, injectionCoords,
+										DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
 
 		}
 
@@ -416,10 +440,10 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 
 	// Print out the elapsed time it took from beginning to end.
 	end = ((double)clock() - start) / CLOCKS_PER_SEC;
-	cout << "\n\nTotal time elapsed: " << end << endl;
+	cout << "\n\nTotal time elapsed: " << end << "\n\n";
 
 
-
+	rng_seed_stream.close();
 
 }
 

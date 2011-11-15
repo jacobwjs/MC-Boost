@@ -141,6 +141,7 @@ public:
 	void	injectPhoton(Medium *m, const int num_iterations, RNGSeeds daseeds, coords &c,
 							bool DISPLACE, bool REFRACTIVE_GRADIENT, bool SAVE_RNG_SEEDS);
 
+
 	//void	injectPhoton(Medium *medium, const int iterations, coords &laser, RNGSeeds daseeds, bool blah, bool foobar);
     
     

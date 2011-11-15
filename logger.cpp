@@ -181,13 +181,15 @@ void Logger::writeWeightAngleLengthCoords(Photon &p)
 {
 	boost::mutex::scoped_lock lock(m_mutex);
 
-	exit_data_stream << p.weight << ","
-					 << p.currLocation->getDirX() << ","
-					 << p.currLocation->getDirY() << ","
-					 << cos(p.transmission_angle) << ","
-					 << p.displaced_optical_path_length << ","
-					 //<< p.unmodulated_optical_path_length << ","
-					 << p.currLocation << "\n";
+	exit_data_stream << p.weight << " "
+					 << p.currLocation->getDirX() << " "
+					 << p.currLocation->getDirY() << " "
+					 << p.transmission_angle << " "
+					 << p.displaced_optical_path_length << " "
+					 //<< p.unmodulated_optical_path_length << " "
+					 << p.currLocation->location.x << " "
+					 << p.currLocation->location.y << " "
+					 << p.currLocation->location.z << "\n";
 	exit_data_stream.flush();
 }
                                           
