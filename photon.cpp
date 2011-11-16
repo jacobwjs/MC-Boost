@@ -302,7 +302,8 @@ void Photon::propagatePhoton(const int iterations)
         }
 
 		// Reset the photon and start propogation over from the beginning.
-		reset();
+		if (SAVE_RNG_SEEDS)
+			reset();
 
 	} // end for() loop
 

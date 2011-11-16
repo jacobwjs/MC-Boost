@@ -39,7 +39,7 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 100;
+const int MAX_PHOTONS = 10;
 
 
 // Used to append to saved data files.
@@ -58,6 +58,8 @@ void testDisplacements(void);
 void testPressures(void);
 
 
+typedef std::vector<RNGSeeds> RNGSeedArray;
+
 
 // Simulation routines.
 //
@@ -70,6 +72,10 @@ void testPressures(void);
 void generateSeeds(Medium *tissue, coords injectionCoords);
 // The acousto-optic simulation.
 void runAcoustoOptics(Medium *tissue, coords injectionCoords);
+
+// Load the RNG seeds into memory.
+//
+RNGSeedArray loadRNGSeeds(const std::string &filename);
 
 
 
@@ -362,14 +368,15 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 	start = clock();
     
     
-	RNGSeeds daseeds;
+	//RNGSeeds daseeds;
+	RNGSeedArray daseeds = loadRNGSeeds(rng_seed_file);
     
 	// For each time step that K-Wave gave ultrasound data, propagate
 	// photons through and track modulation due to the acoustic source.
 	// Number of time steps that were executed in the K-Wave simulation
 	// that produced displacement and pressure data.
 	//
-	const int KWAVESIM_TIME_STEPS = 2;
+	const int KWAVESIM_TIME_STEPS = 3;
     
     
 	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
@@ -389,9 +396,7 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 #ifdef __APPLE__
         exit_data_file = "AO-exit-aperture-detection-" + boost::lexical_cast<std::string>(dt) + ".txt";
         Logger::getInstance()->openExitFile(exit_data_file);
-#endif
-        
-#ifndef __APPLE__
+#else
 		exit_data_file = "D:/MC-Data/Log/Exit-data/2cm/homo-medium/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
         Logger::getInstance()->openExitFile(exit_data_file);
 #endif
@@ -402,6 +407,8 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 		//tissue->loadPressure(pressure_file, dt);
 		//tissue->loadDisplacements(displacement_file, dt);
         
+        cout << "Simulating AO time step: " << dt << endl;
+
         const int NUM_DETECTED_PHOTONS = Logger::getInstance()->getNumDetectedPhotons();
         for (int k = 0; k < NUM_DETECTED_PHOTONS/NUM_PHOTON_OBJECTS; k++)
             // Create the threads and give them photon objects to run.
@@ -410,25 +417,21 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
             //
             for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
             {
-                
-                // Read in the seeds to give to the photon's RNG in order to reproduce the
-                // same path of the previously detected (from generateSeeds()) photon.
-                //
-                rng_seed_stream >> daseeds.s1;
-                rng_seed_stream >> daseeds.s2;
-                rng_seed_stream >> daseeds.s3;
-                rng_seed_stream >> daseeds.s4;
-                
+
                 
                 // Only a single iteration because we are only launching a single photon object responsible for a
                 // single photon.
                 //
                 int iterations = 1;
                 
+                cout << "Seeds = " << daseeds[k*NUM_PHOTON_OBJECTS + i].s1 << ", "
+                					<< daseeds[k*NUM_PHOTON_OBJECTS + i].s2 << ", "
+                					<< daseeds[k*NUM_PHOTON_OBJECTS + i].s3 << ", "
+                					<< daseeds[k*NUM_PHOTON_OBJECTS + i].s4 << "\n";
                 
-                cout << "Launching photon " << (k+i) << " iterations: " << iterations << endl;
+                //cout << "Launching photon " << (k+i) << " iterations: " << iterations << endl;
                 threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, iterations,
-                                           daseeds, injectionCoords,
+                                           daseeds[k*NUM_PHOTON_OBJECTS + i], injectionCoords,
                                            DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
                 
             }
@@ -445,11 +448,7 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 		end = ((double)clock() - start_per_simulation) / CLOCKS_PER_SEC;
 		cout << "Time elapsed for simulation (" << dt << "): " << end << endl;
         
-        // Reset to the begging of the file.
-        // FIXME:
-        //      - Should just store the seeds in memory.  Time to make the RNGObject.
-        rng_seed_stream.clear();
-        rng_seed_stream.seekg(0, ios::beg);
+
         
 	}
     
@@ -458,9 +457,55 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 	cout << "\n\nTotal time elapsed: " << end << "\n\n";
     
     
-	rng_seed_stream.close();
+
     
 }
+
+
+
+RNGSeedArray loadRNGSeeds(const std::string &filename)
+{
+
+	RNGSeedArray photonSeeds;
+
+	// Open the file that has the seeds produced from running 'generateSeeds()'.
+	std::ifstream rng_seed_stream;
+	rng_seed_stream.open(rng_seed_file.c_str());
+	if (!rng_seed_stream)
+	{
+		cout << "!!! ERROR: Could not open (" << rng_seed_stream << ") !!!\n";
+		exit(1);
+	}
+
+	int num_photons = Logger::getInstance()->getNumDetectedPhotons();
+	for (int i = 0; i < num_photons; i++)
+	{
+		RNGSeeds temp;
+		rng_seed_stream >> temp.s1;
+		rng_seed_stream >> temp.s2;
+		rng_seed_stream >> temp.s3;
+		rng_seed_stream >> temp.s4;
+		photonSeeds.push_back(temp);
+	}
+
+
+#ifdef DEBUG
+	for (int i = 0; i < photonSeeds.size(); i++)
+	{
+		cout << "Seeds = " << photonSeeds[i].s1 << ", "
+						   << photonSeeds[i].s2 << ", "
+						   << photonSeeds[i].s3 << ", "
+						   << photonSeeds[i].s4 << "\n";
+	}
+#endif
+
+	rng_seed_stream.close();
+
+	return photonSeeds;
+}
+
+
+// -------------------------------------------------------------------------------
 
 
 void testDisplacements(void)
