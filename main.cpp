@@ -346,8 +346,8 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
     
 	// Photon array.  Each object in the array will be assigned their own seperate CPU core to run on.
 	//
-	Photon photons[NUM_PHOTON_OBJECTS];
-	boost::thread threads[NUM_THREADS];
+	Photon *photons[NUM_PHOTON_OBJECTS];
+	boost::thread_group threads;
     
     
 	// Used to seed the RNG.
@@ -417,7 +417,7 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
             //
             for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
             {
-
+                photons[i] = new Photon();
                 
                 // Only a single iteration because we are only launching a single photon object responsible for a
                 // single photon.
@@ -430,23 +430,30 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
                 					<< daseeds[k*NUM_PHOTON_OBJECTS + i].s4 << "\n";
                 
                 //cout << "Launching photon " << (k+i) << " iterations: " << iterations << endl;
-                threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, iterations,
-                                           daseeds[k*NUM_PHOTON_OBJECTS + i], injectionCoords,
-                                           DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
+//                threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, iterations,
+//                                           daseeds[k*NUM_PHOTON_OBJECTS + i], injectionCoords,
+//                                           DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
+                boost::thread *t = new boost::thread(&Photon::injectPhoton, photons[i], tissue, iterations,
+                                                     daseeds[k*NUM_PHOTON_OBJECTS + i], injectionCoords,
+                                                     DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
+                threads.add_thread(t);
                 
             }
         
 		// Join all created threads once they have done their work.
 		//
-		for (int i = 0; i < NUM_PHOTON_OBJECTS; i++)
-		{
-			threads[i].join();
-		}
+		threads.join_all();
         
 		// Print out the elapsed time it took for this simulation step.
 		//
 		end = ((double)clock() - start_per_simulation) / CLOCKS_PER_SEC;
 		cout << "Time elapsed for simulation (" << dt << "): " << end << endl;
+        
+        
+        // Clean up memory.
+        //
+        for (int j = 0; j < NUM_THREADS; j++)
+            delete photons[j];
         
 
         
