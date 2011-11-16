@@ -39,7 +39,7 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 10;
+const int MAX_PHOTONS = 10e6;
 
 
 // Used to append to saved data files.
@@ -101,10 +101,10 @@ int main()
     
 	// Define a layer in the tissue.
 	//
-	double mu_a = 0.0f;
+	double mu_a = 1.0f;
 	double mu_s = 70.0f;
 	double refractive_index = 1.0f;
-	double anisotropy = 0.9999;
+	double anisotropy = 0.9;
 	double start_depth = 0.0f; // [cm]
 	double end_depth = Z_dim; // [cm]
 	Layer *tissueLayer0 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
@@ -357,7 +357,7 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
     
 	// Booleans that dictate what (and what does not) get simulated.
 	//
-	bool DISPLACE 				= false;
+	bool DISPLACE 				= true;
 	bool REFRACTIVE_GRADIENT 	= false;
 	bool SAVE_SEEDS 			= false;
     
@@ -376,7 +376,7 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 	// Number of time steps that were executed in the K-Wave simulation
 	// that produced displacement and pressure data.
 	//
-	const int KWAVESIM_TIME_STEPS = 3;
+	const int KWAVESIM_TIME_STEPS = 312;
     
     
 	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
@@ -405,7 +405,7 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 		// Load a pressure map and displacement maps at time step number (K-Wave simulation) 'dt'.
 		//
 		//tissue->loadPressure(pressure_file, dt);
-		//tissue->loadDisplacements(displacement_file, dt);
+		tissue->loadDisplacements(displacement_file, dt);
         
         cout << "Simulating AO time step: " << dt << endl;
 
@@ -424,15 +424,6 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
                 //
                 int iterations = 1;
                 
-                cout << "Seeds = " << daseeds[k*NUM_PHOTON_OBJECTS + i].s1 << ", "
-                					<< daseeds[k*NUM_PHOTON_OBJECTS + i].s2 << ", "
-                					<< daseeds[k*NUM_PHOTON_OBJECTS + i].s3 << ", "
-                					<< daseeds[k*NUM_PHOTON_OBJECTS + i].s4 << "\n";
-                
-                //cout << "Launching photon " << (k+i) << " iterations: " << iterations << endl;
-//                threads[i] = boost::thread(&Photon::injectPhoton, &photons[i], tissue, iterations,
-//                                           daseeds[k*NUM_PHOTON_OBJECTS + i], injectionCoords,
-//                                           DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
                 boost::thread *t = new boost::thread(&Photon::injectPhoton, photons[i], tissue, iterations,
                                                      daseeds[k*NUM_PHOTON_OBJECTS + i], injectionCoords,
                                                      DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
@@ -447,7 +438,7 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 		// Print out the elapsed time it took for this simulation step.
 		//
 		end = ((double)clock() - start_per_simulation) / CLOCKS_PER_SEC;
-		cout << "Time elapsed for simulation (" << dt << "): " << end << endl;
+		cout << "Time elapsed for simulation (" << dt << "): " << end << " secs" << endl;
         
         
         // Clean up memory.
@@ -634,15 +625,6 @@ void testPressures(void)
 	// Add the objects to the medium.
 	//
 	tissue->addLayer(tissueLayer0);
-    
-    
-	// Define the initial location of injection of the photons.
-	//
-	coords injectionCoords;
-	injectionCoords.x = X_dim/2; // Centered
-	injectionCoords.y = Y_dim/2; // Centered
-	injectionCoords.z = 1e-15f;   // Just below the surface of the 'air' layer.
-    
     
     
     
