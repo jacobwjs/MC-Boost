@@ -39,7 +39,7 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 10e6;
+const int MAX_PHOTONS = 50e6;
 
 
 // Used to append to saved data files.
@@ -146,7 +146,7 @@ int main()
 	// Generate the seeds that will be used to only propagate photons that
 	// are detected through the exit aperture.
 	//
-	generateSeeds(tissue, injectionCoords);
+	//generateSeeds(tissue, injectionCoords);
     
 	// Run the AO simulation of those detectable photons generated from above.
 	//
@@ -347,7 +347,8 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 	// Photon array.  Each object in the array will be assigned their own seperate CPU core to run on.
 	//
 	Photon *photons[NUM_PHOTON_OBJECTS];
-	boost::thread_group threads;
+	boost::thread threads[NUM_THREADS];
+	//boost::thread_group threads;
     
     
 	// Used to seed the RNG.
@@ -381,14 +382,15 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
     
 	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
 	{
+		// Define the thread group here so that the memory is released when
+		// the group goes out of scope.
+		//
+		//boost::thread_group threads;
+
 		// Capture the time at the beginning of this simulation step.
 		//
 		start_per_simulation = clock();
         
-		// Init the random number generator with a static seed for reproducibility of
-		// photon events for this simulation (time step of kWave data).
-		//
-		//srand(13);
         
 		// Open a file for each time step which holds exit data of photons
 		// when they leave the medium through the detector aperture.
@@ -409,7 +411,7 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
         
         cout << "Simulating AO time step: " << dt << endl;
 
-        const int NUM_DETECTED_PHOTONS = Logger::getInstance()->getNumDetectedPhotons();
+        const int NUM_DETECTED_PHOTONS = Logger::getInstance()->getNumDetectedPhotons()/8;
         for (int k = 0; k < NUM_DETECTED_PHOTONS/NUM_PHOTON_OBJECTS; k++)
             // Create the threads and give them photon objects to run.
             // Each photon object is run MAX_PHOTONS/NUM_THREADS times, which essentially
@@ -424,16 +426,24 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
                 //
                 int iterations = 1;
                 
-                boost::thread *t = new boost::thread(&Photon::injectPhoton, photons[i], tissue, iterations,
-                                                     daseeds[k*NUM_PHOTON_OBJECTS + i], injectionCoords,
-                                                     DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
-                threads.add_thread(t);
+                threads[i] = boost::thread(&Photon::injectPhoton, photons[i], tissue, iterations,
+                									daseeds[k*NUM_PHOTON_OBJECTS + i], injectionCoords,
+                									DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
+
+               // boost::thread *t = new boost::thread(&Photon::injectPhoton, photons[i], tissue, iterations,
+                //                                     daseeds[k*NUM_PHOTON_OBJECTS + i], injectionCoords,
+                //                                     DISPLACE, REFRACTIVE_GRADIENT, SAVE_SEEDS);
+                //threads.add_thread(t);
                 
             }
         
 		// Join all created threads once they have done their work.
 		//
-		threads.join_all();
+		//threads.join_all();
+        for (int i = 0; i < NUM_THREADS; i++)
+        {
+        	threads[i].join();
+        }
         
 		// Print out the elapsed time it took for this simulation step.
 		//
@@ -444,8 +454,9 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
         // Clean up memory.
         //
         for (int j = 0; j < NUM_THREADS; j++)
+        {
             delete photons[j];
-        
+        }
 
         
 	}
