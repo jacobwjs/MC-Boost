@@ -377,7 +377,7 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 	// Number of time steps that were executed in the K-Wave simulation
 	// that produced displacement and pressure data.
 	//
-	const int KWAVESIM_TIME_STEPS = 312;
+	const int KWAVESIM_TIME_STEPS = 1;
     
     
 	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
@@ -407,11 +407,12 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 		// Load a pressure map and displacement maps at time step number (K-Wave simulation) 'dt'.
 		//
 		//tissue->loadPressure(pressure_file, dt);
-		tissue->loadDisplacements(displacement_file, dt);
+		//tissue->loadDisplacements(displacement_file, dt);
         
         cout << "Simulating AO time step: " << dt << endl;
 
-        const int NUM_DETECTED_PHOTONS = Logger::getInstance()->getNumDetectedPhotons()/8;
+        //const int NUM_DETECTED_PHOTONS = Logger::getInstance()->getNumDetectedPhotons();
+        const int NUM_DETECTED_PHOTONS = daseeds.size();
         for (int k = 0; k < NUM_DETECTED_PHOTONS/NUM_PHOTON_OBJECTS; k++)
             // Create the threads and give them photon objects to run.
             // Each photon object is run MAX_PHOTONS/NUM_THREADS times, which essentially
@@ -440,9 +441,9 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 		// Join all created threads once they have done their work.
 		//
 		//threads.join_all();
-        for (int i = 0; i < NUM_THREADS; i++)
+        for (int t = 0; t < NUM_THREADS; t++)
         {
-        	threads[i].join();
+        	threads[t].join();
         }
         
 		// Print out the elapsed time it took for this simulation step.
@@ -487,7 +488,8 @@ RNGSeedArray loadRNGSeeds(const std::string &filename)
 	}
 
 	int num_photons = Logger::getInstance()->getNumDetectedPhotons();
-	for (int i = 0; i < num_photons; i++)
+	//for (int i = 0; i < num_photons; i++)
+    while (rng_seed_stream.good())
 	{
 		RNGSeeds temp;
 		rng_seed_stream >> temp.s1;
@@ -496,8 +498,12 @@ RNGSeedArray loadRNGSeeds(const std::string &filename)
 		rng_seed_stream >> temp.s4;
 		photonSeeds.push_back(temp);
 	}
+    
+    // Remove the last row of seeds as they are all zeros due to
+    // the way the while loop above terminates.
+    photonSeeds.erase(photonSeeds.end());
 
-
+//#define DEBUG
 #ifdef DEBUG
 	for (int i = 0; i < photonSeeds.size(); i++)
 	{
