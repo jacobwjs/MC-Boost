@@ -75,6 +75,7 @@ Photon::~Photon(void)
 #ifdef DEBUG	
 	cout << "Destructing Photon...\n";
 #endif
+
 }
 
 
