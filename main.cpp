@@ -118,10 +118,11 @@ int main()
 
 	// Define a layer in the tissue.
 	//
-	double mu_a = 0.010f;
-	double mu_s = 80.0f;
-	double refractive_index = 1.33f;
-	double anisotropy = 0.9;
+	double mu_a = 1.0f;
+	double mu_s = 70.0f;
+	double refractive_index = 1.0f;
+	double anisotropy = 0.7;
+
 	double start_depth = 0.0f; // [cm]
 	double end_depth = Z_dim; // [cm]
 	Layer *tissueLayer0 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
@@ -250,7 +251,10 @@ void generateSeeds(Medium *tissue, coords injectionCoords)
 	clock_t start, end;
 	start = clock();
 
+    // Structure to hold seed values that are handed off to threads for the RNG.
+    //
 	RNGSeeds daseeds;
+
 
 	// Create the threads and give them photon objects to run.
 	// Each photon object is run MAX_PHOTONS/NUM_THREADS times, which essentially
@@ -284,7 +288,8 @@ void generateSeeds(Medium *tissue, coords injectionCoords)
 	// Print out the elapsed time it took from beginning to end.
 	//
 	end = ((double)clock() - start) / CLOCKS_PER_SEC;
-	cout << "\n\nTotal time elapsed to generate RNG seeds: " << end << "\n\n";
+	cout << "\n\nTotal time elapsed to generate RNG seeds: " << end << "\n";
+    cout << "Detected: " << Logger::getInstance()->getNumDetectedPhotons() << " photons\n\n";
 
 }
 
