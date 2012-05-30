@@ -8,6 +8,7 @@
 #include "photon.h"
 #include "displacementMap.h"
 #include "pressureMap.h"
+#include "refractiveMap.h"
 
 
 
@@ -88,8 +89,6 @@ void Photon::initCommon(void)
 	// Set to initial weight values.
 	weight = 1;
 
-	// Default value of tagged to false.
-	tagged = false;
 
 	r = 0;
 	step = 0;
@@ -104,6 +103,9 @@ void Photon::initCommon(void)
 
 	// Set the transmission angle for a photon.
 	transmission_angle = 0.0f;
+
+	// Initialize the time-of-flight value.
+	time_of_flight = 0.0f;
 
 	// Set the path lengths during initialization.
 	unmodulated_optical_path_length = 0.0f;
@@ -184,9 +186,9 @@ void Photon::injectPhoton(Medium *medium, const int iterations, RNGSeeds daseeds
 
 	// Initialize the photon's properties before propagation begins.
 	initRNG(daseeds.s1, daseeds.s2, daseeds.s3, daseeds.s4);
-    initTrajectory();
+	initTrajectory();
 	initAbsorptionArray();
-	
+
 
 	// Before propagation we set the medium which will be used by the photon.
 	this->m_medium = medium;
@@ -219,9 +221,9 @@ void Photon::propagatePhoton(const int iterations)
 	int i;
 	for (i = 0; i < iterations; i++) 
 	{
-        
-        
-        
+
+
+
 		// While the photon has not been terminated by absorption or leaving
 		// the medium we propagate it through he medium.
 		while (isAlive()) 
@@ -254,14 +256,19 @@ void Photon::propagatePhoton(const int iterations)
 				// Now displace the photon at its new location some distance depending on
 				// how the pressure has moved scattering particles and/or due to the change
 				// in the path of the photon due to refractive index gradient.
-				if (SIM_REFRACTIVE_GRADIENT)
+				if (SIM_REFRACTIVE_GRADIENT && !SIM_DISPLACEMENT)
 				{
-					alterPathLengthFromRefractiveChanges();
+					alterOPLFromAverageRefractiveChanges();
 				}
 
-				if (SIM_DISPLACEMENT)
+				if (SIM_DISPLACEMENT && !SIM_REFRACTIVE_GRADIENT)
 				{
 					displacePhotonFromPressure();
+				}
+
+				if (SIM_DISPLACEMENT && SIM_REFRACTIVE_GRADIENT)
+				{
+					displacePhotonAndAlterOPLFromAverageRefractiveChanges();
 				}
 
 
@@ -289,18 +296,18 @@ void Photon::propagatePhoton(const int iterations)
 		// the medium.
 		//writeCoordsToFile();
 
-        //Logger::getInstance()->writeRNGSeeds(seeds.s1, seeds.s2, seeds.s3, seeds.s4);
+		//Logger::getInstance()->writeRNGSeeds(seeds.s1, seeds.s2, seeds.s3, seeds.s4);
 
-        // Save seeds.
-        if (SAVE_RNG_SEEDS) 
-        {
-            
-            seeds.s1 =  z1;
-            seeds.s2 =  z2;
-            seeds.s3 = 	z3;
-            seeds.s4 = 	z4;
-            
-        }
+		// Save seeds.
+		if (SAVE_RNG_SEEDS)
+		{
+
+			seeds.s1 =  z1;
+			seeds.s2 =  z2;
+			seeds.s3 = 	z3;
+			seeds.s4 = 	z4;
+
+		}
 
 		// Reset the photon and start propogation over from the beginning.
 		if (SAVE_RNG_SEEDS)
@@ -338,8 +345,6 @@ void Photon::reset()
 	// Set back to initial weight values.
 	weight = 1;
 
-	// Set tagged boolean back to false.
-	tagged = false;
 
 	// Set the vector that contains the current location of the photon.
 	currLocation->location.x = illuminationCoords.x;
@@ -397,7 +402,7 @@ void Photon::setStepSize()
 	// is set to remainder size and update step_remainder to zero.
 	if (step_remainder == 0.0) {
 		double rnd = getRandNum();
-        // Calculate the new step length of the photon.
+		// Calculate the new step length of the photon.
 		step = -log(rnd)/(mu_a	+ mu_s);
 	}
 	else
@@ -562,10 +567,7 @@ void Photon::drop()
 		// Update the absorbed weight in this absorber.
 		absorber->updateAbsorbedWeight(absorbed);
 
-		// If this photon hit an absorber we set tagged to true, which
-		// assumes our tagging volume completely encompasses the absorber
-		// and is the same shape.
-		tagged = true;
+
 	}
 	else
 	{
@@ -737,14 +739,14 @@ void Photon::displacePhotonFromPressure(void)
 
 	// Transform the location of the photon in the medium to discrete locations in the grid.
 	//
-	double dx = m_medium->kwave.dmap->getDx();
-	double Nx = m_medium->kwave.dmap->getNumVoxelsXaxis();
+	static double dx = m_medium->dx;
+	static double Nx = m_medium->Nx;
 
-	double dy = m_medium->kwave.dmap->getDy();
-	double Ny = m_medium->kwave.dmap->getNumVoxelsYaxis();
+	static double dy = m_medium->dy;
+	static double Ny = m_medium->Ny;
 
-	double dz = m_medium->kwave.dmap->getDz();
-	double Nz = m_medium->kwave.dmap->getNumVoxelsZaxis();
+	static double dz = m_medium->dz;
+	static double Nz = m_medium->Nz;
 
 	int _x = currLocation->location.x/dx - (currLocation->location.x/dx)/Nx;
 	int _y = currLocation->location.y/dy - (currLocation->location.y/dy)/Ny;
@@ -779,13 +781,28 @@ void Photon::displacePhotonFromPressure(void)
 	currLocation->location.y += m_medium->kwave.dmap->getDisplacementFromGridY(_x, _y, _z);
 	currLocation->location.z += m_medium->kwave.dmap->getDisplacementFromGridX(_x, _y, _z);
 
+	// Get the local refractive index based on the coordinates of the displaced photon.
+	double local_refractive_index = m_medium->kwave.nmap->getRefractiveIndexFromGrid(currLocation->location.x,
+																					 currLocation->location.y,
+																					 currLocation->location.z);
+
 	// Update the optical path length of the photon through the medium by
 	// calculating the distance between the two points and multiplying by the refractive index.
-	displaced_optical_path_length += VectorMath::Distance(prevLocation, currLocation) * currLayer->getRefractiveIndex();
+	//displaced_optical_path_length += VectorMath::Distance(prevLocation, currLocation) * currLayer->getRefractiveIndex();
+	displaced_optical_path_length += VectorMath::Distance(prevLocation, currLocation) * local_refractive_index;
 }
 
 
 
+// XXX: After simulation of optical path lengths (OPL) it has been verified
+//      that the use of a piecewise integration of refractive indices, and
+//      their respective distances (i.e. their distance through the corresponding voxel)
+//      is innaccurate.  This is because the distance calculated through each voxel is never
+//      completely exact, and is in truth quite erroneous.  It has been found it is better to find the refractive index
+//      values the photon bundle has moved through during this step, average those values,
+//      and multiply by the accurate distance.
+// ------------------------------------------------------------------------------------------
+/*
 // Alter the optical path length of the photon through the medium as it encounters
 // refractive index changes along it's step.
 // Basic idea is that the line segment from the photon step encounters changes
@@ -827,7 +844,7 @@ void Photon::alterPathLengthFromRefractiveChanges(void)
 	// index of refraction.  That is, by tracking where a given point in space starts and ends with
 	// a given value of refractive index, we know which portion (i.e. the distance from
 	// 'previousPointOnSegment' to 'pointOnSegment') should be multiplied by it's corresponding index
-	// of refraction, thus yeilding an optical path length dependent on the gradient changes of the
+	// of refraction, thus yielding an optical path length dependent on the gradient changes of the
 	// refraction of index due to variations in pressure.
 	boost::shared_ptr<Vector3d> pointOnSegment;
 	boost::shared_ptr<Vector3d> previousPointOnSegment = prevLocation;  // Set to last end point from hopping in medium.
@@ -942,7 +959,138 @@ void Photon::alterPathLengthFromRefractiveChanges(void)
 	refractiveIndex_optical_path_length += VectorMath::Distance(pointOnSegment, previousPointOnSegment) * n_curr;
 
 }
+ */
 
+void Photon::alterOPLFromAverageRefractiveChanges(void)
+{
+	// Photon does not get its optical path length changed on boundaries of medium.
+	if (hit_x_bound || hit_y_bound || hit_z_bound) return;
+
+
+	static double dx = m_medium->dx;
+	static double Nx = m_medium->Nx;
+
+	static double dy = m_medium->dy;
+	static double Ny = m_medium->Ny;
+
+	static double dz = m_medium->dz;
+	static double Nz = m_medium->Nz;
+
+
+	// Used for discrete values that will index into the appropriate k-Wave grid.
+	//
+	int _x;
+	int _y;
+	int _z;
+
+	// Current value of the change in refractive index (i.e. n(x,y,z) coordinates).
+	double n_cumulative = 0.0f;
+
+	// Scales the position along the line segment from previous to current location.
+	// i.e. P(t) = prevLocation + t*currLocation
+	double t_curr = 0.0f;
+
+	// NOTE:
+	// - Because the step size is much smaller than the size of a voxel, which means any given step
+	//   at best will at one end lie in a voxel adjecent to the other end, we only have a chance of
+	//   having different values of refrective index at the far ends of the segment connecting the previous location
+	//   and the current location.  Therefore, only check those to simplify things.
+	//   -----------------------------------------------------------------------------------------------------------
+	// Transform the location of the photon in the medium to discrete locations in the grid.
+	//
+	_x = prevLocation->location.x/dx - (prevLocation->location.x/dx)/Nx;
+	_y = prevLocation->location.y/dy - (prevLocation->location.y/dy)/Ny;
+	_z = prevLocation->location.z/dz - (prevLocation->location.z/dz)/Nz;
+
+	// Accumulate the refractive index encountered along the segment between scattering events for this
+	// step through the medium.
+	n_cumulative += m_medium->kwave.nmap->getRefractiveIndexFromGrid(_x, _y, _z);
+
+	// Transform the location of the photon in the medium to discrete locations in the grid.
+	//
+	_x = currLocation->location.x/dx - (currLocation->location.x/dx)/Nx;
+	_y = currLocation->location.y/dy - (currLocation->location.y/dy)/Ny;
+	_z = currLocation->location.z/dz - (currLocation->location.z/dz)/Nz;
+
+
+	// Accumulate the refractive index encountered along the segment between scattering events for this
+	// step through the medium.
+	n_cumulative += m_medium->kwave.nmap->getRefractiveIndexFromGrid(_x, _y, _z);
+
+
+	// Create the average refractive index.
+	double n_avg = n_cumulative / 2.0;
+
+	// Get the distance between the previous location and the current location.
+	double distance_traveled = VectorMath::Distance(prevLocation, currLocation);
+
+	// Make the final calculation of the OPL.
+	refractiveIndex_optical_path_length +=   distance_traveled * n_avg;
+
+/*
+
+    // Create the new vector that is the line segment from the previous position of the photon (p0) to
+	// it's current position (p1).
+	boost::shared_ptr<Vector3d> lineSegment = (*currLocation) - (*prevLocation);
+
+	// These track the distance on the line segment the photon travels that contains it's respective
+	// index of refraction.  That is, by tracking where a given point in space starts and ends with
+	// a given value of refractive index, we know which portion (i.e. the distance from
+	// 'previousPointOnSegment' to 'pointOnSegment') should be multiplied by it's corresponding index
+	// of refraction, thus yielding an optical path length dependent on the gradient changes of the
+	// refraction of index due to variations in pressure.
+	boost::shared_ptr<Vector3d> pointOnSegment;
+
+    // Because we must make the integration of the refractive index changes discrete, we
+	// have a step size (ds) along the arc (S).
+	// More specifically, value of (num_differential_steps) dictates how many portions (i.e. the resolution) we take along the arc (S).
+
+	int num_differential_steps = 1;
+	double ds = 1/(double)num_differential_steps;
+	for (int i = 0; i <= num_differential_steps; i++, t_curr += ds)
+	{
+		// Update the (t_curr) value to move along the line segment.
+		// 'prevLocation' is where the last hop moved the photon. 'lineSegment'
+		// is the line formed form 'prevLocation' to the new location of the photon 'currLocation'.
+		// 'pointOnSegment' is a point on that line ('lineSegment') based on the value of 't'.
+		//t_curr += ds;
+		pointOnSegment = (*prevLocation) + (*((*lineSegment)*t_curr));
+
+		// Transform the location of the photon in the medium to discrete locations in the grid.
+		//
+		_x = pointOnSegment->location.x/dx - (pointOnSegment->location.x/dx)/Nx;
+		_y = pointOnSegment->location.y/dy - (pointOnSegment->location.y/dy)/Ny;
+		_z = pointOnSegment->location.z/dz - (pointOnSegment->location.z/dz)/Nz;
+
+
+		// Accumulate the refractive index encountered along the segment between scattering events for this
+		// step through the medium.
+		n_cumulative += m_medium->kwave.nmap->getRefractiveIndexFromGrid(_x, _y, _z);
+	} // end for() loop
+
+
+	// Calculate the OPL through the average index of refraction encountered.
+	double distance_traveled = VectorMath::Distance(prevLocation, pointOnSegment);  // The distance between the two scattering locations (i.e. length of line segment)
+	double n_avg = n_cumulative / num_differential_steps; // Average refractive index.
+	refractiveIndex_optical_path_length +=  distance_traveled * n_avg;
+*/
+
+	// Scale distance into meters.
+	distance_traveled = distance_traveled * 1e-2;
+
+	// Update the time-of-flight value for this portion of propagation.
+	time_of_flight += distance_traveled / (3e8/n_avg);
+
+}
+
+// XXX: FINISH ME
+// - Combine both displacement and average refractive index changes to OPL contribution.
+void Photon::displacePhotonAndAlterOPLFromAverageRefractiveChanges(void)
+{
+	displacePhotonFromPressure();
+	alterOPLFromAverageRefractiveChanges();
+
+}
 
 
 // FIXME:
@@ -955,43 +1103,6 @@ void Photon::alterPathLengthFromRefractiveChanges(void)
 void Photon::displacePhotonFromRefractiveGradient(const double n1, const double n2)
 {
 
-	boost::shared_ptr<Vector3d> n(new Vector3d(0.0f, 0.0f, 1.0f));
-	boost::shared_ptr<Vector3d> I(new Vector3d);
-	I->location.x = currLocation->location.x;
-	I->location.y = currLocation->location.y;
-	I->location.z = currLocation->location.z;
-
-
-	VectorMath::Normalize(I);
-	double cosT = -VectorMath::dotProduct(n, I);
-
-	double cosT2 = sqrt(1 - pow((n1/n2),2)*(1-pow(cosT,2)));
-
-	boost::shared_ptr<Vector3d> R1 = (*I)*(n1/n2);
-	boost::shared_ptr<Vector3d> R2 = (*I)*(n1/n2*cosT - cosT2);
-	boost::shared_ptr<Vector3d> R = (*R1) + (*R2);
-	R = (*((*I)*(n1/n2))) + (*((*n)*((n1/n2)*cosT-cosT2)));
-
-	boost::shared_ptr<Vector3d> reflected = (*I) + (*((*I)*(cosT*2)));
-
-
-	/*
-    double dirX = currLocation->getDirX();
-    double dirY = currLocation->getDirY();
-    double dirZ = currLocation->getDirZ();
-
-    double incidentX = acos(abs(dirX));
-    double incidentY = acos(abs(dirY));
-    double incidentZ = acos(abs(dirZ));
-
-    double t_x = asin(n1/n2*sin(incidentX));
-    double t_y = asin(n1/n2*sin(incidentY));
-    double t_z = asin(n1/n2*sin(incidentZ));
-
-    t_x = cos(t_x);
-    t_y = cos(t_y);
-    t_z = cos(t_z);
-	 */
 
 }
 
@@ -1096,6 +1207,9 @@ void Photon::transmit(const char *type)
 
 			// Write exit data from logger.
 			Logger::getInstance()->writeWeightAngleLengthCoords(*this);
+
+			// Write time-of-flight data to logger.
+			Logger::getInstance()->writeTOFData(time_of_flight);
 
 			// Write out the seeds that caused this photon to hop, drop and spin its way out the
 			// exit-aperture.

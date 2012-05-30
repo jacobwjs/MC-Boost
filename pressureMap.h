@@ -24,7 +24,7 @@ typedef boost::multi_array<double, 3> three_dim_array;
 typedef three_dim_array::index array_index;
 
 
-// Forward decleration of Vector3d class.
+// Forward declaration of Vector3d class.
 class Vector3d;
 
 

@@ -60,6 +60,7 @@ void Absorber::writeData(void)
 
 Absorber::~Absorber()
 {
+
     // STUB
 }
 

@@ -16,6 +16,7 @@
 #include "layer.h"
 #include "pressureMap.h"
 #include "displacementMap.h"
+#include "refractiveMap.h"
 #include "sphereAbsorber.h"
 #include "cylinderAbsorber.h"
 #include "coordinates.h"
@@ -39,7 +40,16 @@ using std::endl;
 
 
 // Number of photons to simulate.
-const int MAX_PHOTONS = 100e6;
+const int MAX_PHOTONS = 10e6;
+
+// NOTE:
+	// - These values must match with those used in k-Wave.
+	// ----------------------------------------------------------------------------
+const double TISSUE_SOS = 1480;  			// Speed-of-sound of the tissue. [m/sec]
+const double DENSITY = 1000;	  			// Density of the tissue.
+const double PEZIO_OPTICAL_COEFF = 0.322;	// Pezio-optical coefficient of the tissue.
+const double N_BACKGROUND = 1.33;			// Refractive index of the unmodulated medium.
+
 
 
 // Used to append to saved data files.
@@ -70,6 +80,7 @@ typedef std::vector<RNGSeeds> RNGSeedArray;
 // has run it is possible to speed up the many simulations needed for
 // modeling AO since we are only injecting photons that would be detected.
 void generateSeeds(Medium *tissue, coords injectionCoords);
+
 // The acousto-optic simulation.
 void runAcoustoOptics(Medium *tissue, coords injectionCoords);
 
@@ -98,13 +109,19 @@ int main()
 	//
 	Medium *tissue = new Medium(X_dim, Y_dim, Z_dim);
 
+	// Set the acoustic properties of the medium, which are needed for AO calculations.
+	tissue->setDensity(DENSITY);
+	tissue->setSOS(TISSUE_SOS);
+	tissue->setPezioOpticCoeff(PEZIO_OPTICAL_COEFF);
+	tissue->setBackgroundRefractiveIndex(N_BACKGROUND);
+
 
 	// Define a layer in the tissue.
 	//
-	double mu_a = 1.0f;
-	double mu_s = 70.0f;
-	double refractive_index = 1.0f;
-	double anisotropy = 1/3;
+	double mu_a = 0.010f;
+	double mu_s = 80.0f;
+	double refractive_index = 1.33f;
+	double anisotropy = 0.9;
 	double start_depth = 0.0f; // [cm]
 	double end_depth = Z_dim; // [cm]
 	Layer *tissueLayer0 = new Layer(mu_a, mu_s, refractive_index, anisotropy, start_depth, end_depth);
@@ -113,15 +130,15 @@ int main()
 
 	// Define a spherical absorber.
 	//
-	//    SphereAbsorber *absorber0 = new SphereAbsorber(.5, X_dim/2, Y_dim/2, Z_dim/2);
-	//    absorber0->setAbsorberAbsorptionCoeff(3.0f);
-	//    absorber0->setAbsorberScatterCoeff(mu_s);
-	//    tissueLayer0->addAbsorber(absorber0);
+	//SphereAbsorber *absorber0 = new SphereAbsorber(.45, X_dim/2, Y_dim/2, Z_dim/2);
+	//absorber0->setAbsorberAbsorptionCoeff(3.0f);
+	//absorber0->setAbsorberScatterCoeff(mu_s);
+	//tissueLayer0->addAbsorber(absorber0);
 
 	// Create a spherical detector.
 	//
 	Detector *detector;
-	CircularDetector circularExitDetector(0.25f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
+	CircularDetector circularExitDetector(0.5f, Vector3d(X_dim/2, Y_dim/2, Z_dim));
 	circularExitDetector.setDetectorPlaneXY();  // Set the plane the detector is orientated on.
 	detector = &circularExitDetector;
 
@@ -197,7 +214,7 @@ void generateSeeds(Medium *tissue, coords injectionCoords)
 	//
 	const int NUM_PHOTON_OBJECTS = NUM_THREADS;
 
-	// Photon array.  Each object in the array will be assigned their own seperate CPU core to run on.
+	// Photon array.  Each object in the array will be assigned their own separate CPU core to run on.
 	//
 	Photon photons[NUM_PHOTON_OBJECTS];
 	boost::thread threads[NUM_THREADS];
@@ -211,7 +228,8 @@ void generateSeeds(Medium *tissue, coords injectionCoords)
 	// Init the random number generator with a static seed for reproducibility of
 	// photon events for this simulation.
 	//
-	srand(13);
+	//srand(13);
+	srand(69);
 
 	// Open a file for each time step which holds exit data of photons
 	// when they leave the medium through the detector aperture.
@@ -263,9 +281,6 @@ void generateSeeds(Medium *tissue, coords injectionCoords)
 	}
 
 
-
-
-
 	// Print out the elapsed time it took from beginning to end.
 	//
 	end = ((double)clock() - start) / CLOCKS_PER_SEC;
@@ -276,6 +291,9 @@ void generateSeeds(Medium *tissue, coords injectionCoords)
 
 void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 {
+
+
+
 
 	// Open the file that has the seeds produced from running 'generateSeeds()'.
 	std::ifstream rng_seed_stream;
@@ -301,11 +319,11 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 	// tissue->addPressureMap(new PressureMap("testing.txt"));
 
 
-	// Number of pixels in the kWave pressure grid.
+	// Number of voxels in the kWave pressure grid.
 	//
-	const int pgrid_x = 64;
-	const int pgrid_y = 64;
-	const int pgrid_z = 64;
+	const int pgrid_x = 96;
+	const int pgrid_y = 96;
+	const int pgrid_z = 96;
 	/*
      string pressure_file = "./kWave-pressure/pressure";
      PressureMap *pmap = new PressureMap(pgrid_x, pgrid_z, pgrid_y, X_dim);
@@ -319,14 +337,30 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 	const int dgrid_y = pgrid_z;
 	const int dgrid_z = pgrid_y;
 	const int GRID_DIM = 2; // size in [cm].
-	string displacement_file = "D:/MC-Data/KWave-Displacements/2cm/homo-medium/disp";
-	DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, GRID_DIM);
-	tissue->addDisplacementMap(dmap);
+	//string displacement_file = "D:/MC-Data/KWave-Displacements/2cm/hetero-medium/disp";
+	//DisplacementMap *dmap = new DisplacementMap(dgrid_x, dgrid_z, dgrid_y, GRID_DIM);
+	//tissue->addDisplacementMap(dmap);
 
-
-	// Set the value of the transducer frequency used in the K-Wave simulation.
+	// Create and add the refractive map object to the medium.
 	//
-	tissue->kwave.transducerFreq = 1.5e6;
+	const int ngrid_x = pgrid_x;
+	const int ngrid_y = pgrid_y;
+	const int ngrid_z = pgrid_z;
+	string pressure_file = "D:/MC-Data/kWave-Data/homo-medium/2x2x2cm/pressure-data/pressure";
+	RefractiveMap *nmap = new RefractiveMap(ngrid_x, ngrid_z, ngrid_y, GRID_DIM);
+	tissue->addRefractiveMap(nmap);
+
+
+	// Create a file for writing the time-of-flight values to.
+	//
+	std::string tof_data_file; // = "time-of-flight-data.txt";
+	//Logger::getInstance()->openTOFFile(tof_data_file);
+
+
+	// Set the value of the transducer frequency used in the k-Wave simulation.
+	//
+	tissue->kwave.transducerFreq = 1e6;
+	tissue->kwave.waveNumber = 2*PI/(TISSUE_SOS / tissue->kwave.transducerFreq);
 
 
 	// Allocate the planar fluence grid and set it in the tissue.
@@ -336,15 +370,15 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 
 	// Let boost decide how many threads to run on this architecture.
 	//
-	const int NUM_THREADS = boost::thread::hardware_concurrency();
-	//const int NUM_THREADS = 1;
+	//const int NUM_THREADS = boost::thread::hardware_concurrency();
+	const int NUM_THREADS = 1;
 
 	// Each thread needs it's own photon object to run, so we need to create
 	// an equal amount of photon objects as threads.
 	//
 	const int NUM_PHOTON_OBJECTS = NUM_THREADS;
 
-	// Photon array.  Each object in the array will be assigned their own seperate CPU core to run on.
+	// Photon array.  Each object in the array will be assigned their own separate CPU core to run on.
 	//
 	Photon *photons[NUM_PHOTON_OBJECTS];
 	boost::thread *threads[NUM_THREADS];
@@ -358,8 +392,8 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 
 	// Booleans that dictate what (and what does not) get simulated.
 	//
-	bool DISPLACE 				= true;
-	bool REFRACTIVE_GRADIENT 	= false;
+	bool DISPLACE 				= false;
+	bool REFRACTIVE_GRADIENT 	= true;
 	bool SAVE_SEEDS 			= false;
 
 
@@ -368,17 +402,16 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 	clock_t start, start_per_simulation, end;
 	start = clock();
 
-	cout << "Before seed load\n";
 
 	//RNGSeeds daseeds;
 	RNGSeedArray daseeds = loadRNGSeeds(rng_seed_file);
 
-	// For each time step that K-Wave gave ultrasound data, propagate
+	// For each time step that k-Wave gave ultrasound data, propagate
 	// photons through and track modulation due to the acoustic source.
 	// Number of time steps that were executed in the K-Wave simulation
 	// that produced displacement and pressure data.
 	//
-	const int KWAVESIM_TIME_STEPS = 312;
+	const int KWAVESIM_TIME_STEPS = 350;
 
 
 	for (int dt = 1; dt <= KWAVESIM_TIME_STEPS; dt++)
@@ -396,15 +429,18 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 		exit_data_file = "AO-exit-aperture-detection-" + boost::lexical_cast<std::string>(dt) + ".txt";
 		Logger::getInstance()->openExitFile(exit_data_file);
 #else
-		exit_data_file = "D:/MC-Data/Log/Exit-data/2cm/homo-medium/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
-		Logger::getInstance()->openExitFile(exit_data_file);
+		//exit_data_file = "D:/MC-Data/Log/Exit-data/2cm/hetero-medium/exit-aperture-" + boost::lexical_cast<std::string>(dt) + ".txt";
+		//Logger::getInstance()->openExitFile(exit_data_file);
+		tof_data_file = "D:/MC-Data/Log/Exit-data/2x2x2cm/homo-medium/tof-data/tof-" + boost::lexical_cast<std::string>(dt) + ".txt";
+		Logger::getInstance()->openTOFFile(tof_data_file);
 #endif
 
 
 		// Load a pressure map and displacement maps at time step number (K-Wave simulation) 'dt'.
 		//
 		//tissue->loadPressure(pressure_file, dt);
-		tissue->loadDisplacements(displacement_file, dt);
+		//tissue->loadDisplacements(displacement_file, dt);
+		tissue->loadRefractiveMap(pressure_file, DENSITY, TISSUE_SOS, N_BACKGROUND, PEZIO_OPTICAL_COEFF, dt);
 
 		cout << "Simulating AO time step: " << dt << endl;
 
@@ -444,6 +480,7 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 			for (int t = 0; t < NUM_THREADS; t++)
 			{
 				threads[t]->join();
+
 			}
 
 
@@ -455,6 +492,9 @@ void runAcoustoOptics(Medium *tissue, coords injectionCoords)
 			{
 				delete photons[j];
 				delete threads[j];
+
+				photons[j] = NULL;
+				threads[j] = NULL;
 
 			}
 		}
@@ -503,12 +543,12 @@ RNGSeedArray loadRNGSeeds(const std::string &filename)
 		photonSeeds.push_back(temp);
 	}
 
-	cout << "before erase\n";
+
 	// Remove the last row of seeds as they are all zeros due to
 	// the way the while loop above terminates.
 	photonSeeds.erase(photonSeeds.end()-1);
 
-	cout << "After erase\n";
+
 	//#define DEBUG
 #ifdef DEBUG
 	for (int i = 0; i < photonSeeds.size(); i++)
@@ -566,7 +606,7 @@ void testVectorMath(void)
 	VectorMath::Normalize(n);
 
 	double u = VectorMath::dotProduct(n, (*c0 - *p0)) / VectorMath::dotProduct(n, (*p1 - *p0));
-	double THRESH = 0.0000000000001;
+	double THRESH = 1e-12;
 	if (u < 0.0f || u > 1.0f + THRESH)
 		cout << "FALSE\n";
 

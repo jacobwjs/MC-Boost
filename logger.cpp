@@ -29,6 +29,7 @@ Logger::~Logger()
     exit_data_stream.close();
     absorber_data_stream.close();
     rng_seed_stream.close();
+    tof_stream.close();
 }
 
 Logger * Logger::getInstance(void)
@@ -55,6 +56,23 @@ void Logger::openExitFile(const std::string &filename)
     	exit(1);
     }
 }
+
+
+void Logger::openTOFFile(const std::string &filename)
+{
+	// Ensure file stream is not already open.
+	if (tof_stream.is_open())
+		tof_stream.close();
+
+	tof_stream.open(filename.c_str());
+	if (!tof_stream)
+	{
+		cout << "!!! ERROR: Could not open '" << filename << "' for writing.  Check directory structure.\n";
+		exit(1);
+	}
+}
+
+
 
 
 void Logger::createRNGSeedFile(const std::string &filename)
@@ -226,5 +244,15 @@ void Logger::writeRNGSeeds(const unsigned int s1, const unsigned int s2,
                        s4 << " " << "\n";
     rng_seed_stream.flush();
 }
+
+
+void Logger::writeTOFData(const double tof)
+{
+
+	boost::mutex::scoped_lock lock(m_tof_mutex);
+	tof_stream << tof << " \n";
+	tof_stream.flush();
+}
+
 
 

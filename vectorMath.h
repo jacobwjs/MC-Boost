@@ -132,4 +132,4 @@ namespace VectorMath
 
 
 
-#endif VECTORMATH_H
+#endif // VECTORMATH_H

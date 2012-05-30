@@ -23,7 +23,7 @@ using namespace std;
 /* If 1+cos(theta) <= ONE_MINUS_COSZERO, fabs(PI-theta) <= 1e-6 rad. */
 #define THRESHOLD	0.01		// Threshold for determining if we should perform roulette
 #define CHANCE      0.1  		// Used in roulette
-#define PI			3.141592653589793238462643383
+#define PI			3.1415926535897932384626
 #define SIGN(x)           ((x)>=0 ? 1:-1)
 //const int MAX_BINS = 101;
 
@@ -183,7 +183,11 @@ public:
     
     // Alter the optical path length due to the changes in refractive
     // index of the medium from the changes in pressure.
-    void    alterPathLengthFromRefractiveChanges(void);
+    void    alterOPLFromAverageRefractiveChanges(void);
+
+    // Combination of displacement and average refractive changes with respect to influencing
+    // OPL.
+    void	displacePhotonAndAlterOPLFromAverageRefractiveChanges(void);
 
 	// Write the coordinates of each scattering event to file for use
 	// with plotting in matlab.
@@ -251,10 +255,7 @@ private:
     boost::shared_ptr<Vector3d> currLocation;
     boost::shared_ptr<Vector3d> prevLocation;
     
-    // A boolean value that is set when a photon is "tagged", which in this
-    // case means it interacted with an absorber.
-    bool tagged;
-	
+
 	// Weight of the photon.
 	double	weight;
 	
@@ -336,6 +337,9 @@ private:
 
     // Count through the layer.
     double cnt_through_aperture;
+
+    // The time-of-flight of this photon bundle through the medium.
+    double time_of_flight;
 
 }; 		
 

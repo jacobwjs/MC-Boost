@@ -36,6 +36,7 @@ public:
     void openExitFile(const std::string &filename);
     void createRNGSeedFile(const std::string &filename);
     void openAbsorberFile(const std::string &filename);
+    void openTOFFile(const std::string &filename);
     
     void write(double val);
     void writeExitData(const boost::shared_ptr<Vector3d> vectorCoords);
@@ -93,6 +94,10 @@ public:
     //
     int getNumDetectedPhotons(void) {return num_photons_exited;}
     
+
+    // Writes the time-of-flight value for the photon bundle when it exits the medium.
+    void writeTOFData(const double tof);
+
 private:
     Logger();                            // default constructor is private
     Logger(Logger const&){};             // copy constructor is private
@@ -107,11 +112,13 @@ private:
     ofstream exit_data_stream;
     ofstream absorber_data_stream;
     ofstream rng_seed_stream;
+    ofstream tof_stream;  // Time-of-flight stream.
     
     // Tracks how many photons were detected through the aperture.
     int num_photons_exited;
     
     boost::mutex m_mutex;
+    boost::mutex m_tof_mutex;
 };
 
 #endif

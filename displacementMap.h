@@ -27,7 +27,7 @@ typedef boost::multi_array<double, 3> three_dim_array;
 typedef three_dim_array::index array_index;
 
 
-// Forward decleration of Vector3d class.
+// Forward declaration of Vector3d class.
 class Vector3d;
 
 
@@ -42,6 +42,12 @@ public:
 	// Loads a text file containing discrete displacement values at a given time step
 	// that were obtained from kWave simulation post-processed data.
 	void	loadDisplacementMaps(const std::string &filename, const int timeStep);
+	void	loadPressureAndCalculateDisplacements(const std::string &filename, const int dt,
+			  	  	  	  	  	  	  	  	  	  const double density,
+			  	  	  	  	  	  	  	  	  	  const double speed_of_sound,
+			  	  	  	  	  	  	  	  	  	  const double pezio_optical_coeff,
+			  	  	  	  	  	  	  	  	  	  const double background_refractive_index);
+
 
 	// Returns a Vector3d object holding values for displacements in all axes.
 	// That is the returned Vector3d objects holds the values the coordinates of
@@ -89,7 +95,7 @@ private:
 	// allowing indexing into the grid based on the coordinates of the photon
 	// and retrieve the localized displacement.
 	// NOTE:
-	// - Displacement happens on each dimension seperate from the other, based on the
+	// - Displacement happens on each dimension separate from the other, based on the
 	//   speed of sound in each direction.  Therefore post-processing of velocity data
 	//   leaves displacement values in each direction, therefore we need 3 grids.
 	three_dim_array * displacement_gridX;
